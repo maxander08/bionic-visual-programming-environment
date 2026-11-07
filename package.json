@@ -1,12 +1,24 @@
 {
-  "name": "react-vite-tailwind",
+  "name": "bionic-visual-programming-environment",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Neural Studio — a bionic visual programming environment. Wire sensors, nuclei and behaviors into a live simulation, in the browser.",
   "type": "module",
+  "homepage": "https://USERNAME.github.io/bionic-visual-programming-environment/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/USERNAME/bionic-visual-programming-environment.git"
+  },
+  "engines": {
+    "node": ">=20.19"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.3.0",
