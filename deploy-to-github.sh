@@ -94,7 +94,7 @@ git remote add origin "https://github.com/$OWNER/$REPO.git"
 if git push -q --set-upstream "https://x-access-token:$GH_TOKEN@github.com/$OWNER/$REPO.git" main 2>/tmp/push.err; then
   ok "Pushed $(git rev-parse --short HEAD) to $OWNER/$REPO"
 else
-  bad "Push failed:"; sed 's/^/    /' /tmp/push.err | head -8
+  bad "Push failed:"; sed -e 's/^/    /' -e 's/github_pat_[A-Za-z0-9_]*/[REDACTED]/g' -e 's/ghp_[A-Za-z0-9]*/[REDACTED]/g' /tmp/push.err | head -8
   printf '  → If it mentions "workflow scope", add Workflows: write to the token.\n'; exit 1
 fi
 
@@ -115,8 +115,13 @@ for i in $(seq 1 60); do
   api GET "/repos/$OWNER/$REPO/actions/runs?per_page=1"
   RUN_ID=$(printf '%s' "$BODY" | grep -o '"id":[0-9]\{6,\}' | head -1 | cut -d: -f2)
   if [ -z "$RUN_ID" ]; then
-    [ "$i" = 1 ] && echo "  no runs yet — dispatching the workflow"
-    api POST "/repos/$OWNER/$REPO/actions/workflows/deploy.yml/dispatches" '{"ref":"main"}'
+    # Give the push-triggered run ~30s to register before dispatching a duplicate.
+    if [ "$i" -gt 5 ]; then
+      [ -z "${DISPATCHED:-}" ] && { echo "  no run appeared — dispatching the workflow"; DISPATCHED=1; }
+      api POST "/repos/$OWNER/$REPO/actions/workflows/deploy.yml/dispatches" '{"ref":"main"}'
+    else
+      echo "  waiting for the push-triggered run to register…"
+    fi
     sleep 6; continue
   fi
   api GET "/repos/$OWNER/$REPO/actions/runs/$RUN_ID"
