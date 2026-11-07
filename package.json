@@ -4,10 +4,10 @@
   "version": "0.1.0",
   "description": "Neural Studio — a bionic visual programming environment. Wire sensors, nuclei and behaviors into a live simulation, in the browser.",
   "type": "module",
-  "homepage": "https://USERNAME.github.io/bionic-visual-programming-environment/",
+  "homepage": "https://maxander08.github.io/bionic-visual-programming-environment/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/USERNAME/bionic-visual-programming-environment.git"
+    "url": "https://github.com/maxander08/bionic-visual-programming-environment.git"
   },
   "engines": {
     "node": ">=20.19"
