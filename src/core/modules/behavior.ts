@@ -1,5 +1,6 @@
 import type { ModuleDef } from '../types';
 import { clamp, hsvToRgb, isImage, makeImage, toBool, toNum, toText } from '../util';
+import { isEquation, samplePlot } from '../equation';
 import { bol, inp, num, out, sel, txt } from './kit';
 
 const base = { category: 'Behavior' as const, family: 'behavior' as const };
@@ -34,18 +35,24 @@ export const behaviors: ModuleDef[] = [
     doc: { summary: 'The general-purpose display. Click the expand icon on the node for a full-size view.', runtime: 'Chooses a layout from the value type: image, large number, or text.' },
   },
   {
-    ...base, type: 'meter', name: 'Meter', caption: 'Meter Display', glyph: 'meter', size: 'square', keywords: 'plot graph scope history',
-    inputs: [inp('in', 'Input', 'num', 'Numeric signal.')], outputs: [],
-    params: [num('window', 'Window', 80, 10, 400, 1, 'Samples kept in the plot.'), bol('auto', 'Auto scale', true, 'Fit the plot to the data range; otherwise 0–1.')],
+    ...base, type: 'meter', name: 'Meter', caption: 'Meter Display', glyph: 'meter', size: 'square', keywords: 'plot graph scope history equation function curve axes',
+    inputs: [inp('in', 'Input', 'any', 'A numeric signal (plotted over time) or an Equation (graphed as y against x).')], outputs: [],
+    params: [num('window', 'Window', 80, 10, 400, 1, 'Samples kept in the plot (numeric signals only).'), bol('auto', 'Auto scale', true, 'Fit the plot to the data range; otherwise 0–1. Equations use the range set on the Equation node.')],
     run(c) {
-      const x = toNum(c.get('in'));
+      const v = c.get('in');
+      if (isEquation(v)) {
+        const r = samplePlot(v);
+        if (!r.ok) { c.view({}); return c.fail(r.error); }
+        return c.view({ plot: r.plot });
+      }
+      const x = toNum(v);
       if (Number.isNaN(x)) return c.warn('Input is not numeric.');
       const h: number[] = (c.state.h ??= []);
       h.push(x);
       while (h.length > c.num('window')) h.shift();
       c.view({ hist: h.slice(), last: x });
     },
-    doc: { summary: 'A live plot of a numeric signal.', runtime: 'Records one sample each time the input changes.' },
+    doc: { summary: 'A live plot of a numeric signal, or the graph of an Equation.', runtime: 'Numeric input: records one sample each time the input changes and draws it over time. Equation input: samples every curve across the equation’s x range and draws them over dimmed gray axes through x = 0 and y = 0. Click the expand icon for a labelled full-size graph.', errors: ['An equation that cannot be parsed raises an error naming the problem.'] },
   },
   {
     ...base, type: 'audio', name: 'Audio', caption: 'Audio Speaker', glyph: 'audio', size: 'small', keywords: 'sound speaker tone oscillator play',

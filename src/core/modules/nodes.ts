@@ -1,5 +1,6 @@
 import type { ModuleDef } from '../types';
 import { clamp, fmtNum, toBool, toNum, toText } from '../util';
+import { FUNCTION_NAMES, compileExpr, splitEquations, type EquationData } from '../equation';
 import { bol, inp, num, out, sel, txt } from './kit';
 
 const r4 = (x: number) => Math.round(x * 10000) / 10000;
@@ -378,6 +379,45 @@ export const nodes: ModuleDef[] = [
       c.wake(c.tickMs);
     },
     doc: { summary: 'A low-frequency oscillator producing a numeric waveform.', runtime: 'Phase advances by f × Δt in simulation time, so the waveform is independent of frame rate. Frequencies above half the tick rate alias.' },
+  },
+  {
+    category: 'Node', family: 'node', type: 'equation', name: 'Equation', caption: 'Equation', glyph: 'f(x)', size: 'small', source: true, keywords: 'formula function graph plot curve expression sin cos math store',
+    inputs: [inp('x', 'X', 'num', 'Evaluate the first equation at this x for the y(x) output. Optional: the “Evaluate at x” setting is used when it is not connected.', 'top', true)],
+    outputs: [out('eq', 'Equation', 'data', 'The equation stored as data (expressions, plot range, time). Route it to a Meter to see its graph.'), out('y', 'y(x)', 'num', 'Value of the first equation at x.', 'right')],
+    params: [
+      txt('expr', 'Equation', 'sin(x)', `Any expression in x (and t, the simulation time in seconds). Write one equation per line or separate them with “;” to graph several curves. A leading “y =” is allowed. Functions: ${FUNCTION_NAMES.join(', ')}. Constants: pi, e, tau, phi. Operators: + − * / ^ %, and implicit products such as 2x or 3sin(x).`, { multiline: true, maxLength: 600, placeholder: 'y = sin(x)' }),
+      num('xMin', 'x min', -10, -1e6, 1e6, 0.1, 'Left edge of the graph.'),
+      num('xMax', 'x max', 10, -1e6, 1e6, 0.1, 'Right edge of the graph. Must be greater than x min.'),
+      bol('yAuto', 'Auto y range', true, 'Fit the vertical range to the curves (ignoring asymptotes). Off: use y min and y max.'),
+      num('yMin', 'y min', -1, -1e6, 1e6, 0.1, 'Bottom edge of the graph when Auto y range is off.'),
+      num('yMax', 'y max', 1, -1e6, 1e6, 0.1, 'Top edge of the graph when Auto y range is off.'),
+      num('samples', 'Samples', 200, 20, 2000, 10, 'Points computed per curve. More points draw sharper curves.'),
+      num('x', 'Evaluate at x', 0, -1e6, 1e6, 0.1, 'The x used for the y(x) output when X is not connected.'),
+    ],
+    run(c) {
+      const exprs = splitEquations(c.str('expr'));
+      if (!exprs.length) return c.fail('Enter an equation, for example sin(x).');
+      const compiled = exprs.map((e) => compileExpr(e));
+      for (let i = 0; i < compiled.length; i++) { const r = compiled[i]; if (!r.ok) return c.fail(`“${exprs[i]}”: ${r.error}`); }
+      if (!(c.num('xMax') > c.num('xMin'))) return c.fail('x max must be greater than x min.');
+      const fns = compiled.map((r) => (r.ok ? r : undefined)!);
+      const usesT = fns.some((f) => f.usesT);
+      const t = usesT ? r4(c.time / 1000) : 0;
+      const data: EquationData = { kind: 'equation', exprs, xMin: c.num('xMin'), xMax: c.num('xMax'), yMin: c.num('yMin'), yMax: c.num('yMax'), yAuto: c.bool('yAuto'), samples: c.num('samples'), t };
+      c.emit('eq', data);
+      const x = c.has('x') ? n(c.get('x')) : c.num('x');
+      const y = fns[0].fn({ x, t });
+      if (Number.isFinite(y)) c.emit('y', r4(y));
+      else { c.emit('y', undefined); c.warn(`y(${fmtNum(x)}) is not a finite number.`); }
+      c.view({ count: exprs.length, y: Number.isFinite(y) ? r4(y) : undefined });
+      if (usesT) c.wake(c.tickMs);
+    },
+    doc: {
+      summary: 'Stores one or more equations as data. Route its Equation output to a Meter to draw the graph.',
+      runtime: 'Parses the expressions with a built-in safe evaluator (no scripts are run) and emits them with the plot range. Meter samples them over x min…x max and draws the curves on dimmed gray axes. The y(x) output evaluates the first equation at the X input. Equations that use t re-evaluate every tick, so graphs animate in simulation time.',
+      errors: ['A syntax error, unknown name, wrong number of arguments or empty equation raises an error that names the problem.', 'x max not greater than x min raises an error.', 'y(x) not being a finite number (for example sqrt of a negative) raises a warning and clears the y output; the graph shows a gap there.'],
+      examples: ['sin(x)', 'y = x^2 - 3x + 1', 'sin(x); cos(x) (two curves)', 'sin(x - 2t) (a travelling wave)', 'exp(-x^2/4) * cos(3x)'],
+    },
   },
   {
     ...chipBase, type: 'event', name: 'Send Event', caption: 'Event Sender', glyph: '⚑', chip: (p) => String(p.name),

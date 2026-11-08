@@ -136,6 +136,21 @@ export const TEMPLATES: Template[] = [
     }),
   },
   {
+    id: 'equation-graphs', name: 'Equation graphs',
+    summary: 'Equation nodes store formulas; Meters draw their graphs on gray axes.',
+    expect: 'The first Meter shows a decaying cosine, the second shows sin(x) and cos(x) together, and the third shows a wave travelling to the right as time passes. The Projector reads y(x) of the animated equation at x = 1.',
+    build: () => make('Equation graphs', 'Equation → Meter: any formula, drawn as a graph.', (b) => {
+      b.add('damped', 'equation', 0, 0, { expr: 'y = exp(-x^2/16) * cos(3x)', xMin: -8, xMax: 8 });
+      b.add('pair', 'equation', 0, 156, { expr: 'sin(x)\ncos(x)', xMin: -6.2832, xMax: 6.2832 });
+      b.add('wave', 'equation', 0, 312, { expr: 'sin(x - 2t) / (1 + abs(x) / 6)', xMin: -10, xMax: 10, yAuto: false, yMin: -1.2, yMax: 1.2, x: 1 });
+      b.add('g1', 'meter', 192, 0);
+      b.add('g2', 'meter', 192, 156);
+      b.add('g3', 'meter', 192, 312);
+      b.add('val', 'projector', 360, 312, { format: 'fixed2' });
+      b.wire('damped', 'eq', 'g1', 'in'); b.wire('pair', 'eq', 'g2', 'in'); b.wire('wave', 'eq', 'g3', 'in'); b.wire('wave', 'y', 'val', 'in');
+    }),
+  },
+  {
     id: 'memory-state', name: 'Memory and state tracking',
     summary: 'A sequence of numbers feeds a Memory trace while a clock steps a three-state machine.',
     expect: 'The memory trace follows the sequence with lag; the state machine cycles idle → active → done on every pulse.',

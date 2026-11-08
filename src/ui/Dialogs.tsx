@@ -4,7 +4,8 @@ import { CATEGORIES, MODULES, getDef } from '../core/registry';
 import { PACKAGES } from '../core/packages';
 import { TEMPLATES } from '../core/library';
 import { QR_BYTE_LIMIT, encodeShare, sha256Hex } from '../core/project';
-import { crc32, describe } from '../core/util';
+import { crc32, describe, fmtNum } from '../core/util';
+import type { Plot } from '../core/equation';
 import { engine, useNodeVer } from '../runtime/session';
 import { storageAvailable, projects, clearAll } from '../state/storage';
 import { useStore } from '../state/store';
@@ -13,6 +14,7 @@ import { Canvas } from './Canvas';
 import { Icon } from './icons';
 import { DocBlock } from './Inspector';
 import { ImageCanvas } from './NodeView';
+import { CURVE_COLORS, EquationPlot } from './EquationPlot';
 
 function Modal({ title, onClose, children, wide, label }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean; label?: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -264,6 +266,26 @@ function CompoundViewer({ onClose }: { onClose: () => void }) {
   );
 }
 
+function MeterGraph({ onClose }: { onClose: () => void }) {
+  const id = useStore((s) => s.ui.arg) as string;
+  useNodeVer(id);
+  const v = (engine.nodes.get(id)?.viewData ?? {}) as any;
+  const plot = v.plot as Plot | undefined;
+  return (
+    <Modal title="Graph" onClose={onClose} wide>
+      <div className="graph-full" aria-live="polite">
+        {plot ? <EquationPlot plot={plot} detail /> : <p className="muted">No equation yet. Route an Equation node to this Meter and press Run.</p>}
+      </div>
+      {plot && (
+        <ul className="graph-legend">
+          {plot.curves.map((c, i) => <li key={i}><i style={{ background: CURVE_COLORS[i % CURVE_COLORS.length] }} /><code>{c.expr}</code></li>)}
+          <li className="muted">x ∈ [{fmtNum(plot.xMin)}, {fmtNum(plot.xMax)}] · y ∈ [{fmtNum(plot.yMin, 3)}, {fmtNum(plot.yMax, 3)}]{plot.usesT ? ` · t = ${fmtNum(plot.t, 2)} s` : ''}</li>
+        </ul>
+      )}
+    </Modal>
+  );
+}
+
 function Projector({ onClose }: { onClose: () => void }) {
   const id = useStore((s) => s.ui.arg) as string;
   useNodeVer(id);
@@ -292,6 +314,7 @@ export function Dialogs() {
     case 'settings': return <Settings onClose={close} />;
     case 'compound': return <CompoundViewer onClose={close} />;
     case 'projector': return <Projector onClose={close} />;
+    case 'meter': return <MeterGraph onClose={close} />;
     default: return null;
   }
 }

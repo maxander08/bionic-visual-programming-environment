@@ -7,7 +7,7 @@ backend, no accounts, no network calls.
 Built with React 19, Vite 7, TypeScript (strict), Tailwind CSS 4 and Zustand, and compiled by
 `vite-plugin-singlefile` into **one self-contained `index.html`**.
 
-![Neural Studio](https://img.shields.io/badge/build-single--file%20HTML-informational) ![tests](https://img.shields.io/badge/tests-40%20passing-brightgreen) ![license](https://img.shields.io/badge/license-MIT-blue)
+![Neural Studio](https://img.shields.io/badge/build-single--file%20HTML-informational) ![tests](https://img.shields.io/badge/tests-54%20passing-brightgreen) ![license](https://img.shields.io/badge/license-MIT-blue)
 
 ---
 
@@ -26,7 +26,7 @@ Other scripts:
 | `npm run build` | Production build → `dist/index.html` (one file, ~580 KB) |
 | `npm run preview` | Serve the production build locally |
 | `npm run typecheck` | `tsc --noEmit` |
-| `npm test` | Vitest suite (40 tests) |
+| `npm test` | Vitest suite (54 tests) |
 | `npm run test:watch` | Vitest in watch mode |
 
 Requires **Node ≥ 20.19** (Vite 7's minimum).
@@ -101,8 +101,9 @@ src/
 │   ├── packages.ts    Inference/feature packages hosted by nuclei
 │   ├── project.ts     Serialisation, sanitising, share-link encoding
 │   ├── library.ts     Example programs and built-in compound systems
+│   ├── equation.ts    Safe expression parser, equation data and plot sampler
 │   ├── util.ts        Coercion, RNG, image statistics
-│   ├── core.test.ts   40 tests
+│   ├── core.test.ts   54 tests
 │   └── modules/       The module catalogue
 │       ├── sensors.ts   Vision, hearing, touch, motion, keys…
 │       ├── nuclei.ts    Sense, knowledge, imagination, attention, fear, memory…
@@ -128,6 +129,20 @@ Time is an explicit **simulation clock** advanced by `step(dt)` — nothing depe
   back-edges deliver on the next tick. A cycle with no delaying module is reported as an
   unbounded cycle instead of silently spinning.
 - Required inputs without a signal keep a module idle; optional inputs never block.
+
+### Equations and graphs
+
+The **Equation** node (Node category) stores one or more formulas as data. Wire its **Equation**
+output into a **Meter** and the Meter draws the graph of y against x, with dimmed gray axes through
+x = 0 and y = 0. Click the expand icon on the Meter for a full-size view with ticks and a legend.
+
+- One equation per line (or separated by `;`); a leading `y =` is optional. Several lines draw several curves.
+- Functions: everything the Math node offers (`abs sqrt square sin cos tanh exp log floor round ceil min max pow mod`)
+  plus `tan asin acos atan atan2 sinh cosh ln log10 log2 cbrt sign trunc fract hypot clamp step saw tri sqr`.
+- Constants `pi e tau phi`; operators `+ - * / ^ %`; implicit products such as `2x` and `3sin(x)`.
+- `t` is simulation time in seconds, so `sin(x - 2t)` animates.
+- The optional **X** input and the **y(x)** output evaluate the first equation at a point, so an Equation also works as a Math-style node.
+- Parsing is done by a small hand-written evaluator — no `eval`, no `Function`. Errors name the problem.
 
 ### Honest labelling
 

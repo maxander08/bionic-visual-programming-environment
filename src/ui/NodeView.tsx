@@ -9,6 +9,7 @@ import { getSensorState, subscribeSensors, sensorVersion } from '../runtime/sens
 import { useSyncExternalStore } from 'react';
 import { useStore } from '../state/store';
 import { Icon } from './icons';
+import { EquationPlot } from './EquationPlot';
 
 export const FAMILY_VAR: Record<string, string> = {
   sensor: '#ff2a2a', sense: '#6fd3ee', knowledge: '#a259ff', attention: '#f7c52b', fear: '#3ddc97', memory: '#86f0cc', apparatus: '#2fd6c0',
@@ -171,7 +172,20 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
       );
       break;
     }
-    case 'meter': body = <div className="meter-wrap"><Meter hist={view.hist} auto={node.params.auto !== false} /><span className="meter-num">{view.last !== undefined ? fmtNum(view.last, 3) : ''}</span></div>; break;
+    case 'meter':
+      body = view.plot ? (
+        <div className="meter-wrap">
+          <EquationPlot plot={view.plot} />
+          {!ro && <button className="expand" data-interactive aria-label="Open graph full size" onClick={() => useStore.getState().openDialog('meter', rid)}><Icon name="expand" /></button>}
+        </div>
+      ) : <div className="meter-wrap"><Meter hist={view.hist} auto={node.params.auto !== false} /><span className="meter-num">{view.last !== undefined ? fmtNum(view.last, 3) : ''}</span></div>;
+      break;
+    case 'equation':
+      body = (
+        <textarea className="inline-text eq-text" data-interactive aria-label="Equation, one per line" value={String(node.params.expr ?? '')} maxLength={600} readOnly={ro} spellCheck={false} placeholder="y = sin(x)"
+          onChange={(e) => setParam({ expr: e.target.value }, 'expr')} onKeyDown={(e) => e.stopPropagation()} />
+      );
+      break;
     case 'audio': body = <Art kind="audio" level={view.mute ? 0 : (view.amp ?? 0) * (rt?.evals ? 1 : 0)} />; break;
     case 'haptic': body = <Art kind="haptic" />; break;
     case 'vital': {
@@ -262,6 +276,7 @@ export function PreviewNode({ def, scale = 0.78 }: { def: ModuleDef; scale?: num
   if (def.type === 'touch') body = <div className="pad" />;
   else if (def.type === 'switch') body = <span className="sw" />;
   else if (def.type === 'info') body = <div className="inline-text pv">abc|</div>;
+  else if (def.type === 'equation') body = <div className="inline-text pv eq-text">y = sin(x)</div>;
   else if (def.type === 'text') body = <div className="text-body">Hello World</div>;
   else if (def.type === 'color') body = <div className="hsv"><div><span>H</span><span>S</span><span>V</span></div><i style={{ background: '#0a7aff' }} /></div>;
   else if (def.type === 'projector') body = <i className="grad" />;

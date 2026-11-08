@@ -5,6 +5,7 @@ import { TEMPLATES, builtinCompounds } from './library';
 import { MODULES, getDef } from './registry';
 import { decodeShare, encodeShare, newProject, parseProjectJSON, serializeProject, validateProject } from './project';
 import type { CompoundDef, Graph, Params } from './types';
+import { compileExpr, isEquation, niceTicks, samplePlot, splitEquations } from './equation';
 
 function build(spec: { nodes: [string, string, Params?][]; wires: [string, string, string, string][]; compounds?: Record<string, CompoundDef> }) {
   let g: Graph = emptyGraph();
@@ -326,5 +327,114 @@ describe('projects and sharing', () => {
   it('handles long unbroken names and ids', () => {
     const p = newProject('W'.repeat(300));
     expect(parseProjectJSON(serializeProject(p)).project!.name.length).toBe(80);
+  });
+});
+
+describe('equations', () => {
+  const ev = (src: string, x = 0, t = 0) => {
+    const c = compileExpr(src);
+    if (!c.ok) throw new Error(c.error);
+    return c.fn({ x, t });
+  };
+  it('evaluates operators with correct precedence and associativity', () => {
+    expect(ev('1 + 2 * 3')).toBe(7);
+    expect(ev('(1 + 2) * 3')).toBe(9);
+    expect(ev('2 ^ 3 ^ 2')).toBe(512);
+    expect(ev('-x^2', 3)).toBe(-9);
+    expect(ev('2^-1')).toBe(0.5);
+    expect(ev('10 % 4')).toBe(2);
+    expect(ev('8 / 4 / 2')).toBe(1);
+  });
+  it('supports functions, constants, variables and implicit multiplication', () => {
+    expect(ev('sin(pi/2)')).toBeCloseTo(1);
+    expect(ev('y = x^2 - 3x + 1', 2)).toBe(-1);
+    expect(ev('f(x) = 2x')).toBe(0);
+    expect(ev('3sin(x)', Math.PI / 2)).toBeCloseTo(3);
+    expect(ev('(x+1)(x-1)', 3)).toBe(8);
+    expect(ev('max(x, 2, 5) + min(4, 9)', 1)).toBe(9);
+    expect(ev('mod(-1, 5)')).toBe(4);
+    expect(ev('sin(x - 2t)', 0, Math.PI / 4)).toBeCloseTo(-1);
+    expect(ev('x²', 4)).toBe(16);
+    expect(ev('e^1')).toBeCloseTo(Math.E);
+  });
+  it('agrees with the Math node for every function it offers', () => {
+    for (const fn of ['abs', 'sqrt', 'sin', 'cos', 'tanh', 'exp', 'log', 'floor', 'round', 'ceil']) expect(ev(`${fn}(x)`, 2.5)).toBe((Math as any)[fn](2.5));
+    expect(ev('square(x)', 3)).toBe(9);
+    expect(ev('pow(2, 10)')).toBe(1024);
+  });
+  it('reports readable errors and never executes code', () => {
+    const msg = (s: string) => { const c = compileExpr(s); return c.ok ? '' : c.error; };
+    expect(msg('')).toMatch(/empty/);
+    expect(msg('sin(')).toMatch(/too early/);
+    expect(msg('(1 + 2')).toMatch(/Expected “\)”/);
+    expect(msg('2 +')).toMatch(/too early/);
+    expect(msg('foo(x)')).toMatch(/Unknown name/);
+    expect(msg('sin')).toMatch(/function/);
+    expect(msg('pow(1)')).toMatch(/2 arguments/);
+    expect(msg('x $ 2')).toMatch(/character/);
+    expect(msg('constructor.constructor("return 1")()')).not.toBe('');
+    expect(msg('x; process')).not.toBe('');
+  });
+  it('splits several equations and ignores comments', () => {
+    expect(splitEquations('sin(x)\n// note\ncos(x); y = x')).toEqual(['sin(x)', 'cos(x)', 'y = x']);
+  });
+  it('samples a plot, leaving gaps where undefined and ignoring asymptotes in auto range', () => {
+    const base = { kind: 'equation' as const, xMin: -1, xMax: 1, yMin: -1, yMax: 1, yAuto: true, samples: 101, t: 0 };
+    const r = samplePlot({ ...base, exprs: ['sqrt(x)'] });
+    expect(r.ok && r.plot.curves[0].ys[0]).toBeNull();
+    expect(r.ok && r.plot.curves[0].ys[100]).toBe(1);
+    const s = samplePlot({ ...base, xMin: -6.2832, xMax: 6.2832, exprs: ['sin(x)'] });
+    expect(s.ok && s.plot.yMin).toBeLessThan(-1);
+    expect(s.ok && s.plot.yMax).toBeGreaterThan(1);
+    const tn = samplePlot({ ...base, xMin: -4, xMax: 4, exprs: ['tan(x)'] });
+    expect(tn.ok && tn.plot.yMax).toBeLessThan(100);
+    expect(samplePlot({ ...base, xMax: -2, exprs: ['x'] }).ok).toBe(false);
+    expect(samplePlot({ ...base, exprs: ['x +'] }).ok).toBe(false);
+  });
+  it('picks nice ticks', () => {
+    expect(niceTicks(-10, 10, 4)).toEqual([-10, -5, 0, 5, 10]);
+    expect(niceTicks(0, 1, 5)).toEqual([0, 0.2, 0.4, 0.6, 0.8, 1]);
+  });
+  it('Equation node stores equation data and evaluates y(x)', () => {
+    const { e } = build({ nodes: [['q', 'equation', { expr: 'y = x^2 + 1', x: 3 }]], wires: [] });
+    e.step();
+    const v = e.out('q', 'eq');
+    expect(isEquation(v)).toBe(true);
+    expect((v as any).exprs).toEqual(['y = x^2 + 1']);
+    expect(e.out('q', 'y')).toBe(10);
+    expect(e.nodes.get('q')!.status.level).toBe('ok');
+  });
+  it('Equation node takes x from its input', () => {
+    const { e } = build({ nodes: [['c', 'constant', { value: '2' }], ['q', 'equation', { expr: 'sin(pi * x / 4)' }]], wires: [['c', 'out', 'q', 'x']] });
+    e.step();
+    expect(e.out('q', 'y')).toBe(1);
+  });
+  it('Equation node reports syntax errors by name', () => {
+    const { e } = build({ nodes: [['q', 'equation', { expr: 'sin(x' }]], wires: [] });
+    e.step();
+    expect(e.nodes.get('q')!.status.level).toBe('error');
+    expect(e.nodes.get('q')!.status.message).toMatch(/too early|Expected/);
+    expect(e.out('q', 'eq')).toBeUndefined();
+  });
+  it('Meter graphs a routed Equation and still plots plain numbers', () => {
+    const { e } = build({ nodes: [['q', 'equation', { expr: 'sin(x); cos(x)' }], ['m', 'meter']], wires: [['q', 'eq', 'm', 'in']] });
+    e.step();
+    const plot = (e.nodes.get('m')!.viewData as any).plot;
+    expect(plot.curves).toHaveLength(2);
+    expect(plot.curves[0].ys.length).toBe(200);
+    expect(e.nodes.get('m')!.status.level).toBe('ok');
+    const n = build({ nodes: [['c', 'constant', { value: '3' }], ['m', 'meter']], wires: [['c', 'out', 'm', 'in']] });
+    n.e.step();
+    expect((n.e.nodes.get('m')!.viewData as any).last).toBe(3);
+  });
+  it('equations using t animate with simulation time', () => {
+    const { e } = build({ nodes: [['q', 'equation', { expr: 'sin(x - t)' }], ['m', 'meter']], wires: [['q', 'eq', 'm', 'in']] });
+    e.runFor(1000);
+    expect((e.nodes.get('m')!.viewData as any).plot.t).toBeGreaterThan(0.5);
+  });
+  it('Meter reports an unparsable equation instead of drawing', () => {
+    const { e } = build({ nodes: [['q', 'equation', { expr: 'x', xMin: 5, xMax: 1 }], ['m', 'meter']], wires: [['q', 'eq', 'm', 'in']] });
+    e.step();
+    expect(e.nodes.get('q')!.status.level).toBe('error');
   });
 });
