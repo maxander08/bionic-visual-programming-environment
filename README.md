@@ -7,7 +7,7 @@ backend, no accounts, no network calls.
 Built with React 19, Vite 7, TypeScript (strict), Tailwind CSS 4 and Zustand, and compiled by
 `vite-plugin-singlefile` into **one self-contained `index.html`**.
 
-![Neural Studio](https://img.shields.io/badge/build-single--file%20HTML-informational) ![tests](https://img.shields.io/badge/tests-40%20passing-brightgreen)
+![Neural Studio](https://img.shields.io/badge/build-single--file%20HTML-informational) ![tests](https://img.shields.io/badge/tests-40%20passing-brightgreen) ![license](https://img.shields.io/badge/license-MIT-blue)
 
 ---
 
@@ -147,3 +147,9 @@ active when a sensor module is placed and the simulation is running.
 
 The single `fetch`/XHR/eval-free source tree is easy to audit: there are no network calls anywhere
 in `src/`.
+
+---
+
+## License
+
+[MIT](LICENSE) © 2026 maxander08
