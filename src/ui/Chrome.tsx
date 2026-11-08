@@ -20,7 +20,18 @@ function IconBtn({ icon, label, onClick, disabled, on, danger, text, tone }: { i
 
 function Menu({ label, icon, text, children }: { label: string; icon: string; text?: string; children: (close: () => void) => ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  // Anchor the dropdown to the viewport rather than the toolbar. The toolbar scrolls
+  // horizontally on narrow screens, and an `auto` overflow axis makes it a clipping
+  // container, which trapped the menu inside the 46px strip. Fixed positioning escapes it.
+  const toggle = () => {
+    if (open) { setOpen(false); return; }
+    const r = btnRef.current?.getBoundingClientRect();
+    if (r) setPos({ left: Math.min(r.left, window.innerWidth - 238), top: r.bottom + 6 });
+    setOpen(true);
+  };
   useEffect(() => {
     if (!open) return;
     const down = (e: PointerEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
@@ -33,17 +44,25 @@ function Menu({ label, icon, text, children }: { label: string; icon: string; te
         items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus();
       }
     };
+    const bail = () => setOpen(false);
     window.addEventListener('pointerdown', down);
     window.addEventListener('keydown', key);
+    window.addEventListener('scroll', bail, true);
+    window.addEventListener('resize', bail);
     setTimeout(() => (ref.current?.querySelector('[role="menuitem"]') as HTMLElement | null)?.focus(), 0);
-    return () => { window.removeEventListener('pointerdown', down); window.removeEventListener('keydown', key); };
+    return () => {
+      window.removeEventListener('pointerdown', down);
+      window.removeEventListener('keydown', key);
+      window.removeEventListener('scroll', bail, true);
+      window.removeEventListener('resize', bail);
+    };
   }, [open]);
   return (
     <div className="menu" ref={ref}>
-      <button className={`tb-btn ${open ? 'on' : ''}`} aria-haspopup="menu" aria-expanded={open} aria-label={label} title={label} onClick={() => setOpen(!open)}>
+      <button ref={btnRef} className={`tb-btn ${open ? 'on' : ''}`} aria-haspopup="menu" aria-expanded={open} aria-label={label} title={label} onClick={toggle}>
         <Icon name={icon} size={16} />{text && <span className="tb-text">{text}</span>}
       </button>
-      {open && <div className="menu-pop" role="menu">{children(() => setOpen(false))}</div>}
+      {open && <div className="menu-pop" role="menu" style={pos ? { position: 'fixed', left: pos.left, top: pos.top } : undefined}>{children(() => setOpen(false))}</div>}
     </div>
   );
 }
