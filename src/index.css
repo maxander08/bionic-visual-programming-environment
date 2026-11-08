@@ -127,6 +127,7 @@ button { cursor: pointer; }
 
 /* ---------- inspector ---------- */
 .ihead { padding: 14px 12px 6px; }
+.ihead p { margin-left: 18px; }   /* sit under the title text, past the 10px swatch + 8px gap */
 .ititle { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .ititle h2 { margin: 0; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .swatch { width: 10px; height: 10px; border-radius: 3px; border: 1.5px solid var(--c); flex: none; }
@@ -150,7 +151,7 @@ button { cursor: pointer; }
 .sec-toggle { display: flex; align-items: center; gap: 6px; flex: 1; padding: 10px 12px; background: none; border: 0; text-align: left; font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); font-weight: 500; }
 .sec-toggle svg { transition: transform var(--dur-micro) var(--ease); } .sec-toggle[aria-expanded="true"] svg { transform: rotate(90deg); }
 .sec-toggle:hover { color: #fff; }
-.isec-body { padding: 0 12px 6px; }
+.isec-body { padding: 0 12px 6px 30px; }   /* 12px gutter + 18px chevron rail, so fields line up with the section label */
 .field { margin: 0 0 14px; min-width: 0; }
 .field > label { display: block; font-weight: 500; margin-bottom: 5px; font-size: 11.5px; }
 .field.inline { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 12px; }
