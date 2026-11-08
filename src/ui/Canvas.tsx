@@ -76,7 +76,11 @@ function CanvasImpl({ graph, compounds, prefix = '', ro = false, main = false }:
   const size = useRef({ w: 800, h: 600 });
   const raf = useRef(0);
   const [visible, setVisible] = useState<Set<string> | null>(null);
-  const [hover, setHover] = useState<{ x: number; y: number; text: string } | null>(null);
+  // `mode` drives the CSS animation: 'in' fades the tooltip in, 'out' fades it away using
+  // the same --dur-micro/--ease tokens. A leaving tooltip is removed once its animation ends.
+  const [hover, setHover] = useState<{ x: number; y: number; text: string; mode: 'in' | 'out' } | null>(null);
+  const hoverKey = useRef<string | null>(null);   // port the pointer is currently over
+  const hoverBack = useRef(false);                // re-show the tooltip after a wire ends
   const [localSel, setLocalSel] = useState<string[]>([]);
   const [localEdge, setLocalEdge] = useState<string | null>(null);
 
@@ -393,6 +397,10 @@ function CanvasImpl({ graph, compounds, prefix = '', ro = false, main = false }:
         }
       });
       root.current!.classList.add('wiring');
+      // Put the tooltip away while wiring: it must not sit on top of the wire being drawn.
+      hoverBack.current = hoverKey.current !== null;
+      hoverKey.current = null;
+      setHover((h) => (h && h.mode === 'in' ? { ...h, mode: 'out' } : h));
       drag.current = { t: 'wire', anchor, replace, target: null, px: wp.x, py: wp.y, cand };
       updateProv();
       return;
@@ -506,7 +514,12 @@ function CanvasImpl({ graph, compounds, prefix = '', ro = false, main = false }:
     if (!pm || drag.current) return;
     const wp = toWorld((pm.e as PointerEvent).clientX, (pm.e as PointerEvent).clientY);
     const hit = hitPort(wp, 10);
-    if (!hit) { root.current?.classList.remove('overport'); setHover((h) => (h ? null : h)); return; }
+    if (!hit) {
+      root.current?.classList.remove('overport');
+      hoverKey.current = null;
+      setHover((h) => (h && h.mode === 'in' ? { ...h, mode: 'out' } : h));
+      return;
+    }
     root.current?.classList.add('overport');
     const l = live.current.layout.get(hit.node)!;
     const p = portList(l.def, hit.dir).find((q) => q.id === hit.port)!;
@@ -514,7 +527,11 @@ function CanvasImpl({ graph, compounds, prefix = '', ro = false, main = false }:
     const sig = hit.dir === 'out' ? rt?.outputs[hit.port] : rt?.inputs[hit.port];
     const r = root.current!.getBoundingClientRect();
     const text = `${l.def.name} · ${hit.dir === 'in' ? 'input' : 'output'} ${p.label} (${p.type})\n${sig ? `${describe(sig.v)}  ·  strength ${sig.s.toFixed(2)}` : 'no signal'}`;
-    setHover((h) => (h && h.text === text ? h : { x: (pm.e as PointerEvent).clientX - r.left, y: (pm.e as PointerEvent).clientY - r.top, text }));
+    // Same port and already shown: keep the frame-identical tooltip instead of restarting its animation.
+    const k = `${hit.node}|${hit.dir}|${hit.port}`;
+    if (hoverKey.current === k) return;
+    hoverKey.current = k;
+    setHover({ x: (pm.e as PointerEvent).clientX - r.left, y: (pm.e as PointerEvent).clientY - r.top, text, mode: 'in' });
   };
 
   const updateGhosts = () => {
@@ -596,6 +613,24 @@ function CanvasImpl({ graph, compounds, prefix = '', ro = false, main = false }:
           else if (d.replace) { st.removeEdge(d.replace.id); st.toast('Connection removed.', 'info'); }
         }
       }
+      // A wire just ended while the pointer never left its port: bring the tooltip back,
+      // re-measuring only now so it fades in under the resting cursor.
+      if (hoverBack.current) {
+        hoverBack.current = false;
+        const wp = toWorld(e.clientX, e.clientY);
+        const hit = hitPort(wp, 10);
+        if (hit) {
+          const l = live.current.layout.get(hit.node)!;
+          const p = portList(l.def, hit.dir).find((q) => q.id === hit.port)!;
+          const rt = engine.nodes.get(prefix + hit.node);
+          const sig = hit.dir === 'out' ? rt?.outputs[hit.port] : rt?.inputs[hit.port];
+          const r = root.current!.getBoundingClientRect();
+          const text = `${l.def.name} · ${hit.dir === 'in' ? 'input' : 'output'} ${p.label} (${p.type})\n${sig ? `${describe(sig.v)}  ·  strength ${sig.s.toFixed(2)}` : 'no signal'}`;
+          hoverKey.current = `${hit.node}|${hit.dir}|${hit.port}`;
+          setHover({ x: e.clientX - r.left, y: e.clientY - r.top, text, mode: 'in' });
+          root.current?.classList.add('overport');
+        } else hoverKey.current = null;
+      }
       redraw();
     } else if (d.t === 'marquee') {
       if (marquee.current) marquee.current.style.display = 'none';
@@ -636,7 +671,7 @@ function CanvasImpl({ graph, compounds, prefix = '', ro = false, main = false }:
 
   return (
     <div ref={root} className={`canvas-root ${ro ? 'ro' : ''}`} tabIndex={0} role="application" aria-label={ro ? 'Compound inner graph (read only)' : 'Program workspace. Tab selects modules, arrow keys move them, Delete removes them.'}
-      onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={(e) => endDrag(e, false)} onPointerCancel={(e) => endDrag(e, true)} onDoubleClick={onDoubleClick} onKeyDown={onKeyDown} onContextMenu={(e) => e.preventDefault()}>
+      onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={(e) => endDrag(e, false)} onPointerCancel={(e) => endDrag(e, true)} onPointerLeave={() => { hoverKey.current = null; setHover((h) => (h && h.mode === 'in' ? { ...h, mode: 'out' } : h)); }} onDoubleClick={onDoubleClick} onKeyDown={onKeyDown} onContextMenu={(e) => e.preventDefault()}>
       <div ref={world} className="world" style={{ transform: `translate3d(${view.current.x}px, ${view.current.y}px, 0) scale(${view.current.k})` }}>
         <svg ref={svg} className="wires" width="1" height="1" aria-hidden="true">
           <path ref={(e) => { els.current.off = e; }} className="w w-off" />
@@ -655,7 +690,8 @@ function CanvasImpl({ graph, compounds, prefix = '', ro = false, main = false }:
         <svg className="wires top" width="1" height="1" aria-hidden="true"><path ref={prov} className="w w-prov" /></svg>
       </div>
       <div ref={marquee} className="marquee" />
-      {hover && <div className="port-tip" style={{ left: hover.x + 14, top: hover.y + 14 }} role="status">{hover.text.split('\n').map((t, i) => <div key={i} className={i ? 'v' : ''}>{t}</div>)}</div>}
+      {hover && <div className={`port-tip ${hover.mode}`} style={{ left: hover.x + 14, top: hover.y + 14 }} role="status"
+        onAnimationEnd={(ev) => { if (hover.mode === 'out' && ev.animationName === 'fade-out') setHover((h) => (h && h.mode === 'out' ? null : h)); }}>{hover.text.split('\n').map((t, i) => <div key={i} className={i ? 'v' : ''}>{t}</div>)}</div>}
       {Object.keys(graph.nodes).length === 0 && !ro && (
         <div className="empty-hint"><p>Empty workspace</p><span>Drag a module from the library, or open an example from the toolbar.</span></div>
       )}

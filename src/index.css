@@ -72,6 +72,7 @@ button { cursor: pointer; }
 @keyframes panel-in-r { from { opacity: 0; transform: translateX(var(--shift)); } }
 @keyframes modal-in { from { opacity: 0; transform: translateY(var(--shift)); } }
 @keyframes fade-in { from { opacity: 0; } }
+@keyframes fade-out { to { opacity: 0; } }
 @keyframes toast-in { from { opacity: 0; transform: translateY(var(--shift)); } }
 
 /* ---------- panels ---------- */
@@ -221,7 +222,9 @@ button { cursor: pointer; }
 .marquee { position: absolute; display: none; border: 1px solid var(--acc); background: #2fd9cf10; pointer-events: none; z-index: 5; }
 .ghosts { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 0; }
 .ghost { position: absolute; left: 0; top: 0; border: 1px dashed #ffffff55; border-radius: 10px; display: none; }
-.port-tip { position: absolute; z-index: 20; max-width: 260px; padding: 6px 9px; background: #0b0b0b; border: 1px solid #333; border-radius: 8px; font-size: 11px; pointer-events: none; white-space: pre-wrap; overflow-wrap: anywhere; animation: fade-in var(--dur-micro) both; }
+.port-tip { position: absolute; z-index: 20; max-width: 260px; padding: 6px 9px; background: #0b0b0b; border: 1px solid #333; border-radius: 8px; font-size: 11px; pointer-events: none; white-space: pre-wrap; overflow-wrap: anywhere; transition: opacity var(--dur-micro) var(--ease), transform var(--dur-micro) var(--ease); animation: fade-in var(--dur-micro) var(--ease) both; }
+/* Leaving the port, or starting a wire: fade out the way it faded in. */
+.port-tip.out { animation: fade-out var(--dur-micro) var(--ease) both; pointer-events: none; }
 .port-tip .v { color: var(--acc); margin-top: 2px; }
 .empty-hint { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; color: var(--dim); pointer-events: none; padding: 20px; } .empty-hint p { margin: 0 0 6px; color: #ddd; }
 .minimap { position: absolute; right: 12px; bottom: 12px; z-index: 8; background: #000d; border: 1px solid var(--line2); border-radius: 8px; touch-action: none; cursor: pointer; }
