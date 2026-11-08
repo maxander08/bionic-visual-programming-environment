@@ -155,8 +155,8 @@ export const sensors: ModuleDef[] = [
     type: 'info', name: 'Info', caption: 'Info Sensor', category: 'Sensor', family: 'sensor', glyph: '', size: 'small',
     keywords: 'text number manual input',
     inputs: [],
-    outputs: [out('text', 'Text', 'text', 'The text typed in the node.'), out('number', 'Number', 'num', 'The text parsed as a number; empty if it is not numeric.', 'right')],
-    params: [txt('text', 'Text', 'hello', 'Information to emit. Type directly inside the node or here.', { multiline: true })],
+    outputs: [out('text', 'Text', 'text', 'The text set in the inspector.'), out('number', 'Number', 'num', 'The text parsed as a number; empty if it is not numeric.', 'right')],
+    params: [txt('text', 'Text', 'hello', 'Information to emit. Edit it here in the inspector; the node only displays it.', { multiline: true })],
     source: true,
     run(c) {
       const t = c.str('text');
@@ -166,7 +166,7 @@ export const sensors: ModuleDef[] = [
     },
     doc: {
       summary: 'Manual text and number source for offline experiments.',
-      runtime: 'Emits when the text changes. “number” is only emitted if the whole text is numeric.',
+      runtime: 'The text is edited only in the right sidebar (inspector); the node just displays it. Emits when the text changes. “number” is only emitted if the whole text is numeric.',
     },
   },
   {

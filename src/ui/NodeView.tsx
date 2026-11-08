@@ -143,10 +143,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
       );
       break;
     case 'info':
-      body = (
-        <textarea className="inline-text" data-interactive aria-label="Info text" value={String(node.params.text ?? '')} maxLength={2000} readOnly={ro} spellCheck={false}
-          onChange={(e) => setParam({ text: e.target.value }, 'text')} onKeyDown={(e) => e.stopPropagation()} />
-      );
+      body = <div className="text-body pre clamp2">{String(node.params.text ?? '')}</div>;
       break;
     case 'motion': {
       const x = Number(out('x')), y = Number(out('y'));
@@ -181,10 +178,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
       ) : <div className="meter-wrap"><Meter hist={view.hist} auto={node.params.auto !== false} /><span className="meter-num">{view.last !== undefined ? fmtNum(view.last, 3) : ''}</span></div>;
       break;
     case 'equation':
-      body = (
-        <textarea className="inline-text eq-text" data-interactive aria-label="Equation, one per line" value={String(node.params.expr ?? '')} maxLength={600} readOnly={ro} spellCheck={false} placeholder="y = sin(x)"
-          onChange={(e) => setParam({ expr: e.target.value }, 'expr')} onKeyDown={(e) => e.stopPropagation()} />
-      );
+      body = <div className="text-body eq pre clamp2">{String(node.params.expr ?? '') || <span className="ph">y = sin(x)</span>}</div>;
       break;
     case 'audio': body = <Art kind="audio" level={view.mute ? 0 : (view.amp ?? 0) * (rt?.evals ? 1 : 0)} />; break;
     case 'haptic': body = <Art kind="haptic" />; break;
@@ -275,8 +269,8 @@ export function PreviewNode({ def, scale = 0.78 }: { def: ModuleDef; scale?: num
   let body: ReactElement | null = art ? <Art kind={art} level={0.5} extra={20} /> : null;
   if (def.type === 'touch') body = <div className="pad" />;
   else if (def.type === 'switch') body = <span className="sw" />;
-  else if (def.type === 'info') body = <div className="inline-text pv">abc|</div>;
-  else if (def.type === 'equation') body = <div className="inline-text pv eq-text">y = sin(x)</div>;
+  else if (def.type === 'info') body = <div className="text-body pre">hello</div>;
+  else if (def.type === 'equation') body = <div className="text-body eq pre">y = sin(x)</div>;
   else if (def.type === 'text') body = <div className="text-body">Hello World</div>;
   else if (def.type === 'color') body = <div className="hsv"><div><span>H</span><span>S</span><span>V</span></div><i style={{ background: '#0a7aff' }} /></div>;
   else if (def.type === 'projector') body = <i className="grad" />;

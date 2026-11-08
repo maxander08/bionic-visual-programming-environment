@@ -414,7 +414,7 @@ export const nodes: ModuleDef[] = [
     },
     doc: {
       summary: 'Stores one or more equations as data. Route its Equation output to a Meter to draw the graph.',
-      runtime: 'Parses the expressions with a built-in safe evaluator (no scripts are run) and emits them with the plot range. Meter samples them over x min…x max and draws the curves on dimmed gray axes. The y(x) output evaluates the first equation at the X input. Equations that use t re-evaluate every tick, so graphs animate in simulation time.',
+      runtime: 'The equation is edited only in the right sidebar (inspector); the node just displays it. Parses the expressions with a built-in safe evaluator (no scripts are run) and emits them with the plot range. Meter samples them over x min…x max and draws the curves on dimmed gray axes. The y(x) output evaluates the first equation at the X input. Equations that use t re-evaluate every tick, so graphs animate in simulation time.',
       errors: ['A syntax error, unknown name, wrong number of arguments or empty equation raises an error that names the problem.', 'x max not greater than x min raises an error.', 'y(x) not being a finite number (for example sqrt of a negative) raises a warning and clears the y output; the graph shows a gap there.'],
       examples: ['sin(x)', 'y = x^2 - 3x + 1', 'sin(x); cos(x) (two curves)', 'sin(x - 2t) (a travelling wave)', 'exp(-x^2/4) * cos(3x)'],
     },
