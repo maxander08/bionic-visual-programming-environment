@@ -104,6 +104,8 @@ export interface ClockReading {
   hour: number;
   minute: number;
   second: number;
+  /** Millisecond within the current second, 0–999. */
+  millisecond: number;
   /** Offset from UTC in hours, e.g. 5.5 for India. */
   offset: number;
   /** Local time between 06:00 and 18:00. */
@@ -134,10 +136,11 @@ export function readClock(tz: string, nowMs: number, hour12: boolean, seconds: b
   const asUtc = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), hour, minute, second);
   const offset = Math.round(((asUtc - whole) / 3600000) * 100) / 100;
   const h = hour12 ? hour % 12 || 12 : hour;
-  const ms = String(Math.floor(nowMs) - whole).padStart(3, '0');
+  const milli = Math.floor(nowMs) - whole;
+  const ms = String(milli).padStart(3, '0');
   const time = `${hour12 ? h : pad(h)}:${pad(minute)}${seconds ? ':' + pad(second) + (millis ? '.' + ms : '') : ''}${hour12 ? (hour < 12 ? ' AM' : ' PM') : ''}`;
   return {
-    time, date: `${parts.weekday} ${Number(parts.day)} ${MONTHS[Number(parts.month) - 1]} ${parts.year}`, hour, minute, second, offset,
+    time, date: `${parts.weekday} ${Number(parts.day)} ${MONTHS[Number(parts.month) - 1]} ${parts.year}`, hour, minute, second, millisecond: milli, offset,
     day: hour >= 6 && hour < 18,
   };
 }

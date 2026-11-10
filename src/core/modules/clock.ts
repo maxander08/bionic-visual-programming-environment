@@ -12,6 +12,7 @@ export const worldClock: ModuleDef = {
     out('date', 'Date', 'text', 'Local date, such as “Wed 12 Mar 2026”.'),
     out('hour', 'Hour', 'num', 'Local hour, 0–23.', 'right'),
     out('minute', 'Minute', 'num', 'Local minute, 0–59.', 'right'),
+    out('millisecond', 'Milliseconds', 'num', 'Local millisecond within the current second, 0–999. It refreshes every tick while Show seconds and Show milliseconds are on, otherwise once a second.', 'right'),
     out('offset', 'UTC offset', 'num', 'Hours ahead of (+) or behind (−) UTC right now, daylight saving included. India is 5.5.', 'right'),
   ],
   params: [
@@ -34,6 +35,7 @@ export const worldClock: ModuleDef = {
     c.emit('date', r.date);
     c.emit('hour', r.hour);
     c.emit('minute', r.minute);
+    c.emit('millisecond', r.millisecond);
     c.emit('offset', r.offset);
     c.view({ time: r.time, date: r.date, city: city.name, country: city.country, zone: city.tz, offset: fmtOffset(r.offset), day: r.day });
     // With milliseconds, refresh every tick; otherwise wake just after the next whole second so the display never skips.

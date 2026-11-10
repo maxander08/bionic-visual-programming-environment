@@ -70,6 +70,11 @@ describe('readClock', () => {
     expect(readClock('Asia/Tokyo', t + 7, false, false, true).time).toBe('21:30');
     expect(readClock('Asia/Tokyo', t + 7, false, true).time).toBe('21:30:45');
   });
+  it('reports the millisecond within the second', () => {
+    expect(readClock('Asia/Tokyo', t + 7, false, true, true).millisecond).toBe(7);
+    expect(readClock('UTC', Date.UTC(2026, 0, 1, 15, 5, 9, 250), true, true, true).millisecond).toBe(250);
+    expect(readClock('Asia/Tokyo', t, false, true).millisecond).toBe(0);
+  });
   it('formats offsets', () => {
     expect(fmtOffset(5.5)).toBe('UTC+5:30');
     expect(fmtOffset(-4)).toBe('UTC−4');
@@ -84,6 +89,13 @@ describe('World Clock module', () => {
     const d = getDef('clock')!;
     expect(d.inputs.some((p) => p.id === 'p:city' && p.type === 'text')).toBe(true);
   });
+  it('puts the Milliseconds pin on the right edge, level with the four setting pins on the left', () => {
+    const d = getDef('clock')!;
+    const ms = d.outputs.find((p) => p.id === 'millisecond')!;
+    expect(ms.type).toBe('num');
+    expect(ms.side).toBe('right');
+    expect(d.outputs.filter((p) => p.side === 'right').length).toBe(d.paramPins!.filter((p) => p.side === 'left').length);
+  });
   function run(params: Record<string, unknown>) {
     const g = addNode(emptyGraph(), 'clock', 0, 0, params, undefined, 'c').graph;
     const e = new Engine(50);
@@ -95,6 +107,8 @@ describe('World Clock module', () => {
     const e = run({ city: 'Sydney, Australia' });
     expect(e.out('c', 'time')).toMatch(/^\d\d:\d\d:\d\d\.\d{3}$/);
     expect([10, 11]).toContain(e.out('c', 'offset'));
+    const ms = e.out('c', 'millisecond') as number;
+    expect(Number.isInteger(ms) && ms >= 0 && ms <= 999).toBe(true);
     expect(e.nodes.get('c')!.status.level).toBe('ok');
   });
   it('raises an error for an unknown city', () => {
