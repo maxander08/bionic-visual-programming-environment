@@ -12,8 +12,10 @@ import { EquationPlot } from './EquationPlot';
 
 export const FAMILY_VAR: Record<string, string> = {
   sensor: '#ff2a2a', sense: '#6fd3ee', knowledge: '#a259ff', attention: '#f7c52b', fear: '#3ddc97', memory: '#86f0cc', apparatus: '#2fd6c0',
-  emotion: '#ff8a50', behavior: '#f4f4f4', projector: '#2fd9cf', node: '#ffc933', info: '#7b8cff',
+  emotion: '#ff8a50', behavior: '#f4f4f4', projector: '#2fd9cf', node: '#ffc933', timekeeping: '#ff7ac6', info: '#7b8cff',
 };
+
+const TK_STATE: Record<string, string> = { idle: 'Ready', running: 'Running', paused: 'Paused', done: 'Done', stopped: 'Stopped', limit: 'Limit reached', armed: 'Armed', ringing: 'Ringing', snoozed: 'Snoozed' };
 
 export function Art({ kind, level = 0.4, extra }: { kind: string; level?: number; extra?: number }) {
   const o = 0.32 + 0.68 * clamp(level, 0, 1);
@@ -206,6 +208,28 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
         <div className="clock-zone clamp1">{view.offset ?? ''}</div>
       </div>
     ); break;
+    case 'timer': body = (
+      <div className={`tk ${view.state ?? 'idle'}`}>
+        <div className={`tk-time ${String(view.time ?? '').length > 9 ? 'long' : ''}`}>{view.time ?? '--:--'}</div>
+        <div className="tk-bar" aria-hidden="true"><i style={{ width: `${clamp(Number(view.progress) || 0, 0, 1) * 100}%` }} /></div>
+        <div className="tk-state">{TK_STATE[view.state ?? 'idle']}{Number(view.count) > 0 ? ` · ${view.count}×` : ''}</div>
+      </div>
+    ); break;
+    case 'alarm': body = (
+      <div className={`tk ${view.state ?? ''}`}>
+        <div className="tk-time">{view.time ?? '--:--'}</div>
+        <div className="tk-state">{TK_STATE[view.state ?? 'armed']}</div>
+        <div className="tk-sub clamp1">{view.countdown ? `in ${view.countdown}` : ' '}</div>
+        <div className="tk-sub clamp1">{view.place ?? String(params.city ?? '').split(',')[0]}</div>
+      </div>
+    ); break;
+    case 'stopwatch': body = (
+      <div className={`tk ${view.state ?? 'stopped'}`}>
+        <div className={`tk-time ${String(view.time ?? '').length > 9 ? 'long' : ''}`}>{view.time ?? '00:00'}</div>
+        <div className="tk-state">{TK_STATE[view.state ?? 'stopped']}</div>
+        <div className="tk-sub clamp1">{Number(view.laps) > 0 ? `Lap ${view.laps} · ${view.lap}` : ' '}</div>
+      </div>
+    ); break;
     case 'comment': body = <div className="text-body note clamp3">{String(params.text ?? '')}</div>; break;
     case 'sense': body = <Art kind="radial" level={view.level ?? 0.15} />; break;
     case 'knowledge': body = <Art kind="triangle" level={out('score') !== undefined ? Number(out('score')) : 0.3} />; break;
@@ -288,6 +312,9 @@ export function PreviewNode({ def, scale = 0.78 }: { def: ModuleDef; scale?: num
   else if (def.type === 'motion') body = <div className="cross"><i /><b /></div>;
   else if (def.type === 'comment') body = <div className="text-body note">Note</div>;
   else if (def.type === 'clock') body = <div className="clock"><div className="clock-time">12:00</div><div className="clock-city">Tokyo</div></div>;
+  else if (def.type === 'timer') body = <div className="tk"><div className="tk-time">05:00</div><div className="tk-bar"><i style={{ width: '40%' }} /></div><div className="tk-state">Running</div></div>;
+  else if (def.type === 'alarm') body = <div className="tk"><div className="tk-time">07:30</div><div className="tk-state">Armed</div><div className="tk-sub">in 08:12:00</div></div>;
+  else if (def.type === 'stopwatch') body = <div className="tk"><div className="tk-time">01:23.4</div><div className="tk-state">Running</div></div>;
   else if (def.type === 'vital') body = <svg className="art" viewBox="0 0 100 40"><circle cx="50" cy="20" r="8" fill="currentColor" /></svg>;
   return (
     <div className="pv-wrap" style={{ width: size.w * scale, height: size.h * scale }}>

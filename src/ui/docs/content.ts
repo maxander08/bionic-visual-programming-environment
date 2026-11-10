@@ -19,7 +19,8 @@ export const ARTICLES: Article[] = [
         '**Nuclei** process them: [[n:sense]] normalizes, [[n:fear]] integrates threat, [[n:memory]] remembers, [[n:decision]] chooses.',
         '**Behaviors** show or act: [[n:projector]], [[n:meter]], [[n:audio]], [[n:light]], [[n:notify]].',
         '**Nodes** are the plumbing: math, timing, routing and logic such as [[n:add]], [[n:pulse]], [[n:relay]] and [[n:threshold]].',
-        '**Info** modules label and inform: [[n:comment]] and [[n:by]] are notes that never run, while [[n:clock]] shows the live time in any major city.',
+        '**Timekeeping** modules measure and tell time: [[n:timer]] counts down, [[n:stopwatch]] counts up, [[n:alarm]] rings at a time of day and [[n:clock]] shows the live time in any major city.',
+        '**Info** modules label and inform: [[n:comment]] and [[n:by]] are notes that never run.',
       ] },
       { t: 'h', x: 'The loop of work' },
       { t: 'ol', items: [

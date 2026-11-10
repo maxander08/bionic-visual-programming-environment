@@ -243,7 +243,7 @@ fieldset.driven { margin: 0; padding: 0; border: 0; min-width: 0; opacity: 0.5; 
 .node.preview { filter: none; position: absolute; }
 .f-sensor { --f: #120000; } .f-sense { --f: #021014; } .f-knowledge { --f: #05000f; } .f-attention { --f: #100a00; } .f-fear { --f: #02120a; }
 .f-memory { --f: #021510; } .f-apparatus { --f: #01120f; } .f-emotion { --f: #100400; } .f-behavior { --f: #000; } .f-projector { --f: #000; }
-.f-node { --f: #0e0900; } .f-info { --f: #05071a; }
+.f-node { --f: #0e0900; } .f-info { --f: #05071a; } .f-timekeeping { --f: #14030d; }
 .node-title { position: absolute; left: 12px; right: 10px; top: 9px; height: 16px; display: flex; align-items: center; gap: 7px; font-size: 11.5px; letter-spacing: 0.07em; text-transform: uppercase; white-space: nowrap; line-height: 16px; }
 .node-title .t { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .dot { flex: none; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid currentColor; } .dot.live { background: currentColor; }
@@ -348,10 +348,20 @@ fieldset.driven { margin: 0; padding: 0; border: 0; min-width: 0; opacity: 0.5; 
 }
 @media (prefers-reduced-motion: reduce) { html:not(.full-motion) * { scroll-behavior: auto !important; } }
 
-/* World Clock */
-.clock { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; text-align: center; color: #cdd3ff; min-width: 0; }
-.clock-time { font-size: 16px; line-height: 1.1; font-weight: 700; color: #9aa6ff; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; white-space: nowrap; }
-.clock-time.long { font-size: 13px; }
-.clock.night .clock-time { color: #9aa6ff; }
-.clock-city { font-size: 12px; font-weight: 700; color: #7b8cff; max-width: 100%; }
-.clock-date, .clock-zone { font-size: 10.5px; color: #8a93d6; max-width: 100%; }
+/* Timekeeping: World Clock, Timer, Alarm, Stopwatch. Text is tinted from the section colour (--c, rose #ff7ac6). */
+.clock, .tk { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; text-align: center; color: #ffd1ea; min-width: 0; }
+.clock-time, .tk-time { font-size: 16px; line-height: 1.1; font-weight: 700; color: #ff9ad2; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; white-space: nowrap; max-width: 100%; }
+.clock-time.long, .tk-time.long { font-size: 13px; }
+.clock.night .clock-time { color: #ff9ad2; }
+.clock-city { font-size: 12px; font-weight: 700; color: var(--c, #ff7ac6); max-width: 100%; }
+.clock-date, .clock-zone, .tk-sub { font-size: 10.5px; color: #d68db9; max-width: 100%; min-height: 1.2em; }
+.tk-time { font-size: 20px; }
+.tk-time.long { font-size: 14px; }
+.tk-state { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--c, #ff7ac6); opacity: 0.9; }
+.tk-bar { width: 86%; height: 4px; margin: 3px 0 2px; border-radius: 2px; background: #3a1428; overflow: hidden; }
+.tk-bar i { display: block; height: 100%; background: var(--c, #ff7ac6); border-radius: 2px; transition: width 80ms linear; }
+.tk.paused .tk-time, .tk.stopped .tk-time, .tk.idle .tk-time, .tk.snoozed .tk-time { opacity: 0.72; }
+.tk.done .tk-time, .tk.limit .tk-time { color: #fff; }
+.tk.ringing .tk-time, .tk.ringing .tk-state { color: #fff; animation: tk-ring 0.7s ease-in-out infinite alternate; }
+@keyframes tk-ring { from { opacity: 1; } to { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { html:not(.full-motion) .tk.ringing .tk-time, html:not(.full-motion) .tk.ringing .tk-state { animation: none; } }

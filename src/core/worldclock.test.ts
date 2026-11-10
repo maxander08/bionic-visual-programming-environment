@@ -88,9 +88,10 @@ describe('readClock', () => {
 });
 
 describe('World Clock module', () => {
-  it('is an Info module with a City setting pin', () => {
+  it('is a Timekeeping module with a City setting pin', () => {
     const m = MODULES.find((x) => x.type === 'clock')!;
-    expect(m.category).toBe('Info');
+    expect(m.category).toBe('Timekeeping');
+    expect(m.family).toBe('timekeeping');
     const d = getDef('clock')!;
     expect(d.inputs.some((p) => p.id === 'p:city' && p.type === 'text')).toBe(true);
   });

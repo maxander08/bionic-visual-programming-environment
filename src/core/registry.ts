@@ -4,7 +4,7 @@ import { sensors } from './modules/sensors';
 import { nuclei } from './modules/nuclei';
 import { nodes } from './modules/nodes';
 import { behaviors } from './modules/behavior';
-import { worldClock } from './modules/clock';
+import { timekeeping } from './modules/timekeeping';
 import { txt } from './modules/kit';
 import { clamp, fmtNum } from './util';
 
@@ -21,7 +21,6 @@ const info: ModuleDef[] = [
     run() {},
     doc: { summary: 'Credits an author on the workspace.', runtime: 'None. This is plain text: it is not a signature and does not prove who made the program.' },
   },
-  worldClock,
 ];
 
 const compoundShell: ModuleDef = {
@@ -30,9 +29,9 @@ const compoundShell: ModuleDef = {
   doc: { summary: 'A reusable subsystem: a group of modules wrapped with defined inputs, outputs and exposed settings.', runtime: 'At run time the compound is expanded into its inner modules. Open it to inspect the inner graph.' },
 };
 
-export const MODULES: ModuleDef[] = [...sensors, ...nuclei, ...behaviors, ...nodes, ...info];
+export const MODULES: ModuleDef[] = [...sensors, ...nuclei, ...behaviors, ...nodes, ...timekeeping, ...info];
 const BY_TYPE = new Map(MODULES.map((m) => [m.type, m]));
-export const CATEGORIES = ['Sensor', 'Nucleus', 'Behavior', 'Node', 'Info'] as const;
+export const CATEGORIES = ['Sensor', 'Nucleus', 'Behavior', 'Node', 'Timekeeping', 'Info'] as const;
 
 // ---- setting pins -------------------------------------------------------------------------------------------
 // Every setting of a module (number, choice, text, switch) also exists as an optional input pin. While a signal
