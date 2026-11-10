@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import qrcode from 'qrcode-generator';
-import { CATEGORIES, MODULES, getDef } from '../core/registry';
-import { PACKAGES } from '../core/packages';
 import { TEMPLATES } from '../core/library';
 import { QR_BYTE_LIMIT, encodeShare, sha256Hex } from '../core/project';
 import { crc32, describe, fmtNum } from '../core/util';
@@ -12,7 +10,7 @@ import { useStore } from '../state/store';
 import { exportJSON, importCode, importFile, openWithBackup, openTemplate, download, fileSlug } from '../state/actions';
 import { Canvas } from './Canvas';
 import { Icon } from './icons';
-import { DocBlock } from './Inspector';
+import { Docs } from './docs/Docs';
 import { ImageCanvas } from './NodeView';
 import { CURVE_COLORS, EquationPlot } from './EquationPlot';
 
@@ -179,51 +177,6 @@ function Share({ onClose }: { onClose: () => void }) {
       <h3 className="sec">Import a code</h3>
       <div className="field"><textarea className="mono" rows={2} value={paste} placeholder="Paste a share code (NS1.…)" aria-label="Paste share code to import" spellCheck={false} onChange={(e) => setPaste(e.target.value)} /></div>
       <div className="btn-row end"><button className="btn" disabled={!paste.trim()} onClick={() => { if (importCode(paste)) onClose(); }}>Import as new program</button></div>
-    </Modal>
-  );
-}
-
-const GUIDE: [string, ReactNode][] = [
-  ['What this is', <p key="a">Neural Studio is an original, NEURO-inspired visual programming environment. It is not an official THIX product and does not claim to reproduce NEURO’s internals. The cognitive modules are small, well-defined signal processors: they do not model consciousness or human cognition.</p>],
-  ['Building a program', <ul key="b"><li>Drag modules from the library, or press Enter on one to add it at the center.</li><li>Drag from a module’s edge tab to another module’s tab to connect. Compatible inputs light up; incompatible ones dim and a message explains why.</li><li>Dragging from a connected input unplugs and re-routes it; dropping on empty space removes it.</li><li>Shift+click or Shift+drag selects several. Group them as a compound to reuse them.</li></ul>],
-  ['Signals', <><p>Every connection carries a value (number, boolean, text, image or structured data) plus a <b>strength</b> (0–1+). Connection weights scale strength. Compatible types are converted automatically (number ↔ boolean, anything → text); text cannot drive a number input.</p><p>An input has exactly one source. Output fan-out is unlimited. A connection can also add a propagation delay.</p></>],
-  ['Execution model', <><p>A deterministic simulation clock advances in fixed ticks (default 50 ms). It does not depend on screen refresh. A module runs only when a signal arrived, a timer it set came due, a sensor delivered data, or when it starts. Within a tick modules run in dependency order, so each runs at most once.</p><p><b>Missing inputs:</b> a module whose required input has no signal stays idle and emits nothing; optional inputs never block. <b>Errors:</b> a failing module clears its outputs, shows ×, and downstream modules show a warning.</p></>],
-  ['Feedback loops', <p key="f">A connection that closes a cycle is delivered one tick late if the cycle contains a delaying module (Delay, Smooth, Register, Memory, State, Counter, Nap, Envelope, Fear, Reward, …). Otherwise the cycle is unbounded: the closing connection is blocked, drawn dashed red, and reported. Runaway protection halts execution if timers or propagation explode.</p>],
-  ['Sensors and permissions', <ul key="s"><li>Every sensor has a simulated source that works offline with no hardware.</li><li>Camera and microphone need a device, a secure context (https or localhost) and your permission. Their state (requesting, denied, unavailable, live) is shown honestly in the inspector and diagnostics.</li><li>Device orientation needs a motion sensor; iOS asks for permission when you press Run.</li><li>Sound is locked by browsers until you press Run or Step. Notifications need permission; vibration is unsupported on iOS and desktops.</li></ul>],
-  ['Inference packages', <ul key="m">{PACKAGES.map((p) => <li key={p.id}><b>{p.name}</b> ({p.status}): {p.technique} Requires: {p.requirements} Limits: {p.limitations}</li>)}</ul>],
-  ['Saving and sharing', <ul key="sv"><li>Autosave keeps the latest state in this browser. If storage is blocked, use Export file.</li><li>Share codes (NS1.…) are compressed text with a CRC-32 check. A checksum catches accidents; it is not a signature and does not prove authorship.</li><li>Programs larger than a QR code can hold show a clear message instead of a broken code.</li></ul>],
-  ['Offline and typography', <p key="o">This is a single HTML file. Scripts, styles, icons and the fallback typeface are embedded; nothing is fetched. The interface asks for “TT Autonomous” first (used if installed on your device). That typeface is commercially licensed and could not be embedded, so JetBrains Mono (SIL OFL) is bundled as the fallback.</p>],
-  ['Keyboard', <ul key="k" className="kbd-list"><li><kbd>Space</kbd> run / pause</li><li><kbd>.</kbd> step one tick</li><li><kbd>Esc</kbd> stop (or close)</li><li><kbd>Ctrl/⌘ Z</kbd> undo, <kbd>⇧</kbd> redo</li><li><kbd>Ctrl/⌘ D</kbd> duplicate</li><li><kbd>Ctrl/⌘ A</kbd> select all</li><li><kbd>Ctrl/⌘ G</kbd> group</li><li><kbd>Delete</kbd> remove</li><li><kbd>F</kbd> fit, <kbd>⇧ F</kbd> focus</li><li><kbd>Tab</kbd> next module, arrows move it</li><li><kbd>/</kbd> search library</li></ul>],
-];
-
-function Docs({ onClose }: { onClose: () => void }) {
-  const sel = useStore((s) => s.selection);
-  const graph = useStore((s) => s.project.graph);
-  const compounds = useStore((s) => s.project.compounds);
-  const node = sel.length === 1 ? graph.nodes[sel[0]] : undefined;
-  const def = node && getDef(node.type, compounds, node.params);
-  const [type, setType] = useState<string | null>(null);
-  const shown = type ? getDef(type) : def;
-  return (
-    <Modal title="Documentation" onClose={onClose} wide>
-      <div className="docs-layout">
-        <nav className="docs-nav" aria-label="Documentation sections">
-          <h3 className="sec">Guide</h3>
-          {GUIDE.map(([t]) => <a key={t} href={`#g-${t.replace(/\W+/g, '-')}`} onClick={(e) => { e.preventDefault(); document.getElementById(`g-${t.replace(/\W+/g, '-')}`)?.scrollIntoView({ block: 'start' }); }}>{t}</a>)}
-          {CATEGORIES.map((c) => (
-            <div key={c}><h3 className="sec">{c}</h3>{MODULES.filter((m) => m.category === c).map((m) => <button key={m.type} className={shown?.type === m.type ? 'on' : ''} onClick={() => { setType(m.type); document.getElementById('g-module')?.scrollIntoView({ block: 'start' }); }}>{m.name}</button>)}</div>
-          ))}
-        </nav>
-        <div className="docs-main">
-          <section id="g-module" className="docs-module">
-            {shown ? <><h3>{shown.name} <span className="tag">{shown.category}</span>{!type && node && <span className="tag sel">selected</span>}</h3><DocBlock def={shown} node={!type ? node : undefined} />
-              <h4>Ports</h4><ul>{[...shown.inputs.map((p) => ['in', p] as const), ...shown.outputs.map((p) => ['out', p] as const)].map(([d, p]) => <li key={d + p.id}><b>{d === 'in' ? 'Input' : 'Output'} {p.label}</b> ({p.type}{p.optional ? ', optional' : ''}): {p.doc}</li>)}</ul>
-              <h4>Parameters</h4>{shown.params.length ? <ul>{shown.params.map((p) => <li key={p.key}><b>{p.label}</b>: {p.doc}{p.kind === 'number' ? ` Range ${p.min} to ${p.max}, default ${p.default}.` : ''}</li>)}</ul> : <p className="muted">None.</p>}</>
-              : <p className="muted">Select a module in the workspace to see its documentation here, or pick one from the list.</p>}
-          </section>
-          {GUIDE.map(([t, body]) => <section key={t} id={`g-${t.replace(/\W+/g, '-')}`}><h3>{t}</h3>{body}</section>)}
-        </div>
-      </div>
     </Modal>
   );
 }
