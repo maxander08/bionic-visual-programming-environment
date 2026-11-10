@@ -74,6 +74,26 @@ export const nodes: ModuleDef[] = [
     doc: { summary: 'Multiplies a signal.', runtime: 'out = a × b, or a × factor when b is not connected.' },
   },
   {
+    ...chipBase, type: 'sub', name: 'Subtractor', caption: 'Subtractor', glyph: '−', chip: (p) => fmtNum(Number(p.offset)),
+    inputs: [inp('a', 'A', 'num', 'Minuend: the value to subtract from.'), inp('b', 'B', 'num', 'Subtrahend; 0 when not connected.', 'left', true)], outputs: [out('out', 'Difference', 'num', 'a − b − offset.')],
+    params: [num('offset', 'Offset', 0, -1e6, 1e6, 0.1, 'Constant subtracted from the difference.')],
+    run(c) { c.emit('out', r4(n(c.get('a')) - (c.has('b') ? n(c.get('b')) : 0) - c.num('offset'))); },
+    doc: { summary: 'Subtracts numbers.', runtime: 'out = a − b − offset. Missing b counts as 0; a missing a keeps the node idle.' },
+  },
+  {
+    ...chipBase, type: 'div', name: 'Divisor', caption: 'Divisor', glyph: '÷', chip: (p) => fmtNum(Number(p.divisor), 2),
+    inputs: [inp('a', 'A', 'num', 'Dividend: the value to divide.'), inp('b', 'B', 'num', 'Replaces the divisor when connected.', 'left', true)], outputs: [out('out', 'Quotient', 'num', 'a ÷ (b or divisor).')],
+    params: [num('divisor', 'Divisor', 1, -1e6, 1e6, 0.1, 'Used when b is not connected.')],
+    run(c) {
+      const a = n(c.get('a')), d = c.has('b') ? n(c.get('b')) : c.num('divisor');
+      if (d === 0) return c.fail(`Division by zero: ${fmtNum(a)} ÷ 0.`);
+      const r = a / d;
+      if (!Number.isFinite(r)) return c.fail(`${fmtNum(a)} ÷ ${fmtNum(d)} is not a finite number.`);
+      c.emit('out', r4(r));
+    },
+    doc: { summary: 'Divides a signal.', runtime: 'out = a ÷ b, or a ÷ divisor when b is not connected.', errors: ['A divisor of 0 raises an error and emits nothing.'] },
+  },
+  {
     ...chipBase, type: 'invert', name: 'Inverter', caption: 'Inverter', glyph: '−', chip: (p) => String(p.mode),
     inputs: [IN_ANY('Number or boolean.')], outputs: [OUT_ANY],
     params: [sel('mode', 'Mode', 'negate', [['negate', 'Negate (−x)'], ['complement', 'Complement (1 − x)']], 'Numeric inversion. Booleans are always logically inverted.')],

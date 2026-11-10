@@ -106,6 +106,34 @@ describe('signal propagation and basic modules', () => {
   });
 });
 
+describe('Subtractor and Divisor', () => {
+  it('Subtractor computes a − b − offset, with b optional', () => {
+    const { e } = build({ nodes: [['a', 'constant', { value: '10' }], ['b', 'constant', { value: '3' }], ['s', 'sub', { offset: 2 }], ['t', 'sub']], wires: [['a', 'out', 's', 'a'], ['b', 'out', 's', 'b'], ['a', 'out', 't', 'a']] });
+    e.step();
+    expect(e.out('s', 'out')).toBe(5);
+    expect(e.out('t', 'out')).toBe(10); // b missing counts as 0
+  });
+  it('Divisor computes a ÷ b, falling back to its divisor setting', () => {
+    const { e } = build({ nodes: [['a', 'constant', { value: '9' }], ['b', 'constant', { value: '4' }], ['d', 'div', { divisor: 3 }], ['q', 'div', { divisor: 3 }]], wires: [['a', 'out', 'd', 'a'], ['a', 'out', 'q', 'a'], ['b', 'out', 'q', 'b']] });
+    e.step();
+    expect(e.out('d', 'out')).toBe(3);
+    expect(e.out('q', 'out')).toBe(2.25);
+  });
+  it('Divisor raises an error instead of emitting on division by zero', () => {
+    const { e } = build({ nodes: [['a', 'constant', { value: '9' }], ['d', 'div', { divisor: 0 }]], wires: [['a', 'out', 'd', 'a']] });
+    e.run(2);
+    expect(e.nodes.get('d')!.status.level).toBe('error');
+    expect(e.out('d', 'out')).toBeUndefined();
+  });
+  it('both nodes expose a setting pin for each parameter', () => {
+    expect(getDef('sub')!.inputs.some((p) => p.id === 'p:offset')).toBe(true);
+    expect(getDef('div')!.inputs.some((p) => p.id === 'p:divisor')).toBe(true);
+    const { e } = build({ nodes: [['a', 'constant', { value: '8' }], ['k', 'constant', { value: '2' }], ['d', 'div']], wires: [['a', 'out', 'd', 'a'], ['k', 'out', 'd', 'p:divisor']] });
+    e.runFor(100);
+    expect(e.out('d', 'out')).toBe(4);
+  });
+});
+
 describe('state, memory, reward, timing', () => {
   it('Memory traces values and forgets', () => {
     const { e } = build({ nodes: [['c', 'constant', { value: '10' }], ['m', 'memory', { remember: 1 }]], wires: [['c', 'out', 'm', 'in']] });
