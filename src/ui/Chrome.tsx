@@ -198,7 +198,7 @@ export function Minimap({ graph, compounds }: { graph: Graph; compounds: Record<
     const rects: { x: number; y: number; w: number; h: number; c: string }[] = [];
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (const n of Object.values(graph.nodes)) {
-      const d = n.type === 'compound' ? (compounds[String(n.params.def)] ? compoundModuleDef(compounds[String(n.params.def)]) : undefined) : getDef(n.type);
+      const d = n.type === 'compound' ? (compounds[String(n.params.def)] ? compoundModuleDef(compounds[String(n.params.def)]) : undefined) : getDef(n.type, undefined, n.params);
       if (!d) continue;
       const s = nodeSize(d);
       rects.push({ x: n.x, y: n.y, w: s.w, h: s.h, c: FAMILY_VAR[d.family] });

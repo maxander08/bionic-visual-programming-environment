@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { CompoundDef, Graph, Project } from '../core/types';
-import { addNode, connect, createCompound, disconnect, duplicateNodes, moveNodes, patchEdge, removeNodes, setParams, snap } from '../core/graph';
+import { addNode, connect, createCompound, disconnect, duplicateNodes, moveNodes, patchEdge, pruneSettingEdges, removeNodes, setParams, snap } from '../core/graph';
 import { TEMPLATES } from '../core/library';
 import { cleanName, newProject } from '../core/project';
 import { autosave, settingsStore, storageAvailable, userLibrary } from './storage';
@@ -196,7 +196,12 @@ export const useStore = create<State>((set, get) => ({
   },
 
   updateCompound(id, fn) {
-    get().edit((s) => (s.compounds[id] ? { ...s, compounds: { ...s.compounds, [id]: fn(s.compounds[id]) } } : null), `c:${id}`);
+    get().edit((s) => {
+      if (!s.compounds[id]) return null;
+      const compounds = { ...s.compounds, [id]: fn(s.compounds[id]) };
+      // Un-exposing a setting removes its pin: drop connections that ended on it.
+      return { ...s, compounds, graph: pruneSettingEdges(s.graph, compounds) };
+    }, `c:${id}`);
   },
 
   saveCompoundToLibrary(id) {

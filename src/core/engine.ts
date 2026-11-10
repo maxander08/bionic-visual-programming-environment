@@ -10,7 +10,7 @@
 //    the back edge is blocked and an error is reported.
 //  * Required inputs without a signal keep a module idle. Optional inputs never block.
 import type { Ctx, Diagnostic, FlatEdge, FlatGraph, ModuleDef, Params, PortDef, Signal } from './types';
-import { getDef, resolveParams } from './registry';
+import { getDef, isSettingPort, resolveParams } from './registry';
 import { coerceTo, compatibility, hashStr, mulberry32 } from './util';
 
 export interface NodeStatus {
@@ -23,7 +23,13 @@ export interface NodeRT {
   id: string;
   type: string;
   def: ModuleDef;
+  /** The settings chosen in the inspector. */
   params: Params;
+  /** The settings in effect: `params`, with every setting pin that carries a signal applied on top. */
+  live: Params;
+  /** True while at least one setting pin overrides a setting. */
+  driven: boolean;
+  seedKey: unknown;
   state: Record<string, any>;
   inputs: Record<string, Signal | undefined>;
   outputs: Record<string, Signal | undefined>;
@@ -68,7 +74,7 @@ class NodeCtx implements Ctx {
   dt = 0;
   get tickMs() { return this.e.tickMs; }
   get reason() { return this.n.reason; }
-  get params() { return this.n.params; }
+  get params() { return this.n.live; }
   get state() { return this.n.state; }
   get injected() { return this.n.injected; }
   get command() { return this.n.command; }
@@ -76,7 +82,7 @@ class NodeCtx implements Ctx {
     let s = 0, any = false;
     for (const k in this.n.inputs) {
       const g = this.n.inputs[k];
-      if (g) { any = true; if (g.s > s) s = g.s; }
+      if (g && !isSettingPort(k)) { any = true; if (g.s > s) s = g.s; }
     }
     return any ? s : 1;
   }
@@ -84,9 +90,9 @@ class NodeCtx implements Ctx {
   sig(port: string) { return this.n.inputs[port]; }
   has(port: string) { return this.n.inputs[port] !== undefined; }
   changed(port: string) { return this.n.changed.has(port); }
-  num(key: string) { return Number(this.n.params[key]); }
-  str(key: string) { return String(this.n.params[key] ?? ''); }
-  bool(key: string) { return !!this.n.params[key]; }
+  num(key: string) { return Number(this.n.live[key]); }
+  str(key: string) { return String(this.n.live[key] ?? ''); }
+  bool(key: string) { return !!this.n.live[key]; }
   emit(port: string, value: unknown, strength?: number, event = false) { this.e.emitFrom(this.n, port, value, strength ?? this.strength, event); }
   emitLater(port: string, value: unknown, ms: number, strength?: number) {
     this.e.schedule({ at: this.e.time + ms, seq: 0, kind: 'emit', node: this.n.id, port, sig: { v: value, s: strength ?? this.strength, t: this.e.time + ms } });
@@ -165,6 +171,8 @@ export class Engine {
   activity: Activity = { nodes: new Set(), edges: new Set() };
   maxTimers = 20000;
   maxDeliveries = 200000;
+  /** Called (outside the tick's hot path) when a setting pin changes a sensor's `source`, so drivers can follow. */
+  onSourceChange?: () => void;
 
   constructor(tickMs = 50) {
     this.tickMs = tickMs;
@@ -185,9 +193,11 @@ export class Engine {
         const changed = JSON.stringify(prev.params) !== JSON.stringify(params);
         prev.params = params;
         prev.def = def;
+        prev.seedKey = params.seed;
         const dis = !!n.disabled;
         const toggled = dis !== prev.disabled;
         if (toggled) { prev.disabled = dis; if (dis) this.clearOutputs(prev); }
+        this.applyLive(prev, false);
         if (changed || toggled) this.markDirty(prev, 'init');
         next.set(n.id, prev);
       } else next.set(n.id, this.makeNode(n.id, n.type, def, params, !!n.disabled));
@@ -201,7 +211,12 @@ export class Engine {
     const driven = new Set(this.edges.map((e) => `${e.to}:${e.toPort}`));
     for (const n of next.values()) {
       for (const port of Object.keys(n.inputs)) {
-        if (!driven.has(`${n.id}:${port}`) && n.inputs[port] !== undefined) { n.inputs[port] = undefined; n.changed.add(port); this.markDirty(n, 'input'); }
+        if (!driven.has(`${n.id}:${port}`) && n.inputs[port] !== undefined) {
+          n.inputs[port] = undefined;
+          // Losing a setting pin is like editing the setting back: it re-runs the module without counting as a data event.
+          if (isSettingPort(port)) this.markDirty(n, 'init');
+          else { n.changed.add(port); this.markDirty(n, 'input'); }
+        }
       }
     }
     // New connections immediately carry the source's current value.
@@ -224,7 +239,7 @@ export class Engine {
 
   private makeNode(id: string, type: string, def: ModuleDef, params: Params, disabled: boolean): NodeRT {
     const n: NodeRT = {
-      id, type, def, params, state: {}, inputs: {}, outputs: {}, changed: new Set(), dirty: false, reason: 'init', rank: 0, lastEval: 0, lastFire: -1e9, lastRecv: -1e9,
+      id, type, def, params, live: params, driven: false, seedKey: params.seed, state: {}, inputs: {}, outputs: {}, changed: new Set(), dirty: false, reason: 'init', rank: 0, lastEval: 0, lastFire: -1e9, lastRecv: -1e9,
       evals: 0, started: false, disabled, status: { level: 'ok', message: '' }, viewData: {}, ver: 0, rng: mulberry32(1), wakeTok: 0, ctx: undefined as unknown as NodeCtx,
     };
     n.rng = mulberry32(typeof params.seed === 'number' ? (params.seed as number) >>> 0 : hashStr(id));
@@ -308,6 +323,7 @@ export class Engine {
       n.lastEval = 0; n.lastFire = -1e9; n.lastRecv = -1e9; n.status = { level: 'ok', message: '' }; n.viewData = {}; n.ver++; n.wakeTok++;
       n.injected = undefined; n.command = undefined;
       n.rng = mulberry32(typeof n.params.seed === 'number' ? (n.params.seed as number) >>> 0 : hashStr(n.id));
+      n.seedKey = n.params.seed; n.live = n.params; n.driven = false;
       this.activity.nodes.add(n.id);
     }
     this.edgeKeys = new Set(this.edges.map((e) => `${e.from}.${e.fromPort}>${e.to}.${e.toPort}`));
@@ -346,7 +362,7 @@ export class Engine {
     for (const n of this.nodes.values()) {
       if (!n.started) {
         n.started = true;
-        if (n.def.source || n.def.inputs.length === 0) this.markDirty(n, 'init');
+        if (n.def.source || !n.def.inputs.some((p) => !p.param)) this.markDirty(n, 'init');
       }
     }
     while (this.timers.length && this.timers[0].at <= this.time) {
@@ -421,6 +437,7 @@ export class Engine {
       this.runtimeFlags.push({ level: 'error', message: 'Runaway protection: too many evaluations in one tick. Execution was halted.' });
       return;
     }
+    this.applyLive(n, true);
     const ready = this.canRun(n);
     if (ready) {
       n.ctx.dt = n.evals === 0 ? 0 : this.time - n.lastEval;
@@ -438,6 +455,23 @@ export class Engine {
     n.command = undefined;
     n.ver++;
     this.activity.nodes.add(n.id);
+  }
+
+  /** Work out the settings in effect: inspector values overridden by any setting pin that carries a signal. */
+  private applyLive(n: NodeRT, notify: boolean) {
+    const before = n.live.source;
+    let raw: Params | undefined;
+    for (const p of n.def.paramPins ?? []) {
+      const sig = n.inputs[p.id];
+      if (sig && sig.v !== undefined) (raw ??= { ...n.params })[p.param!] = sig.v;
+    }
+    n.driven = !!raw;
+    n.live = raw ? resolveParams(n.def, raw) : n.params;
+    if (n.driven && typeof n.live.seed === 'number' && n.live.seed !== n.seedKey) {
+      n.seedKey = n.live.seed;
+      n.rng = mulberry32((n.live.seed as number) >>> 0);
+    }
+    if (notify && n.live.source !== before) this.onSourceChange?.();
   }
 
   clearOutputs(n: NodeRT) {
@@ -492,10 +526,12 @@ export class Engine {
       if (prev && prev.v === v && prev.s === s && !event) return;
       dst.inputs[e.toPort] = { v, s, t: sig.t };
     }
-    dst.changed.add(e.toPort);
     dst.lastRecv = this.time;
     this.activity.edges.add(e.orig);
-    this.markDirty(dst, 'input');
+    // A setting pin changes a setting, exactly like editing it in the inspector: the module re-runs, but nothing
+    // "arrived" on its data inputs, so edge-triggered logic (Delay, Counter, Register…) is not fooled.
+    if (pi.param !== undefined) this.markDirty(dst, 'init');
+    else { dst.changed.add(e.toPort); this.markDirty(dst, 'input'); }
   }
 
   /** Nodes whose required inputs are driven by a failed module are flagged so errors are visible downstream. */

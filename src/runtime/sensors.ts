@@ -229,7 +229,7 @@ export function syncSensors(e: Engine, running: boolean) {
   const want: Record<keyof typeof drivers, Set<string>> = { camera: new Set(), microphone: new Set(), motionDevice: new Set(), motionPointer: new Set(), keys: new Set(), deviceInfo: new Set() };
   if (running) {
     for (const n of e.nodes.values()) {
-      const src = n.params.source;
+      const src = n.live.source; // a setting pin may be driving the source
       if (n.type === 'vision' && src === 'camera') want.camera.add(n.id);
       else if (n.type === 'hearing' && src === 'mic') want.microphone.add(n.id);
       else if (n.type === 'motion' && src === 'device') want.motionDevice.add(n.id);

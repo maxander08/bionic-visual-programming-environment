@@ -1,8 +1,7 @@
 import { memo, useEffect, useRef, type ReactElement } from 'react';
 import type { ModuleDef, NodeInst } from '../core/types';
 import { SIZES } from '../core/types';
-import { portSide } from '../core/registry';
-import { nodeTitle } from '../core/registry';
+import { SETTING_PREFIX, nodeSize, nodeTitle, portSide } from '../core/registry';
 import { clamp, fmtNum, isImage, toText } from '../core/util';
 import { engine, useNodeVer } from '../runtime/session';
 import { getSensorState, subscribeSensors, sensorVersion } from '../runtime/sensors';
@@ -90,7 +89,10 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
   const rt = engine.nodes.get(rid);
   const el = useRef<HTMLDivElement>(null);
   const view = (rt?.viewData ?? {}) as Record<string, any>;
-  const size = SIZES[def.size];
+  // Settings in effect: what a connected setting pin is driving, otherwise what the inspector says.
+  const params = rt?.driven ? rt.live : node.params;
+  const pinned = (key: string) => rt?.inputs[SETTING_PREFIX + key] !== undefined;
+  const size = nodeSize(def);
   const chip = def.size === 'chip';
   const col = FAMILY_VAR[def.family];
   const fire = rt?.lastFire ?? -1;
@@ -111,10 +113,10 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
   const level = status.level !== 'ok' ? status.level : upstream ? 'warn' : 'ok';
   const msg = status.level !== 'ok' ? status.message : upstream ? `Waiting: upstream module “${upstream}” failed.` : '';
   const out = (p: string) => rt?.outputs[p]?.v;
-  const title = nodeTitle(def, node.params);
+  const title = nodeTitle(def, params);
   const connected = new Set(conn ? conn.split(',') : []);
 
-  const live = sensorKey(def.type, node.params) && sensor?.state === 'live';
+  const live = sensorKey(def.type, params) && sensor?.state === 'live';
   const dot = def.type === 'vision' || def.type === 'hearing' ? <span className={`dot ${live ? 'live' : ''}`} aria-hidden="true" /> : null;
 
   const setParam = (patch: Record<string, unknown>, key?: string) => useStore.getState().setNodeParams(node.id, patch, key);
@@ -138,12 +140,12 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
     }
     case 'switch':
       body = (
-        <button className={`sw ${node.params.on ? 'on' : ''}`} data-interactive role="switch" aria-checked={!!node.params.on} aria-label="Switch" disabled={ro}
+        <button className={`sw ${params.on ? 'on' : ''}`} data-interactive role="switch" aria-checked={!!params.on} aria-label="Switch" disabled={ro || pinned('on')}
           onClick={() => setParam({ on: !node.params.on })} onKeyDown={(e) => e.stopPropagation()} />
       );
       break;
     case 'info':
-      body = <div className="text-body pre clamp2">{String(node.params.text ?? '')}</div>;
+      body = <div className="text-body pre clamp2">{String(params.text ?? '')}</div>;
       break;
     case 'motion': {
       const x = Number(out('x')), y = Number(out('y'));
@@ -175,10 +177,10 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
           <EquationPlot plot={view.plot} />
           {!ro && <button className="expand" data-interactive aria-label="Open graph full size" onClick={() => useStore.getState().openDialog('meter', rid)}><Icon name="expand" /></button>}
         </div>
-      ) : <div className="meter-wrap"><Meter hist={view.hist} auto={node.params.auto !== false} /><span className="meter-num">{view.last !== undefined ? fmtNum(view.last, 3) : ''}</span></div>;
+      ) : <div className="meter-wrap"><Meter hist={view.hist} auto={params.auto !== false} /><span className="meter-num">{view.last !== undefined ? fmtNum(view.last, 3) : ''}</span></div>;
       break;
     case 'equation':
-      body = <div className="text-body eq pre clamp2">{String(node.params.expr ?? '') || <span className="ph">y = sin(x)</span>}</div>;
+      body = <div className="text-body eq pre clamp2">{String(params.expr ?? '') || <span className="ph">y = sin(x)</span>}</div>;
       break;
     case 'audio': body = <Art kind="audio" level={view.mute ? 0 : (view.amp ?? 0) * (rt?.evals ? 1 : 0)} />; break;
     case 'haptic': body = <Art kind="haptic" />; break;
@@ -197,7 +199,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
         </div>
       );
       break;
-    case 'comment': body = <div className="text-body note clamp3">{String(node.params.text ?? '')}</div>; break;
+    case 'comment': body = <div className="text-body note clamp3">{String(params.text ?? '')}</div>; break;
     case 'sense': body = <Art kind="radial" level={view.level ?? 0.15} />; break;
     case 'knowledge': body = <Art kind="triangle" level={out('score') !== undefined ? Number(out('score')) : 0.3} />; break;
     case 'imagination': body = <Art kind="lens" level={out('confidence') !== undefined ? Number(out('confidence')) : 0.3} />; break;
@@ -231,7 +233,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
       {chip ? (
         <div className="chip-row">
           <span className="chip-glyph">{def.glyph}</span>
-          <span className="chip-val" title={def.chip?.(node.params)}>{def.chip?.(node.params) ?? ''}</span>
+          <span className="chip-val" title={def.chip?.(params)}>{def.chip?.(params) ?? ''}</span>
         </div>
       ) : (
         <>

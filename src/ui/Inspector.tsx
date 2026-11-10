@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useSyncExternalStore, type ReactElement } from 'react';
 import type { CompoundDef, Edge, ModuleDef, NodeInst, ParamDef } from '../core/types';
-import { getDef, nodeTitle, paramDefsOf, portList } from '../core/registry';
+import { SETTING_PREFIX, getDef, nodeTitle, paramDefsOf, portList } from '../core/registry';
 import { packageById } from '../core/packages';
 import { checkConnection } from '../core/graph';
 import { describe, fmtNum } from '../core/util';
@@ -32,7 +32,7 @@ function NumberField({ p, value, onChange }: { p: Extract<ParamDef, { kind: 'num
   );
 }
 
-function ParamRow({ p, value, onChange, onAction }: { p: ParamDef; value: unknown; onChange: (v: unknown) => void; onAction?: (c: string) => void }) {
+function ParamRow({ p, value, onChange, onAction, driven }: { p: ParamDef; value: unknown; onChange: (v: unknown) => void; onAction?: (c: string) => void; driven?: boolean }) {
   const id = `f-${p.key}`;
   let control: ReactElement;
   switch (p.kind) {
@@ -54,7 +54,8 @@ function ParamRow({ p, value, onChange, onAction }: { p: ParamDef; value: unknow
   return (
     <div className={`field ${p.kind === 'bool' ? 'inline' : ''}`}>
       <label htmlFor={id}>{p.kind === 'action' ? 'Action' : p.label}</label>
-      {control}
+      {driven ? <fieldset className="driven" disabled>{control}</fieldset> : control}
+      {driven && <p className="doc driven-note">Driven by the “{p.label}” pin: the connected signal is in effect. Disconnect the pin to edit this setting.</p>}
       <p className="doc">{p.doc}{meta && <span className="meta"> {meta}</span>}</p>
     </div>
   );
@@ -266,6 +267,7 @@ function CompoundPanel({ node, cdef }: { node: NodeInst; cdef: CompoundDef }) {
 function NodePanel({ id }: { id: string }) {
   const node = useStore((s) => s.project.graph.nodes[id]);
   const compounds = useStore((s) => s.project.compounds);
+  const graph = useStore((s) => s.project.graph);
   useNodeVer(id);
   useDiagVersion();
   const st = useStore.getState();
@@ -278,6 +280,7 @@ function NodePanel({ id }: { id: string }) {
   const cdef = node.type === 'compound' ? compounds[String(node.params.def)] : undefined;
   const missing = engine.missingInputs(id);
   const live = useStore.getState().run !== 'stopped';
+  const pinDriven = (key: string) => Object.values(graph.edges).some((e) => e.to === id && e.toPort === SETTING_PREFIX + key);
   return (
     <>
       <header className="ihead">
@@ -301,8 +304,9 @@ function NodePanel({ id }: { id: string }) {
         <Section title="Settings">
           {def.type === 'vision' && node.params.source === 'file' && <VisionFile node={node} />}
           {defs.map((p) => {
-            const v = node.params[p.key] ?? (p as any).default;
-            return <ParamRow key={p.key} p={p} value={v} onChange={(val) => st.setNodeParams(id, { [p.key]: val }, p.key)} onAction={(c) => { engine.command(id, c); st.toast('Done.', 'ok'); }} />;
+            const driven = p.kind !== 'action' && pinDriven(p.key);
+            const v = (driven && rt?.driven ? rt.live[p.key] : undefined) ?? node.params[p.key] ?? (p as any).default;
+            return <ParamRow key={p.key} p={p} value={v} driven={driven} onChange={(val) => st.setNodeParams(id, { [p.key]: val }, p.key)} onAction={(c) => { engine.command(id, c); st.toast('Done.', 'ok'); }} />;
           })}
         </Section>
       )}

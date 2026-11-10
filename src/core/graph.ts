@@ -1,7 +1,7 @@
 // Immutable graph operations, connection validation, compound creation and flattening.
 import type { CompoundDef, CompoundPort, Diagnostic, Edge, FlatEdge, FlatGraph, Graph, NodeInst, Params } from './types';
 import { GRID } from './types';
-import { compoundModuleDef, defaultParams, getDef, nodeSize, portList, resolveParams } from './registry';
+import { SETTING_PREFIX, compoundModuleDef, defaultParams, getDef, isSettingPort, nodeSize, portList, resolveParams } from './registry';
 import { compatibility } from './util';
 import type { ModuleDef } from './types';
 
@@ -45,7 +45,21 @@ export function setParams(g: Graph, id: string, patch: Params, compounds?: Compo
   const def = getDef(n.type, compounds, n.params);
   if (!def) return g;
   const merged = { ...n.params, ...patch };
-  return { ...g, nodes: { ...g.nodes, [id]: { ...n, params: resolveParams(def, merged) } } };
+  const next = { ...g, nodes: { ...g.nodes, [id]: { ...n, params: resolveParams(def, merged) } } };
+  // Some settings (a package choice) change which setting pins exist: connections to pins that vanished are dropped.
+  return def.dynamicParams ? pruneSettingEdges(next, compounds) : next;
+}
+
+/** Drop connections that end on a setting pin the module no longer has. Returns the same graph when nothing changed. */
+export function pruneSettingEdges(g: Graph, compounds?: Compounds): Graph {
+  let edges: Record<string, Edge> | undefined;
+  for (const e of Object.values(g.edges)) {
+    if (!isSettingPort(e.toPort)) continue;
+    const n = g.nodes[e.to];
+    const d = n && getDef(n.type, compounds, n.params);
+    if (d && !d.inputs.some((p) => p.id === e.toPort)) { edges ??= { ...g.edges }; delete edges[e.id]; }
+  }
+  return edges ? { ...g, edges } : g;
 }
 
 export interface ConnectResult {
@@ -225,7 +239,10 @@ function expand(g: Graph, compounds: Record<string, CompoundDef>, prefix: string
     const s = subs.get(nodeId);
     if (s) {
       const cp = s.def.inputs.find((p) => p.id === port);
-      return cp ? s.ex.resolveIn(cp.nodeId, cp.port) : [];
+      if (cp) return s.ex.resolveIn(cp.nodeId, cp.port);
+      // A setting pin of the compound drives the inner module's own setting pin.
+      const ex = isSettingPort(port) ? s.def.exposed.find((x) => SETTING_PREFIX + x.key === port) : undefined;
+      return ex ? s.ex.resolveIn(ex.nodeId, SETTING_PREFIX + ex.param) : [];
     }
     return g.nodes[nodeId] && g.nodes[nodeId].type !== 'compound' ? [{ id: prefix + nodeId, port }] : [];
   };

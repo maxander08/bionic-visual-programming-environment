@@ -203,7 +203,7 @@ function Docs({ onClose }: { onClose: () => void }) {
   const node = sel.length === 1 ? graph.nodes[sel[0]] : undefined;
   const def = node && getDef(node.type, compounds, node.params);
   const [type, setType] = useState<string | null>(null);
-  const shown = type ? MODULES.find((m) => m.type === type) : def;
+  const shown = type ? getDef(type) : def;
   return (
     <Modal title="Documentation" onClose={onClose} wide>
       <div className="docs-layout">

@@ -162,6 +162,8 @@ button { cursor: pointer; }
 .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--acc); }
 .doc { margin: 5px 0 0; color: var(--dim); font-size: 11px; line-height: 1.45; overflow-wrap: break-word; max-width: 62ch; }
 .doc .meta { color: #6d6d6d; }
+fieldset.driven { margin: 0; padding: 0; border: 0; min-width: 0; opacity: 0.5; }
+.driven-note { color: var(--acc); }
 .num-field { display: flex; align-items: center; gap: 10px; }
 .num-field input[type="range"] { flex: 1; min-width: 0; accent-color: var(--acc); height: 22px; margin: 0; }
 .num-box { display: flex; align-items: center; width: 98px; flex: none; border: 1px solid var(--line2); border-radius: 6px; background: #0a0a0a; padding-right: 6px; }

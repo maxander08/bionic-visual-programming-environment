@@ -115,6 +115,10 @@ function stopPump() {
   timer = undefined;
 }
 
+// A setting pin switched a sensor's source (e.g. simulated → camera): let the drivers follow, just as if it had been
+// changed in the inspector. Deferred so it never runs inside the engine's tick.
+engine.onSourceChange = () => queueMicrotask(() => syncSensors(engine, useStore.getState().run === 'running'));
+
 export function syncGraph() {
   const { project } = useStore.getState();
   engine.load(flatten(project.graph, project.compounds));

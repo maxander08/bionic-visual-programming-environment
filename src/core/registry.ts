@@ -1,11 +1,11 @@
-import type { CompoundDef, ModuleDef, ParamDef, Params, PortDef, NodeInst, Side } from './types';
-import { SIZES } from './types';
+import type { CompoundDef, ModuleDef, ParamDef, Params, PortDef, PortType, NodeInst, Side } from './types';
+import { GRID, SIZES } from './types';
 import { sensors } from './modules/sensors';
 import { nuclei } from './modules/nuclei';
 import { nodes } from './modules/nodes';
 import { behaviors } from './modules/behavior';
 import { txt } from './modules/kit';
-import { clamp } from './util';
+import { clamp, fmtNum } from './util';
 
 const info: ModuleDef[] = [
   {
@@ -32,7 +32,86 @@ export const MODULES: ModuleDef[] = [...sensors, ...nuclei, ...behaviors, ...nod
 const BY_TYPE = new Map(MODULES.map((m) => [m.type, m]));
 export const CATEGORIES = ['Sensor', 'Nucleus', 'Behavior', 'Node', 'Info'] as const;
 
+// ---- setting pins -------------------------------------------------------------------------------------------
+// Every setting of a module (number, choice, text, switch) also exists as an optional input pin. While a signal
+// arrives on that pin it replaces the value chosen in the inspector; disconnect it and the inspector value is back.
+// Pins are derived from the parameter schema, so a new parameter gets its pin for free.
+
+export const SETTING_PREFIX = 'p:';
+export const isSettingPort = (id: string) => id.startsWith(SETTING_PREFIX);
+/** Minimum distance between neighbouring pins on one edge, in world pixels (a pin is 12 px long, hit radius is 10). */
+export const PIN_SPACING = 24;
+/** A node edge holding n pins needs (n + 1) × PIN_SPACING of length; a lone pin sits in the middle of any edge. */
+const edgeNeed = (n: number) => (n <= 1 ? 0 : Math.ceil(((n + 1) * PIN_SPACING) / GRID) * GRID);
+
+const PIN_TYPE: Record<'number' | 'select' | 'text' | 'bool', PortType> = { number: 'num', select: 'text', text: 'text', bool: 'bool' };
+
+function settingPin(p: ParamDef): PortDef | null {
+  if (p.kind === 'action' || p.hidden || p.pin === false) return null;
+  const hint =
+    p.kind === 'number' ? ` Number from ${fmtNum(p.min)} to ${fmtNum(p.max)}${p.unit ? ' ' + p.unit : ''}; values outside are clamped.`
+    : p.kind === 'bool' ? ' True or false.'
+    : p.kind === 'select' ? ` Text, one of: ${p.options.map((o) => o.value).join(', ')}.`
+    : '';
+  return {
+    id: SETTING_PREFIX + p.key, label: p.label, type: PIN_TYPE[p.kind], optional: true, param: p.key,
+    doc: `Setting “${p.label}”. While connected, its signal replaces the value set in the inspector. ${p.doc}${hint}`,
+  };
+}
+
+/** Append setting pins to a module and size the node so that no edge is crowded. */
+function placeSettingPins(def: ModuleDef, params: ParamDef[]): ModuleDef {
+  const pins = params.map(settingPin).filter(Boolean) as PortDef[];
+  if (!pins.length) return def;
+  const base = SIZES[def.size];
+  const chip = def.size === 'chip';
+  const cin: Record<Side, number> = { top: 0, bottom: 0, left: 0, right: 0 };
+  const cout: Record<Side, number> = { top: 0, bottom: 0, left: 0, right: 0 };
+  def.inputs.forEach((q) => cin[portSide(q, 'in')]++);
+  def.outputs.forEach((q) => cout[portSide(q, 'out')]++);
+  const len = (s: Side) => (s === 'top' || s === 'bottom' ? base.w : base.h);
+  const cost = (s: Side) => Math.max(0, edgeNeed(cin[s] + 1) - len(s));
+  // Settings go on the left (the "auxiliary input" edge) and spill onto the top edge. Chips are one row tall, so they
+  // use the top edge first. A side is only grown when neither side can take the pin within the tolerance.
+  const order: Side[] = chip ? ['top', 'left'] : ['left', 'top'];
+  const tol = chip ? 0 : GRID;
+  const placed = pins.map((pin) => {
+    let side = order.find((s) => cost(s) <= tol);
+    if (!side) side = order.reduce((a, b) => (cost(b) < cost(a) ? b : a));
+    cin[side]++;
+    return { ...pin, side };
+  });
+  const need = (s: Side) => Math.max(edgeNeed(cin[s]), edgeNeed(cout[s]));
+  return {
+    ...def,
+    inputs: [...def.inputs, ...placed],
+    paramPins: placed,
+    dim: { w: Math.max(base.w, need('top'), need('bottom')), h: Math.max(base.h, need('left'), need('right')) },
+  };
+}
+
+const settingCache = new WeakMap<ModuleDef, Map<string, ModuleDef>>();
+function withSettingPins(def: ModuleDef, params: ParamDef[]): ModuleDef {
+  const sig = params.map((p) => p.key).join('|');
+  let m = settingCache.get(def);
+  if (!m) settingCache.set(def, (m = new Map()));
+  let d = m.get(sig);
+  if (!d) m.set(sig, (d = placeSettingPins(def, params)));
+  return d;
+}
+
+const compoundCache = new WeakMap<CompoundDef, ModuleDef>();
+
 export function compoundModuleDef(cd: CompoundDef): ModuleDef {
+  let d = compoundCache.get(cd);
+  if (!d) {
+    const raw = rawCompoundDef(cd);
+    compoundCache.set(cd, (d = placeSettingPins(raw, raw.params)));
+  }
+  return d;
+}
+
+function rawCompoundDef(cd: CompoundDef): ModuleDef {
   const exposed: ParamDef[] = [];
   for (const e of cd.exposed) {
     const inner = cd.graph.nodes[e.nodeId];
@@ -56,7 +135,8 @@ export function getDef(type: string, compounds?: Record<string, CompoundDef>, pa
     const cd = compounds?.[String(params?.def)];
     return cd ? compoundModuleDef(cd) : undefined;
   }
-  return BY_TYPE.get(type);
+  const def = BY_TYPE.get(type);
+  return def && withSettingPins(def, paramDefsOf(def, params ?? {}));
 }
 
 export function paramDefsOf(def: ModuleDef, params: Params): ParamDef[] {
@@ -99,7 +179,7 @@ export function resolveParams(def: ModuleDef, raw: Params): Params {
   return out;
 }
 
-export const nodeSize = (def: ModuleDef) => SIZES[def.size];
+export const nodeSize = (def: ModuleDef) => def.dim ?? SIZES[def.size];
 
 export function portList(def: ModuleDef, dir: 'in' | 'out'): PortDef[] {
   return dir === 'in' ? def.inputs : def.outputs;

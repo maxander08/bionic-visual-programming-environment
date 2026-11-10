@@ -11,6 +11,8 @@ export interface PortDef {
   doc: string;
   /** Input only. Optional inputs never block evaluation when they have no signal. */
   optional?: boolean;
+  /** Input only. Set on a "setting pin": the key of the parameter this pin overrides while it carries a signal. */
+  param?: string;
 }
 
 export interface SelectOption {
@@ -23,6 +25,8 @@ interface ParamBase {
   label: string;
   doc: string;
   hidden?: boolean;
+  /** Set to false for parameters that must not get a setting pin (e.g. ones that change the pin set itself). */
+  pin?: false;
 }
 export type ParamDef =
   | (ParamBase & { kind: 'number'; min: number; max: number; step: number; default: number; unit?: string })
@@ -200,6 +204,10 @@ export interface ModuleDef {
   doc: ModuleDoc;
   /** Sensor source needing browser permission/hardware. */
   keywords?: string;
+  /** Derived (registry): rendered size when setting pins make the node larger than its `size` preset. */
+  dim?: { w: number; h: number };
+  /** Derived (registry): the setting pins appended to `inputs`. */
+  paramPins?: PortDef[];
 }
 
 export interface FlatEdge extends Edge {

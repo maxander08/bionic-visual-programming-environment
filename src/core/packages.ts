@@ -283,5 +283,6 @@ export const packagesFor = (host: 'knowledge' | 'imagination') => PACKAGES.filte
 
 export function packageParamDef(host: 'knowledge' | 'imagination'): ParamDef {
   const list = packagesFor(host);
-  return sel('package', 'Package', list.find((p) => p.status === 'available')!.id, list.map((p) => [p.id, p.status === 'unavailable' ? `${p.name} — unavailable` : p.name] as [string, string]), 'Which inference package this nucleus runs. Each package documents its technique and limits.');
+  // The package decides which other settings exist, so it cannot itself be driven from a pin.
+  return { pin: false as const, ...sel('package', 'Package', list.find((p) => p.status === 'available')!.id, list.map((p) => [p.id, p.status === 'unavailable' ? `${p.name} — unavailable` : p.name] as [string, string]), 'Which inference package this nucleus runs. Each package documents its technique and limits.')};
 }

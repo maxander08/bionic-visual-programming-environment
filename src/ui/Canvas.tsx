@@ -48,7 +48,7 @@ function defFor(n: NodeInst, compounds: Record<string, CompoundDef>): ModuleDef 
     if (!d) compoundCache.set(cd, (d = compoundModuleDef(cd)));
     return d;
   }
-  return getDef(n.type);
+  return getDef(n.type, undefined, n.params);
 }
 
 type Drag =
