@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import qrcode from 'qrcode-generator';
 import { TEMPLATES } from '../core/library';
 import { QR_BYTE_LIMIT, encodeShare, sha256Hex } from '../core/project';
-import { crc32, describe, fmtNum } from '../core/util';
+import { crc32, fmtNum } from '../core/util';
 import type { Plot } from '../core/equation';
 import { engine, useNodeVer } from '../runtime/session';
 import { storageAvailable, projects, clearAll } from '../state/storage';
@@ -11,7 +11,6 @@ import { exportJSON, importCode, importFile, openWithBackup, openTemplate, downl
 import { Canvas } from './Canvas';
 import { Icon } from './icons';
 import { Docs } from './docs/Docs';
-import { ImageCanvas } from './NodeView';
 import { CURVE_COLORS, EquationPlot } from './EquationPlot';
 
 function Modal({ title, onClose, children, wide, label }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean; label?: string }) {
@@ -239,20 +238,6 @@ function MeterGraph({ onClose }: { onClose: () => void }) {
   );
 }
 
-function Projector({ onClose }: { onClose: () => void }) {
-  const id = useStore((s) => s.ui.arg) as string;
-  useNodeVer(id);
-  const v = (engine.nodes.get(id)?.viewData ?? {}) as any;
-  return (
-    <Modal title="Projector" onClose={onClose} wide>
-      <div className="proj-full" aria-live="polite">
-        {v.kind === 'image' ? <ImageCanvas img={v.image} /> : v.kind ? <div className={v.kind === 'number' ? 'giant' : 'giant txt'}>{v.text}</div> : <p className="muted">No signal. Press Run.</p>}
-      </div>
-      {v.text && <details className="full-value"><summary>Full value</summary><pre>{describe(v.text)}</pre></details>}
-    </Modal>
-  );
-}
-
 export function Dialogs() {
   const d = useStore((s) => s.ui.dialog);
   const setUi = useStore((s) => s.setUi);
@@ -266,7 +251,6 @@ export function Dialogs() {
     case 'docs': return <Docs onClose={close} />;
     case 'settings': return <Settings onClose={close} />;
     case 'compound': return <CompoundViewer onClose={close} />;
-    case 'projector': return <Projector onClose={close} />;
     case 'meter': return <MeterGraph onClose={close} />;
     default: return null;
   }

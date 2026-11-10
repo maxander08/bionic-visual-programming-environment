@@ -32,7 +32,7 @@ export const behaviors: ModuleDef[] = [
       }
       c.view({ kind: 'text', text: toText(v) });
     },
-    doc: { summary: 'The general-purpose display. Click the expand icon on the node for a full-size view.', runtime: 'Chooses a layout from the value type: image, large number, or text.' },
+    doc: { summary: 'The general-purpose display for numbers, text and images.', runtime: 'Chooses a layout from the value type: image, large number, or text.' },
   },
   {
     ...base, type: 'meter', name: 'Meter', caption: 'Meter Display', glyph: 'meter', size: 'square', keywords: 'plot graph scope history equation function curve axes',

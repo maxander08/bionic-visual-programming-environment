@@ -125,8 +125,8 @@ function formatter(tz: string): Intl.DateTimeFormat {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-/** Wall-clock reading of a time zone at an instant (epoch ms). Throws RangeError for an unknown zone. */
-export function readClock(tz: string, nowMs: number, hour12: boolean, seconds: boolean): ClockReading {
+/** Wall-clock reading of a time zone at an instant (epoch ms). Milliseconds are appended to the seconds when both are enabled. Throws RangeError for an unknown zone. */
+export function readClock(tz: string, nowMs: number, hour12: boolean, seconds: boolean, millis = false): ClockReading {
   const whole = Math.floor(nowMs / 1000) * 1000;
   const parts: Record<string, string> = {};
   for (const p of formatter(tz).formatToParts(whole)) parts[p.type] = p.value;
@@ -134,7 +134,8 @@ export function readClock(tz: string, nowMs: number, hour12: boolean, seconds: b
   const asUtc = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), hour, minute, second);
   const offset = Math.round(((asUtc - whole) / 3600000) * 100) / 100;
   const h = hour12 ? hour % 12 || 12 : hour;
-  const time = `${hour12 ? h : pad(h)}:${pad(minute)}${seconds ? ':' + pad(second) : ''}${hour12 ? (hour < 12 ? ' AM' : ' PM') : ''}`;
+  const ms = String(Math.floor(nowMs) - whole).padStart(3, '0');
+  const time = `${hour12 ? h : pad(h)}:${pad(minute)}${seconds ? ':' + pad(second) + (millis ? '.' + ms : '') : ''}${hour12 ? (hour < 12 ? ' AM' : ' PM') : ''}`;
   return {
     time, date: `${parts.weekday} ${Number(parts.day)} ${MONTHS[Number(parts.month) - 1]} ${parts.year}`, hour, minute, second, offset,
     day: hour >= 6 && hour < 18,

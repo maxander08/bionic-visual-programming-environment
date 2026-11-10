@@ -166,7 +166,6 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
       body = (
         <>
           {k === 'image' ? <ImageCanvas img={view.image} /> : k === 'number' ? <div className={`big n${String(view.text).length > 8 ? 3 : String(view.text).length > 5 ? 2 : 1}`}>{view.text}</div> : k === 'text' ? <div className="proj-text clamp4">{view.text}</div> : <div className="empty" />}
-          {!ro && <button className="expand" data-interactive aria-label="Open projector full size" onClick={() => useStore.getState().openDialog('projector', rid)}><Icon name="expand" /></button>}
         </>
       );
       break;
@@ -201,7 +200,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
       break;
     case 'clock': body = (
       <div className={`clock ${view.day === false ? 'night' : ''}`}>
-        <div className="clock-time">{view.time ?? '--:--'}</div>
+        <div className={`clock-time ${String(view.time ?? '').length > 12 ? 'long' : ''}`}>{view.time ?? '--:--'}</div>
         <div className="clock-city clamp1">{view.city ?? String(params.city ?? '').split(',')[0]}</div>
         <div className="clock-date clamp1">{view.date ? `${view.date}` : ''}</div>
         <div className="clock-zone clamp1">{view.offset ?? ''}</div>

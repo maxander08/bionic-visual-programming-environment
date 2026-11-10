@@ -64,6 +64,12 @@ describe('readClock', () => {
     expect(readClock('UTC', Date.UTC(2026, 0, 1, 0, 5, 0), true, false).time).toBe('12:05 AM');
     expect(readClock('UTC', Date.UTC(2026, 0, 1, 15, 5, 9), true, true).time).toBe('3:05:09 PM');
   });
+  it('appends milliseconds after the seconds', () => {
+    expect(readClock('Asia/Tokyo', t + 7, false, true, true).time).toBe('21:30:45.007');
+    expect(readClock('UTC', Date.UTC(2026, 0, 1, 15, 5, 9, 250), true, true, true).time).toBe('3:05:09.250 PM');
+    expect(readClock('Asia/Tokyo', t + 7, false, false, true).time).toBe('21:30');
+    expect(readClock('Asia/Tokyo', t + 7, false, true).time).toBe('21:30:45');
+  });
   it('formats offsets', () => {
     expect(fmtOffset(5.5)).toBe('UTC+5:30');
     expect(fmtOffset(-4)).toBe('UTC−4');
@@ -87,7 +93,7 @@ describe('World Clock module', () => {
   }
   it('emits the local time of the chosen city', () => {
     const e = run({ city: 'Sydney, Australia' });
-    expect(e.out('c', 'time')).toMatch(/^\d\d:\d\d:\d\d$/);
+    expect(e.out('c', 'time')).toMatch(/^\d\d:\d\d:\d\d\.\d{3}$/);
     expect([10, 11]).toContain(e.out('c', 'offset'));
     expect(e.nodes.get('c')!.status.level).toBe('ok');
   });
