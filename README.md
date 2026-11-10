@@ -108,7 +108,9 @@ src/
 │       ├── sensors.ts   Vision, hearing, touch, motion, keys…
 │       ├── nuclei.ts    Sense, knowledge, imagination, attention, fear, memory…
 │       ├── nodes.ts     Constant, random, pulse, adder, subtractor, multiplier, divisor, math, delay…
-│       └── behavior.ts  Text, image, projector, meter, audio, haptic, notify…
+│       ├── behavior.ts  Text, image, projector, meter, audio, haptic, notify…
+│       ├── clock.ts     World Clock (Timekeeping section)
+│       └── timekeeping.ts  Timer, Alarm and Stopwatch (Timekeeping section)
 ├── runtime/        Browser-side runtime: sensors (camera/mic/etc.), session, outputs
 ├── state/          Zustand store, undo/redo, localStorage persistence
 ├── ui/             Canvas, node views, inspector, library, dialogs, chrome
@@ -116,6 +118,19 @@ src/
 ├── App.tsx         Layout, keyboard shortcuts, autosave
 └── main.tsx        Entry point
 ```
+
+### Timekeeping modules
+
+The library's **Timekeeping** section holds everything about time. Every setting is also a pin.
+
+| Module | What it does | Inputs (rising edge) | Outputs | Settings |
+| --- | --- | --- | --- | --- |
+| **World Clock** | Local time of any of ~6,100 cities | — | Time, Date, UTC offset, Hour, Minute, Seconds, Milliseconds | City, Format, Show seconds, Show milliseconds |
+| **Timer** | Counts down from a duration | Start, Pause, Reset | Time, Done, Progress, Remaining, Running | Hours, Minutes, Seconds, Start automatically, Repeat, Show milliseconds |
+| **Alarm** | Rings at a time of day in a city's (or this device's) time zone | Snooze, Dismiss | Ringing, Time left, Next ring, Seconds left, Rings | Hour, Minute, Days, City, Armed, Only once, Ring duration, Snooze |
+| **Stopwatch** | Counts up, records laps, can stop at a limit | Start, Stop, Lap, Reset | Time, Elapsed, Running, Laps, Last lap | Start automatically, Show milliseconds, Stop at |
+
+Timer and Stopwatch use *simulation* time (pause, Stop and Speed apply to them); Alarm and World Clock read the real clock.
 
 ### Execution model
 

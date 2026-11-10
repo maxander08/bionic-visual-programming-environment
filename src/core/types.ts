@@ -144,7 +144,7 @@ export type Family =
   | 'node'
   | 'info';
 
-export type Category = 'Sensor' | 'Nucleus' | 'Behavior' | 'Node' | 'Info';
+export type Category = 'Sensor' | 'Nucleus' | 'Behavior' | 'Node' | 'Timekeeping' | 'Info';
 
 export interface ModuleDoc {
   summary: string;

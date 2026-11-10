@@ -110,6 +110,8 @@ export interface ClockReading {
   offset: number;
   /** Local time between 06:00 and 18:00. */
   day: boolean;
+  /** The local wall-clock time as milliseconds since 1970-01-01 00:00 *of that zone* (so UTC getters read the local fields). */
+  local: number;
 }
 
 const fmtCache = new Map<string, Intl.DateTimeFormat>();
@@ -142,7 +144,13 @@ export function readClock(tz: string, nowMs: number, hour12: boolean, seconds: b
   return {
     time, date: `${parts.weekday} ${Number(parts.day)} ${MONTHS[Number(parts.month) - 1]} ${parts.year}`, hour, minute, second, millisecond: milli, offset,
     day: hour >= 6 && hour < 18,
+    local: asUtc + milli,
   };
+}
+
+/** IANA name of this device's time zone, or UTC when the browser does not say. */
+export function deviceTimeZone(): string {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { return 'UTC'; }
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

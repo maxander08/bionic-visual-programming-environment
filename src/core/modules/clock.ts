@@ -4,7 +4,7 @@ import { bol, out, sel, txt } from './kit';
 
 /** World Clock: the current local time in any of the 30 most populous cities of every country. */
 export const worldClock: ModuleDef = {
-  type: 'clock', name: 'World Clock', caption: 'World Clock', category: 'Info', family: 'info', glyph: '◷', size: 'square',
+  type: 'clock', name: 'World Clock', caption: 'World Clock', category: 'Timekeeping', family: 'info', glyph: '◷', size: 'square',
   keywords: 'time zone timezone city country hour date local utc offset watch',
   inputs: [],
   outputs: [

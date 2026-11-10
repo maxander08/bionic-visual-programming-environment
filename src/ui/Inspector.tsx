@@ -4,7 +4,7 @@ import { SETTING_PREFIX, getDef, nodeTitle, paramDefsOf, portList } from '../cor
 import { packageById } from '../core/packages';
 import { checkConnection } from '../core/graph';
 import { describe, fmtNum } from '../core/util';
-import { findCity, fmtOffset, readClock } from '../core/worldclock';
+import { deviceTimeZone, findCity, fmtOffset, readClock } from '../core/worldclock';
 import { engine, getDiagnostics, useDiagVersion, useNodeVer } from '../runtime/session';
 import { getSensorState, sensorVersion, subscribeSensors } from '../runtime/sensors';
 import { audio, notificationState, requestNotifications, vibrationSupported } from '../runtime/outputs';
@@ -76,6 +76,11 @@ function ClockInfo({ city }: { city: string }) {
   let off = '';
   try { off = fmtOffset(readClock(c.tz, Date.now(), false, false).offset); } catch { /* unknown zone */ }
   return <p className="doc"><b>{c.label}</b> · {c.tz}{off ? ` · ${off} now` : ''} · population {c.pop.toLocaleString('en-US')}</p>;
+}
+
+function AlarmInfo({ city }: { city: string }) {
+  if (city.trim()) return <ClockInfo city={city} />;
+  return <p className="doc">City is empty: the alarm follows this device’s clock, time zone <b>{deviceTimeZone()}</b>.</p>;
 }
 
 function Section({ title, children, open = true, right }: { title: string; children: React.ReactNode; open?: boolean; right?: React.ReactNode }) {
@@ -321,6 +326,7 @@ function NodePanel({ id }: { id: string }) {
         <Section title="Settings">
           {def.type === 'vision' && node.params.source === 'file' && <VisionFile node={node} />}
           {def.type === 'clock' && <ClockInfo city={String((rt?.driven ? rt.live.city : undefined) ?? node.params.city ?? '')} />}
+          {def.type === 'alarm' && <AlarmInfo city={String((rt?.driven ? rt.live.city : undefined) ?? node.params.city ?? '')} />}
           {defs.map((p) => {
             const driven = p.kind !== 'action' && pinDriven(p.key);
             const v = (driven && rt?.driven ? rt.live[p.key] : undefined) ?? node.params[p.key] ?? (p as any).default;

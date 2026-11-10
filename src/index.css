@@ -355,3 +355,24 @@ fieldset.driven { margin: 0; padding: 0; border: 0; min-width: 0; opacity: 0.5; 
 .clock.night .clock-time { color: #9aa6ff; }
 .clock-city { font-size: 12px; font-weight: 700; color: #7b8cff; max-width: 100%; }
 .clock-date, .clock-zone { font-size: 10.5px; color: #8a93d6; max-width: 100%; }
+
+/* Timekeeping: Timer, Stopwatch, Alarm (same periwinkle family as the World Clock) */
+.tk { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-align: center; min-width: 0; color: #cdd3ff; }
+.tk-time { font-size: 22px; line-height: 1.1; font-weight: 700; color: #9aa6ff; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; white-space: nowrap; max-width: 100%; }
+.tk-time.long { font-size: 15px; }
+.tk-sub { font-size: 10.5px; color: #8a93d6; max-width: 100%; }
+.tk-state { font-size: 11px; font-weight: 700; color: #7b8cff; max-width: 100%; letter-spacing: 0.04em; }
+.tk-bar { width: 100%; height: 4px; border-radius: 2px; background: #151a3d; overflow: hidden; margin: 2px 0; }
+.tk-bar i { display: block; height: 100%; background: #7b8cff; transition: width var(--dur-micro) linear; }
+.tk.done .tk-time { color: #fff; } .tk.done .tk-bar i { background: #fff; }
+.tk.paused .tk-time, .tk.stopped .tk-time { opacity: 0.7; }
+.tk-btns { display: flex; gap: 5px; margin-top: 4px; width: 100%; justify-content: center; }
+.tk-btn { flex: 1 1 0; min-width: 0; height: 22px; padding: 0 4px; font-size: 11px; line-height: 1; background: #0c1030; border: 1px solid #3a4390; border-radius: 6px; color: #b4bcff; transition: background var(--dur-micro), color var(--dur-micro); }
+.tk-btn:hover:not(:disabled) { background: #1a2260; color: #fff; }
+.tk-btn.on { background: #2a3490; color: #fff; border-color: #7b8cff; }
+.tk-btn:disabled { cursor: default; opacity: 0.6; }
+.tk-btn.wide { flex: 0 0 72px; letter-spacing: 0.06em; }
+.tk.alarm.off .tk-time { opacity: 0.45; }
+.tk.alarm.ringing .tk-time, .tk.alarm.ringing .tk-state { color: #fff; animation: tk-ring 0.6s steps(2, jump-none) infinite; }
+@keyframes tk-ring { 0% { opacity: 1; } 100% { opacity: 0.35; } }
+html.rm .tk.alarm.ringing .tk-time, html.rm .tk.alarm.ringing .tk-state { animation: none; }

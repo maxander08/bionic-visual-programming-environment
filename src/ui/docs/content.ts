@@ -19,7 +19,8 @@ export const ARTICLES: Article[] = [
         '**Nuclei** process them: [[n:sense]] normalizes, [[n:fear]] integrates threat, [[n:memory]] remembers, [[n:decision]] chooses.',
         '**Behaviors** show or act: [[n:projector]], [[n:meter]], [[n:audio]], [[n:light]], [[n:notify]].',
         '**Nodes** are the plumbing: math, timing, routing and logic such as [[n:add]], [[n:pulse]], [[n:relay]] and [[n:threshold]].',
-        '**Info** modules label and inform: [[n:comment]] and [[n:by]] are notes that never run, while [[n:clock]] shows the live time in any major city.',
+        '**Timekeeping** modules deal with time: [[n:clock]] shows the live time in any major city, [[n:timer]] counts down, [[n:stopwatch]] counts up and records laps, and [[n:alarm]] rings at a time of day.',
+        '**Info** modules label and inform: [[n:comment]] and [[n:by]] are notes that never run.',
       ] },
       { t: 'h', x: 'The loop of work' },
       { t: 'ol', items: [
@@ -443,5 +444,6 @@ export const GOALS: { goal: string; hint: string; nodes: string[]; recipe?: stri
   { goal: 'Use a camera or image', hint: 'Brightness, dominant colour, scene character.', nodes: ['vision', 'sense', 'knowledge', 'image', 'color'] },
   { goal: 'Take input from the user', hint: 'Pad, toggle, keyboard, typed text.', nodes: ['touch', 'switch', 'keys', 'info', 'motion'] },
   { goal: 'Combine several signals', hint: 'Sum, average, join as text, or pick a winner.', nodes: ['combine', 'hypernerve', 'add', 'attention'] },
+  { goal: 'Measure, count down or wait for a time', hint: 'Countdowns, stopwatches with laps, alarms at a time of day, world clocks.', nodes: ['timer', 'stopwatch', 'alarm', 'clock'] },
   { goal: 'Drive one setting from another signal', hint: 'Modulate any setting with a wire.', nodes: ['wave', 'plastic', 'pulse'], recipe: 'breathing-clock' },
 ];

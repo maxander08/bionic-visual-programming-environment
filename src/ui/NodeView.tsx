@@ -9,6 +9,7 @@ import { useSyncExternalStore } from 'react';
 import { useStore } from '../state/store';
 import { Icon } from './icons';
 import { EquationPlot } from './EquationPlot';
+import { DAY_LABEL, fmtDuration } from '../core/modules/timekeeping';
 
 export const FAMILY_VAR: Record<string, string> = {
   sensor: '#ff2a2a', sense: '#6fd3ee', knowledge: '#a259ff', attention: '#f7c52b', fear: '#3ddc97', memory: '#86f0cc', apparatus: '#2fd6c0',
@@ -120,6 +121,15 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
   const dot = def.type === 'vision' || def.type === 'hearing' ? <span className={`dot ${live ? 'live' : ''}`} aria-hidden="true" /> : null;
 
   const setParam = (patch: Record<string, unknown>, key?: string) => useStore.getState().setNodeParams(node.id, patch, key);
+  /** Node buttons of the timekeeping modules send the same commands as the inspector buttons. */
+  const tkCmd = (cmd: string) => {
+    const st = useStore.getState();
+    if (st.run === 'stopped') { st.toast('Press Run first: this control works while the program runs.', 'info'); return; }
+    engine.command(rid, cmd);
+  };
+  const tkBtn = (cmd: string, label: string, text: string, on = false) => (
+    <button type="button" className={`tk-btn ${on ? 'on' : ''}`} data-interactive aria-label={label} title={label} onClick={() => tkCmd(cmd)} onKeyDown={(e) => e.stopPropagation()}>{text}</button>
+  );
 
   let body: ReactElement | null = null;
   switch (def.type) {
@@ -206,6 +216,51 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
         <div className="clock-zone clamp1">{view.offset ?? ''}</div>
       </div>
     ); break;
+    case 'timer': {
+      const st = String(view.status ?? 'idle');
+      const time = view.time ?? fmtDuration((Number(params.hours) * 3600 + Number(params.minutes) * 60 + Number(params.seconds)) * 1000, !!params.millis, 'ceil');
+      body = (
+        <div className={`tk ${st}`}>
+          <div className={`tk-time ${String(time).length > 8 ? 'long' : ''}`}>{time}</div>
+          <div className="tk-bar"><i style={{ width: `${(view.progress ?? 0) * 100}%` }} /></div>
+          <div className="tk-sub clamp1">{st === 'running' ? 'Counting down' : st === 'paused' ? 'Paused' : st === 'done' ? 'Done' : 'Ready'}{params.repeat ? ' · repeat' : ''}</div>
+          {!ro && <div className="tk-btns">{tkBtn('toggle', st === 'running' ? 'Pause the timer' : 'Start the timer', st === 'running' ? '❚❚' : '▶', st === 'running')}{tkBtn('reset', 'Reset the timer', '↺')}</div>}
+        </div>
+      );
+      break;
+    }
+    case 'stopwatch': {
+      const st = String(view.status ?? 'idle');
+      body = (
+        <div className={`tk ${st}`}>
+          <div className={`tk-time ${String(view.time ?? '').length > 8 ? 'long' : ''}`}>{view.time ?? fmtDuration(0, !!params.millis)}</div>
+          <div className="tk-sub clamp1">{view.laps ? `Lap ${view.laps} · ${view.last}` : st === 'running' ? 'Running' : st === 'stopped' ? (view.limit ? 'Limit reached' : 'Stopped') : 'Ready'}</div>
+          {!ro && <div className="tk-btns">{tkBtn('toggle', st === 'running' ? 'Stop the stopwatch' : 'Start the stopwatch', st === 'running' ? '❚❚' : '▶', st === 'running')}{tkBtn('lap', 'Record a lap', '⚑')}{tkBtn('reset', 'Reset the stopwatch', '↺')}</div>}
+        </div>
+      );
+      break;
+    }
+    case 'alarm': {
+      const ringing = view.ringing === true;
+      const armed = params.armed !== false;
+      const at = view.at ?? `${String(Math.floor(Number(params.hour))).padStart(2, '0')}:${String(Math.floor(Number(params.minute))).padStart(2, '0')}`;
+      const place = view.place ?? (String(params.city ?? '').split(',')[0].trim() || 'This device');
+      body = (
+        <div className={`tk alarm ${ringing ? 'ringing' : ''} ${armed ? '' : 'off'}`}>
+          <div className="tk-time">{at}</div>
+          <div className="tk-sub clamp1">{DAY_LABEL[String(params.days ?? 'daily')]?.replace(/ \(.*\)/, '') ?? 'Every day'}</div>
+          <div className="tk-sub clamp1">{place}</div>
+          <div className="tk-state clamp1">{ringing ? 'RINGING' : armed ? (view.left && view.left !== 'Off' ? `in ${view.left}` : view.spent ? 'Done' : '—') : 'Off'}</div>
+          {!ro && (
+            <div className="tk-btns">
+              {ringing ? <>{tkBtn('snooze', 'Snooze the alarm', 'Snooze')}{tkBtn('dismiss', 'Dismiss the alarm', 'Stop', true)}</>
+                : <button type="button" className={`tk-btn wide ${armed ? 'on' : ''}`} data-interactive role="switch" aria-checked={armed} aria-label="Armed" disabled={pinned('armed')} onClick={() => setParam({ armed: !node.params.armed }, 'armed')} onKeyDown={(e) => e.stopPropagation()}>{armed ? 'ARMED' : 'OFF'}</button>}
+            </div>
+          )}
+        </div>
+      );
+      break;
+    }
     case 'comment': body = <div className="text-body note clamp3">{String(params.text ?? '')}</div>; break;
     case 'sense': body = <Art kind="radial" level={view.level ?? 0.15} />; break;
     case 'knowledge': body = <Art kind="triangle" level={out('score') !== undefined ? Number(out('score')) : 0.3} />; break;
@@ -288,6 +343,9 @@ export function PreviewNode({ def, scale = 0.78 }: { def: ModuleDef; scale?: num
   else if (def.type === 'motion') body = <div className="cross"><i /><b /></div>;
   else if (def.type === 'comment') body = <div className="text-body note">Note</div>;
   else if (def.type === 'clock') body = <div className="clock"><div className="clock-time">12:00</div><div className="clock-city">Tokyo</div></div>;
+  else if (def.type === 'timer') body = <div className="tk"><div className="tk-time">00:10</div><div className="tk-bar"><i style={{ width: '40%' }} /></div><div className="tk-sub">Counting down</div></div>;
+  else if (def.type === 'stopwatch') body = <div className="tk"><div className="tk-time">00:12.5</div><div className="tk-sub">Lap 2</div></div>;
+  else if (def.type === 'alarm') body = <div className="tk alarm"><div className="tk-time">07:30</div><div className="tk-sub">Every day</div><div className="tk-state">in 06:12:00</div></div>;
   else if (def.type === 'vital') body = <svg className="art" viewBox="0 0 100 40"><circle cx="50" cy="20" r="8" fill="currentColor" /></svg>;
   return (
     <div className="pv-wrap" style={{ width: size.w * scale, height: size.h * scale }}>
