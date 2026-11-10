@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Engine } from './engine';
 import { addNode, emptyGraph, flatten } from './graph';
-import { MODULES, getDef } from './registry';
+import { MODULES, PIN_SPACING, getDef, nodeSize, portPosition } from './registry';
 import { CITY_DATA } from './data/cities';
 import { allCities, cityLabels, findCity, fmtOffset, readClock } from './worldclock';
 
@@ -70,6 +70,11 @@ describe('readClock', () => {
     expect(readClock('Asia/Tokyo', t + 7, false, false, true).time).toBe('21:30');
     expect(readClock('Asia/Tokyo', t + 7, false, true).time).toBe('21:30:45');
   });
+  it('reports the second within the minute, whether or not seconds are shown', () => {
+    expect(readClock('Asia/Tokyo', t, false, true).second).toBe(45);
+    expect(readClock('Asia/Tokyo', t, false, false).second).toBe(45);
+    expect(readClock('UTC', Date.UTC(2026, 0, 1, 15, 5, 9, 250), true, true, true).second).toBe(9);
+  });
   it('reports the millisecond within the second', () => {
     expect(readClock('Asia/Tokyo', t + 7, false, true, true).millisecond).toBe(7);
     expect(readClock('UTC', Date.UTC(2026, 0, 1, 15, 5, 9, 250), true, true, true).millisecond).toBe(250);
@@ -89,6 +94,17 @@ describe('World Clock module', () => {
     const d = getDef('clock')!;
     expect(d.inputs.some((p) => p.id === 'p:city' && p.type === 'text')).toBe(true);
   });
+  it('puts the Seconds pin on the bottom edge, right after Date', () => {
+    const d = getDef('clock')!;
+    const bottom = d.outputs.filter((p) => (p.side ?? 'bottom') === 'bottom').map((p) => p.id);
+    expect(bottom).toEqual(['time', 'date', 'second']);
+    expect(d.outputs.find((p) => p.id === 'second')!.type).toBe('num');
+    const node = { id: 'n', type: 'clock', x: 0, y: 0, params: {} };
+    const xs = bottom.map((id) => portPosition(node, d, id, 'out')!.x);
+    expect(xs[1] - xs[0]).toBeGreaterThanOrEqual(PIN_SPACING);
+    expect(xs[2] - xs[1]).toBeGreaterThanOrEqual(PIN_SPACING);
+    expect(xs[2]).toBeLessThan(nodeSize(d).w);
+  });
   it('puts the Milliseconds pin on the right edge, level with the four setting pins on the left', () => {
     const d = getDef('clock')!;
     const ms = d.outputs.find((p) => p.id === 'millisecond')!;
@@ -107,6 +123,8 @@ describe('World Clock module', () => {
     const e = run({ city: 'Sydney, Australia' });
     expect(e.out('c', 'time')).toMatch(/^\d\d:\d\d:\d\d\.\d{3}$/);
     expect([10, 11]).toContain(e.out('c', 'offset'));
+    const sec = e.out('c', 'second') as number;
+    expect(Number.isInteger(sec) && sec >= 0 && sec <= 59).toBe(true);
     const ms = e.out('c', 'millisecond') as number;
     expect(Number.isInteger(ms) && ms >= 0 && ms <= 999).toBe(true);
     expect(e.nodes.get('c')!.status.level).toBe('ok');

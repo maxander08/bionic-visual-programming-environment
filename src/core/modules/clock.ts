@@ -10,6 +10,7 @@ export const worldClock: ModuleDef = {
   outputs: [
     out('time', 'Time', 'text', 'Local time in the city, formatted by the Format, Show seconds and Show milliseconds settings.'),
     out('date', 'Date', 'text', 'Local date, such as “Wed 12 Mar 2026”.'),
+    out('second', 'Seconds', 'num', 'Local second within the current minute, 0–59. It updates once a second, whatever the Show seconds setting.'),
     out('hour', 'Hour', 'num', 'Local hour, 0–23.', 'right'),
     out('minute', 'Minute', 'num', 'Local minute, 0–59.', 'right'),
     out('millisecond', 'Milliseconds', 'num', 'Local millisecond within the current second, 0–999. It refreshes every tick while Show seconds and Show milliseconds are on, otherwise once a second.', 'right'),
@@ -35,6 +36,7 @@ export const worldClock: ModuleDef = {
     c.emit('date', r.date);
     c.emit('hour', r.hour);
     c.emit('minute', r.minute);
+    c.emit('second', r.second);
     c.emit('millisecond', r.millisecond);
     c.emit('offset', r.offset);
     c.view({ time: r.time, date: r.date, city: city.name, country: city.country, zone: city.tz, offset: fmtOffset(r.offset), day: r.day });
