@@ -10,11 +10,11 @@ export const worldClock: ModuleDef = {
   outputs: [
     out('time', 'Time', 'text', 'Local time in the city, formatted by the Format, Show seconds and Show milliseconds settings.'),
     out('date', 'Date', 'text', 'Local date, such as “Wed 12 Mar 2026”.'),
-    out('second', 'Seconds', 'num', 'Local second within the current minute, 0–59. It updates once a second, whatever the Show seconds setting.'),
+    out('offset', 'UTC offset', 'num', 'Hours ahead of (+) or behind (−) UTC right now, daylight saving included. India is 5.5.'),
     out('hour', 'Hour', 'num', 'Local hour, 0–23.', 'right'),
     out('minute', 'Minute', 'num', 'Local minute, 0–59.', 'right'),
+    out('second', 'Seconds', 'num', 'Local second within the current minute, 0–59. It updates once a second, whatever the Show seconds setting.', 'right'),
     out('millisecond', 'Milliseconds', 'num', 'Local millisecond within the current second, 0–999. It refreshes every tick while Show seconds and Show milliseconds are on, otherwise once a second.', 'right'),
-    out('offset', 'UTC offset', 'num', 'Hours ahead of (+) or behind (−) UTC right now, daylight saving included. India is 5.5.', 'right'),
   ],
   params: [
     txt('city', 'City', 'Tokyo, Japan', `Name of a city. Type to see suggestions: the 30 most populous cities of each of ${COUNTRY_COUNT} countries are known. Write “Paris, France” (or “Paris, FR”) when a name exists in several countries; a bare name picks the most populous one. Accents and capitals do not matter.`, { maxLength: 80, placeholder: 'e.g. Tokyo or Paris, France', suggest: cityLabels }),

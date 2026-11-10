@@ -94,16 +94,25 @@ describe('World Clock module', () => {
     const d = getDef('clock')!;
     expect(d.inputs.some((p) => p.id === 'p:city' && p.type === 'text')).toBe(true);
   });
-  it('puts the Seconds pin on the bottom edge, right after Date', () => {
+  it('puts the Seconds pin third on the right edge, after Minute', () => {
     const d = getDef('clock')!;
-    const bottom = d.outputs.filter((p) => (p.side ?? 'bottom') === 'bottom').map((p) => p.id);
-    expect(bottom).toEqual(['time', 'date', 'second']);
+    const right = d.outputs.filter((p) => p.side === 'right').map((p) => p.id);
+    expect(right).toEqual(['hour', 'minute', 'second', 'millisecond']);
     expect(d.outputs.find((p) => p.id === 'second')!.type).toBe('num');
     const node = { id: 'n', type: 'clock', x: 0, y: 0, params: {} };
+    const ys = right.map((id) => portPosition(node, d, id, 'out')!.y);
+    for (let i = 1; i < ys.length; i++) expect(ys[i] - ys[i - 1]).toBeGreaterThanOrEqual(PIN_SPACING);
+    expect(ys[ys.length - 1]).toBeLessThan(nodeSize(d).h);
+  });
+  it('puts the UTC offset pin third on the bottom edge, after Date', () => {
+    const d = getDef('clock')!;
+    const bottom = d.outputs.filter((p) => (p.side ?? 'bottom') === 'bottom').map((p) => p.id);
+    expect(bottom).toEqual(['time', 'date', 'offset']);
+    expect(d.outputs.find((p) => p.id === 'offset')!.type).toBe('num');
+    const node = { id: 'n', type: 'clock', x: 0, y: 0, params: {} };
     const xs = bottom.map((id) => portPosition(node, d, id, 'out')!.x);
-    expect(xs[1] - xs[0]).toBeGreaterThanOrEqual(PIN_SPACING);
-    expect(xs[2] - xs[1]).toBeGreaterThanOrEqual(PIN_SPACING);
-    expect(xs[2]).toBeLessThan(nodeSize(d).w);
+    for (let i = 1; i < xs.length; i++) expect(xs[i] - xs[i - 1]).toBeGreaterThanOrEqual(PIN_SPACING);
+    expect(xs[xs.length - 1]).toBeLessThan(nodeSize(d).w);
   });
   it('puts the Milliseconds pin on the right edge, level with the four setting pins on the left', () => {
     const d = getDef('clock')!;
