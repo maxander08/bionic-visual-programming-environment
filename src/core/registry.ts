@@ -4,6 +4,7 @@ import { sensors } from './modules/sensors';
 import { nuclei } from './modules/nuclei';
 import { nodes } from './modules/nodes';
 import { behaviors } from './modules/behavior';
+import { worldClock } from './modules/clock';
 import { txt } from './modules/kit';
 import { clamp, fmtNum } from './util';
 
@@ -20,6 +21,7 @@ const info: ModuleDef[] = [
     run() {},
     doc: { summary: 'Credits an author on the workspace.', runtime: 'None. This is plain text: it is not a signature and does not prove who made the program.' },
   },
+  worldClock,
 ];
 
 const compoundShell: ModuleDef = {

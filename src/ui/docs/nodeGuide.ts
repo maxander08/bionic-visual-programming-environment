@@ -448,6 +448,15 @@ export const GUIDE: Record<string, NodeGuide> = {
     tips: ['It never takes part in execution. Long notes are clipped on the node; the full text is in the inspector.'],
     alias: 'note annotation label remark documentation',
   },
+  clock: {
+    when: 'You want the current local time of a city anywhere in the world, as text to show or as numbers to react to.',
+    steps: ['Add **World Clock** and type a city in **City**. Suggestions appear as you type.', 'Use **Time** and **Date** (text) with a [[n:projector]] or [[n:text]] module.', 'Use **Hour**, **Minute** or **UTC offset** (numbers) to drive logic, for example a [[n:threshold]].', 'To choose the city from the program, connect text to the **City** pin.'],
+    tips: ['The 30 most populous cities of every country are known, about 6,100 cities in 246 countries and territories.', 'Write the country after a comma, such as `Paris, France` or `Paris, FR`, when a name exists in several countries. A bare name picks the most populous one.', 'Accents and capitals are ignored: `sao paulo` finds São Paulo. A few old names work too, such as Bombay and Kiev.', 'Daylight saving time is applied automatically, so **UTC offset** changes during the year.'],
+    pitfalls: ['A city outside the list (a small town, or the 31st city of a country) raises an error. Choose the nearest listed city instead.', 'It reads your device clock: if that clock is wrong, every city is wrong by the same amount.', 'The display updates once a second while the program runs.'],
+    up: ['constant', 'text'], down: ['projector', 'text', 'threshold', 'meter'], alias: 'world clock time zone timezone city country hour date local utc offset daylight saving watch',
+    settings: { city: 'Examples: `Tokyo`, `Sydney, Australia`, `Springfield, US`.', format: 'Only changes the Time text. **Hour** is always 0–23.', seconds: 'Turn off for a calmer display that changes once a minute.' },
+    options: { format: { '24h': 'Like 14:30.', '12h': 'Like 2:30 PM.' } },
+  },
   by: {
     when: 'You want to credit the author of a program.',
     steps: ['Add **By** and set **Author**.'],

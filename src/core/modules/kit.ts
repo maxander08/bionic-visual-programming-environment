@@ -6,8 +6,8 @@ export const num = (key: string, label: string, def: number, min: number, max: n
 export const sel = (key: string, label: string, def: string, options: [string, string][], doc: string): ParamDef => ({
   key, label, kind: 'select', default: def, options: options.map(([value, l]) => ({ value, label: l })), doc,
 });
-export const txt = (key: string, label: string, def: string, doc: string, o: { multiline?: boolean; hidden?: boolean; maxLength?: number; placeholder?: string } = {}): ParamDef => ({
-  key, label, kind: 'text', default: def, doc, multiline: o.multiline, hidden: o.hidden, maxLength: o.maxLength ?? 2000, placeholder: o.placeholder,
+export const txt = (key: string, label: string, def: string, doc: string, o: { multiline?: boolean; hidden?: boolean; maxLength?: number; placeholder?: string; suggest?: () => string[] } = {}): ParamDef => ({
+  key, label, kind: 'text', default: def, doc, multiline: o.multiline, hidden: o.hidden, maxLength: o.maxLength ?? 2000, placeholder: o.placeholder, suggest: o.suggest,
 });
 export const bol = (key: string, label: string, def: boolean, doc: string): ParamDef => ({ key, label, kind: 'bool', default: def, doc });
 export const act = (key: string, label: string, command: string, doc: string): ParamDef => ({ key, label, kind: 'action', command, doc });

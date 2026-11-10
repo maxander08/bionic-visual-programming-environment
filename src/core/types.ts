@@ -31,7 +31,7 @@ interface ParamBase {
 export type ParamDef =
   | (ParamBase & { kind: 'number'; min: number; max: number; step: number; default: number; unit?: string })
   | (ParamBase & { kind: 'select'; options: SelectOption[]; default: string })
-  | (ParamBase & { kind: 'text'; default: string; multiline?: boolean; maxLength?: number; placeholder?: string })
+  | (ParamBase & { kind: 'text'; default: string; multiline?: boolean; maxLength?: number; placeholder?: string; /** Autocomplete suggestions offered by the inspector. The value is still free text. */ suggest?: () => string[] })
   | (ParamBase & { kind: 'bool'; default: boolean })
   | (ParamBase & { kind: 'action'; command: string });
 

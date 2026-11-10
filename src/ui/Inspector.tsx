@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState, useSyncExternalStore, type ReactElement } from 'react';
+import { memo, useEffect, useMemo, useState, useSyncExternalStore, type ReactElement } from 'react';
 import type { CompoundDef, Edge, ModuleDef, NodeInst, ParamDef } from '../core/types';
 import { SETTING_PREFIX, getDef, nodeTitle, paramDefsOf, portList } from '../core/registry';
 import { packageById } from '../core/packages';
 import { checkConnection } from '../core/graph';
 import { describe, fmtNum } from '../core/util';
+import { findCity, fmtOffset, readClock } from '../core/worldclock';
 import { engine, getDiagnostics, useDiagVersion, useNodeVer } from '../runtime/session';
 import { getSensorState, sensorVersion, subscribeSensors } from '../runtime/sensors';
 import { audio, notificationState, requestNotifications, vibrationSupported } from '../runtime/outputs';
@@ -32,6 +33,11 @@ function NumberField({ p, value, onChange }: { p: Extract<ParamDef, { kind: 'num
   );
 }
 
+/** One shared <datalist>. Memoized so typing in the field never re-renders its thousands of options. */
+const Suggestions = memo(function Suggestions({ id, source }: { id: string; source: () => string[] }) {
+  return <datalist id={id}>{source().map((s) => <option key={s} value={s} />)}</datalist>;
+});
+
 function ParamRow({ p, value, onChange, onAction, driven }: { p: ParamDef; value: unknown; onChange: (v: unknown) => void; onAction?: (c: string) => void; driven?: boolean }) {
   const id = `f-${p.key}`;
   let control: ReactElement;
@@ -46,7 +52,10 @@ function ParamRow({ p, value, onChange, onAction, driven }: { p: ParamDef; value
     case 'text': control = p.multiline ? (
       <textarea id={id} rows={3} value={String(value ?? '')} maxLength={p.maxLength} placeholder={p.placeholder} spellCheck={false} onChange={(e) => onChange(e.target.value)} />
     ) : (
-      <input id={id} type="text" value={String(value ?? '')} maxLength={p.maxLength} placeholder={p.placeholder} spellCheck={false} onChange={(e) => onChange(e.target.value)} />
+      <>
+        <input id={id} type="text" value={String(value ?? '')} maxLength={p.maxLength} placeholder={p.placeholder} spellCheck={false} autoComplete="off" list={p.suggest ? `dl-${p.key}` : undefined} onChange={(e) => onChange(e.target.value)} />
+        {p.suggest && <Suggestions id={`dl-${p.key}`} source={p.suggest} />}
+      </>
     ); break;
     case 'action': control = <button className="btn" onClick={() => onAction?.(p.command)}>{p.label}</button>; break;
   }
@@ -59,6 +68,14 @@ function ParamRow({ p, value, onChange, onAction, driven }: { p: ParamDef; value
       <p className="doc">{p.doc}{meta && <span className="meta"> {meta}</span>}</p>
     </div>
   );
+}
+
+function ClockInfo({ city }: { city: string }) {
+  const c = findCity(city);
+  if (!c) return <p className="callout warn"><Icon name="alert" size={14} />“{city.trim() || '…'}” is not a known city yet. Start typing and pick one of the suggestions.</p>;
+  let off = '';
+  try { off = fmtOffset(readClock(c.tz, Date.now(), false, false).offset); } catch { /* unknown zone */ }
+  return <p className="doc"><b>{c.label}</b> · {c.tz}{off ? ` · ${off} now` : ''} · population {c.pop.toLocaleString('en-US')}</p>;
 }
 
 function Section({ title, children, open = true, right }: { title: string; children: React.ReactNode; open?: boolean; right?: React.ReactNode }) {
@@ -303,6 +320,7 @@ function NodePanel({ id }: { id: string }) {
       {defs.length > 0 && (
         <Section title="Settings">
           {def.type === 'vision' && node.params.source === 'file' && <VisionFile node={node} />}
+          {def.type === 'clock' && <ClockInfo city={String((rt?.driven ? rt.live.city : undefined) ?? node.params.city ?? '')} />}
           {defs.map((p) => {
             const driven = p.kind !== 'action' && pinDriven(p.key);
             const v = (driven && rt?.driven ? rt.live[p.key] : undefined) ?? node.params[p.key] ?? (p as any).default;

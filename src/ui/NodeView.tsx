@@ -199,6 +199,14 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
         </div>
       );
       break;
+    case 'clock': body = (
+      <div className={`clock ${view.day === false ? 'night' : ''}`}>
+        <div className="clock-time">{view.time ?? '--:--'}</div>
+        <div className="clock-city clamp1">{view.city ?? String(params.city ?? '').split(',')[0]}</div>
+        <div className="clock-date clamp1">{view.date ? `${view.date}` : ''}</div>
+        <div className="clock-zone clamp1">{view.offset ?? ''}</div>
+      </div>
+    ); break;
     case 'comment': body = <div className="text-body note clamp3">{String(params.text ?? '')}</div>; break;
     case 'sense': body = <Art kind="radial" level={view.level ?? 0.15} />; break;
     case 'knowledge': body = <Art kind="triangle" level={out('score') !== undefined ? Number(out('score')) : 0.3} />; break;
@@ -280,6 +288,7 @@ export function PreviewNode({ def, scale = 0.78 }: { def: ModuleDef; scale?: num
   else if (def.type === 'image') body = <i className="grad dark" />;
   else if (def.type === 'motion') body = <div className="cross"><i /><b /></div>;
   else if (def.type === 'comment') body = <div className="text-body note">Note</div>;
+  else if (def.type === 'clock') body = <div className="clock"><div className="clock-time">12:00</div><div className="clock-city">Tokyo</div></div>;
   else if (def.type === 'vital') body = <svg className="art" viewBox="0 0 100 40"><circle cx="50" cy="20" r="8" fill="currentColor" /></svg>;
   return (
     <div className="pv-wrap" style={{ width: size.w * scale, height: size.h * scale }}>
