@@ -4,7 +4,7 @@ import { addNode, connect, emptyGraph, flatten } from './graph';
 import { CATEGORIES, MODULES, getDef, nodeSize } from './registry';
 import { SIZES } from './types';
 import type { Graph, Params } from './types';
-import { fmtDuration, fmtTimeOfDay, localParts, msUntilRing, parseTimeOfDay, ringsOn } from './timekeeping';
+import { fmtDuration, fmtTimeOfDay, localParts, msUntilRing, parseTimeOfDay, ringsOn, splitDuration } from './timekeeping';
 
 const TYPES = ['timer', 'alarm', 'stopwatch', 'clock'];
 
@@ -48,8 +48,31 @@ describe('Timekeeping section', () => {
     const text = MODULES.find((m) => m.type === 'text')!;
     for (const t of TYPES) {
       expect(MODULES.find((m) => m.type === t)!.size).toBe(text.size);
-      expect(nodeSize(getDef(t)!)).toEqual(SIZES[text.size]);
+      // The Timer has ten output pins, one more than a square edge holds: it grows by one pin row (12 px) and no more.
+      expect(nodeSize(getDef(t)!)).toEqual(t === 'timer' ? { w: SIZES[text.size].w, h: SIZES[text.size].h + 12 } : SIZES[text.size]);
     }
+  });
+  it('splits a duration into hour, minute, second and millisecond', () => {
+    expect(splitDuration(0)).toEqual({ hour: 0, minute: 0, second: 0, millisecond: 0 });
+    expect(splitDuration(3723456)).toEqual({ hour: 1, minute: 2, second: 3, millisecond: 456 });
+    expect(splitDuration(90061001)).toEqual({ hour: 25, minute: 1, second: 1, millisecond: 1 });
+    expect(splitDuration(-5)).toEqual({ hour: 0, minute: 0, second: 0, millisecond: 0 });
+  });
+  it('gives Timer, Alarm, Stopwatch and World Clock the same Hour, Minute, Seconds and Milliseconds output pins', () => {
+    for (const t of TYPES) {
+      const d = getDef(t)!;
+      for (const id of ['hour', 'minute', 'second', 'millisecond']) {
+        const pin = d.outputs.find((o) => o.id === id);
+        expect(pin, `${t}.${id}`).toBeDefined();
+        expect(pin!.type).toBe('num');
+        expect(pin!.side).toBe('right');
+      }
+    }
+  });
+  it('shows milliseconds by default in every module of the section', () => {
+    // The Alarm has no toggle: it always works to the millisecond.
+    for (const t of TYPES.filter((x) => x !== 'alarm')) expect(MODULES.find((m) => m.type === t)!.params.find((p) => p.key === 'millis'), t).toMatchObject({ default: true });
+    expect(MODULES.find((m) => m.type === 'alarm')!.params.some((p) => p.key === 'millis')).toBe(false);
   });
   it('gives every setting a setting pin, and no pin to the buttons', () => {
     for (const t of TYPES) {
@@ -83,11 +106,16 @@ describe('time helpers', () => {
     expect(parseTimeOfDay('19:45:30')).toBe(h(19) + 45 * 60000 + 30000);
     expect(parseTimeOfDay('7:30 pm')).toBe(h(19) + 30 * 60000);
     expect(parseTimeOfDay('7pm')).toBe(h(19));
+    expect(parseTimeOfDay('07:30:15.250')).toBe(h(7) + 30 * 60000 + 15250);
+    expect(parseTimeOfDay('07:30:15.5')).toBe(h(7) + 30 * 60000 + 15500);
+    expect(parseTimeOfDay('7:30:15.025 pm')).toBe(h(19) + 30 * 60000 + 15025);
     expect(parseTimeOfDay('12:05 AM')).toBe(5 * 60000);
     expect(parseTimeOfDay('12pm')).toBe(h(12));
-    for (const bad of ['', '7', '25:00', '12:60', '13pm', '0am', 'noon', '7:30:61', '730']) expect(parseTimeOfDay(bad), bad).toBeNull();
+    for (const bad of ['', '7', '25:00', '12:60', '13pm', '0am', 'noon', '7:30:61', '730', '07:30.250', '07:30:15.1234']) expect(parseTimeOfDay(bad), bad).toBeNull();
     expect(fmtTimeOfDay(h(7) + 30 * 60000)).toBe('07:30');
     expect(fmtTimeOfDay(h(19) + 45 * 60000 + 30000)).toBe('19:45:30');
+    expect(fmtTimeOfDay(h(7) + 30 * 60000, true)).toBe('07:30:00.000');
+    expect(fmtTimeOfDay(h(19) + 45 * 60000 + 30250, true)).toBe('19:45:30.250');
   });
   it('knows which days an alarm rings', () => {
     const days = [0, 1, 2, 3, 4, 5, 6];
@@ -129,12 +157,42 @@ describe('Timer', () => {
     expect(out(e, 'count')).toBe(1);
     expect(out(e, 'time')).toBe('00:00.000');
   });
-  it('shows whole seconds, rounded up, by default', () => {
+  it('shows milliseconds by default', () => {
     const e = build('timer', { duration: 5 });
+    e.runFor(100);
+    expect(out(e, 'time')).toBe('00:04.950');
+    e.runFor(1200);
+    expect(out(e, 'time')).toMatch(/^00:03\.\d{3}$/);
+  });
+  it('rounds the text up to whole seconds when Show milliseconds is off', () => {
+    const e = build('timer', { duration: 5, millis: false });
     e.runFor(100);
     expect(out(e, 'time')).toBe('00:05');
     e.runFor(1200);
     expect(out(e, 'time')).toBe('00:04');
+  });
+  it('outputs the time left as Hour, Minute, Seconds and Milliseconds', () => {
+    const e = build('timer', { duration: 3723.5, autostart: false });
+    e.runFor(100);
+    expect(out(e, 'hour')).toBe(1);
+    expect(out(e, 'minute')).toBe(2);
+    expect(out(e, 'second')).toBe(3);
+    expect(out(e, 'millisecond')).toBe(500);
+    const g = build('timer', { duration: 3723.5 });
+    g.runFor(1000);
+    expect(out(g, 'hour')).toBe(1);
+    expect(out(g, 'minute')).toBe(2);
+    expect(out(g, 'second')).toBe(2);
+    expect(out(g, 'millisecond')).toBeGreaterThan(400);
+    expect(out(g, 'millisecond')).toBeLessThanOrEqual(550);
+    g.runFor(3730000);
+    expect([out(g, 'hour'), out(g, 'minute'), out(g, 'second'), out(g, 'millisecond')]).toEqual([0, 0, 0, 0]);
+  });
+  it('keeps the four time pins exact when Show milliseconds is off', () => {
+    const e = build('timer', { duration: 10, millis: false });
+    e.runFor(1250);
+    expect(out(e, 'second')).toBe(8);
+    expect(out(e, 'millisecond') as number).toBeGreaterThan(0);
   });
   it('waits for Start when Auto start is off, and Start restarts it after it finished', () => {
     const e = build('timer', { duration: 1, autostart: false, millis: true });
@@ -206,9 +264,12 @@ describe('Timer', () => {
     expect(out(e, 'remaining')).toBe(30);
   });
   it('shows the hours field for long timers', () => {
-    const e = build('timer', { duration: 3600 });
+    const e = build('timer', { duration: 3600, millis: false });
     e.runFor(100);
     expect(out(e, 'time')).toBe('01:00:00');
+    const f = build('timer', { duration: 3600 });
+    f.runFor(100);
+    expect(out(f, 'time')).toBe('00:59:59.950');
   });
   it('lets a setting pin drive Duration', () => {
     const e = build('timer', { duration: 10, autostart: false, millis: true }, [['c', 'constant', { value: '42' }]], [['c', 'out', 'p:duration']]);
@@ -318,8 +379,12 @@ describe('Alarm', () => {
     expect(out(e, 'ringing')).toBe(false);
     expect(out(e, 'seconds')).toBeGreaterThanOrEqual(9);
     expect(out(e, 'seconds')).toBeLessThanOrEqual(10);
-    expect(out(e, 'countdown')).toMatch(/^00:00:(09|10)$/);
-    expect(out(e, 'next')).toBe('Fri 13 Mar, 07:30');
+    expect(out(e, 'countdown')).toMatch(/^00:00:09\.\d{3}$/);
+    expect(out(e, 'next')).toBe('Fri 13 Mar, 07:30:00.000');
+    expect(out(e, 'hour')).toBe(0);
+    expect(out(e, 'minute')).toBe(0);
+    expect(out(e, 'second')).toBe(9);
+    expect(out(e, 'millisecond') as number).toBeGreaterThan(800);
     expect(view(e).state).toBe('armed');
     expect(view(e).place).toBe('Tokyo');
   });
@@ -335,7 +400,7 @@ describe('Alarm', () => {
     expect(out(e, 'ringing')).toBe(true);
     advance(e, 2000);
     expect(out(e, 'ringing')).toBe(false);
-    expect(out(e, 'next')).toBe('Sat 14 Mar, 07:30');
+    expect(out(e, 'next')).toBe('Sat 14 Mar, 07:30:00.000');
   });
   it('rings once only when set to once', () => {
     const e = build('alarm', tokyo({ repeat: 'once' }));
@@ -354,19 +419,19 @@ describe('Alarm', () => {
     const e = build('alarm', tokyo({ repeat: 'weekends' }));
     advance(e, 12000);
     expect(out(e, 'count')).toBe(0);
-    expect(out(e, 'next')).toBe('Sat 14 Mar, 07:30');
+    expect(out(e, 'next')).toBe('Sat 14 Mar, 07:30:00.000');
     wall = START;
     const w = build('alarm', tokyo({ repeat: 'weekdays' }));
     advance(w, 12000);
     expect(out(w, 'count')).toBe(1);
-    expect(out(w, 'next')).toBe('Mon 16 Mar, 07:30');
+    expect(out(w, 'next')).toBe('Mon 16 Mar, 07:30:00.000');
   });
   it('does not ring for a time that has already passed when the program starts', () => {
     const e = build('alarm', tokyo({ time: '07:00' }));
     advance(e, 2000);
     expect(out(e, 'ringing')).toBe(false);
     expect(out(e, 'count')).toBe(0);
-    expect(out(e, 'next')).toBe('Sat 14 Mar, 07:00');
+    expect(out(e, 'next')).toBe('Sat 14 Mar, 07:00:00.000');
   });
   it('catches a ring that fell inside a pause', () => {
     const e = build('alarm', tokyo());
@@ -423,7 +488,7 @@ describe('Alarm', () => {
   it('lets a setting pin set the time from the program', () => {
     const e = build('alarm', tokyo({ time: '12:00' }), [['t', 'info', { text: '07:30:05' }]], [['t', 'text', 'p:time']]);
     advance(e, 100);
-    expect(view(e).time).toBe('07:30:05');
+    expect(view(e).time).toBe('07:30:05.000');
     advance(e, 16000);
     expect(out(e, 'count')).toBe(1);
   });

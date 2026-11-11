@@ -210,14 +210,14 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
     ); break;
     case 'timer': body = (
       <div className={`tk ${view.state ?? 'idle'}`}>
-        <div className={`tk-time ${String(view.time ?? '').length > 9 ? 'long' : ''}`}>{view.time ?? '--:--'}</div>
+        <div className={`tk-time ${String(view.time ?? '').length > 9 ? 'long' : ''}`}>{view.time ?? '--:--.---'}</div>
         <div className="tk-bar" aria-hidden="true"><i style={{ width: `${clamp(Number(view.progress) || 0, 0, 1) * 100}%` }} /></div>
         <div className="tk-state">{TK_STATE[view.state ?? 'idle']}{Number(view.count) > 0 ? ` · ${view.count}×` : ''}</div>
       </div>
     ); break;
     case 'alarm': body = (
       <div className={`tk ${view.state ?? ''}`}>
-        <div className="tk-time">{view.time ?? '--:--'}</div>
+        <div className={`tk-time ${String(view.time ?? '').length > 9 ? 'long' : ''}`}>{view.time ?? '--:--:--.---'}</div>
         <div className="tk-state">{TK_STATE[view.state ?? 'armed']}</div>
         <div className="tk-sub clamp1">{view.countdown ? `in ${view.countdown}` : ' '}</div>
         <div className="tk-sub clamp1">{view.place ?? String(params.city ?? '').split(',')[0]}</div>
@@ -225,7 +225,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
     ); break;
     case 'stopwatch': body = (
       <div className={`tk ${view.state ?? 'stopped'}`}>
-        <div className={`tk-time ${String(view.time ?? '').length > 9 ? 'long' : ''}`}>{view.time ?? '00:00'}</div>
+        <div className={`tk-time ${String(view.time ?? '').length > 9 ? 'long' : ''}`}>{view.time ?? '00:00.000'}</div>
         <div className="tk-state">{TK_STATE[view.state ?? 'stopped']}</div>
         <div className="tk-sub clamp1">{Number(view.laps) > 0 ? `Lap ${view.laps} · ${view.lap}` : ' '}</div>
       </div>
@@ -312,9 +312,9 @@ export function PreviewNode({ def, scale = 0.78 }: { def: ModuleDef; scale?: num
   else if (def.type === 'motion') body = <div className="cross"><i /><b /></div>;
   else if (def.type === 'comment') body = <div className="text-body note">Note</div>;
   else if (def.type === 'clock') body = <div className="clock"><div className="clock-time">12:00</div><div className="clock-city">Tokyo</div></div>;
-  else if (def.type === 'timer') body = <div className="tk"><div className="tk-time">05:00</div><div className="tk-bar"><i style={{ width: '40%' }} /></div><div className="tk-state">Running</div></div>;
-  else if (def.type === 'alarm') body = <div className="tk"><div className="tk-time">07:30</div><div className="tk-state">Armed</div><div className="tk-sub">in 08:12:00</div></div>;
-  else if (def.type === 'stopwatch') body = <div className="tk"><div className="tk-time">01:23.4</div><div className="tk-state">Running</div></div>;
+  else if (def.type === 'timer') body = <div className="tk"><div className="tk-time">05:00.000</div><div className="tk-bar"><i style={{ width: '40%' }} /></div><div className="tk-state">Running</div></div>;
+  else if (def.type === 'alarm') body = <div className="tk"><div className="tk-time long">07:30:00.000</div><div className="tk-state">Armed</div><div className="tk-sub">in 08:12:00.250</div></div>;
+  else if (def.type === 'stopwatch') body = <div className="tk"><div className="tk-time">01:23.400</div><div className="tk-state">Running</div></div>;
   else if (def.type === 'vital') body = <svg className="art" viewBox="0 0 100 40"><circle cx="50" cy="20" r="8" fill="currentColor" /></svg>;
   return (
     <div className="pv-wrap" style={{ width: size.w * scale, height: size.h * scale }}>
