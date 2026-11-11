@@ -2,6 +2,8 @@
  * Hand-written usage guidance for every module. Ports, settings, ranges and defaults are NOT repeated here: the
  * documentation reads those live from the module registry so they can never drift from the real editor.
  */
+import { GROUP_BY_ID, PREFIXES, QUANTITIES, UNIT_BY_SYM } from '../../core/quantities';
+
 export interface NodeGuide {
   /** One sentence: when would I reach for this? */
   when: string;
@@ -489,3 +491,46 @@ export const GUIDE: Record<string, NodeGuide> = {
     alias: 'author credit signature owner biomark',
   },
 };
+
+/* ───── Quantities: one guide per module, written from the quantity table so it never drifts from the units on offer ───── */
+for (const q of QUANTITIES) {
+  const grp = GROUP_BY_ID.get(q.group)!;
+  const first = q.units[0];
+  const names = q.units.map((u) => `**${u}** (${UNIT_BY_SYM.get(u)!.name})`).join(', ');
+  const sameGroup = QUANTITIES.filter((x) => x.group === q.group && x.id !== q.id).map((x) => `[[n:qty-${x.id}]]`);
+  GUIDE[`qty-${q.id}`] = {
+    when: `You want ${q.about} in your program written as <amount><unit> (for example 2.5${first}), or want to convert it between units and SI prefixes.`,
+    steps: [
+      `Add **${q.name}** and type an **Amount**. Pick the **Prefix** and the **Unit** (${q.units.join(', ')}).`,
+      `Connect **Quantity** (text, such as 2.5${first}) to a [[n:projector]] or [[n:text]] module to read it, or **Amount** to anything that takes a number.`,
+      `Connect **SI value** (in ${grp.baseName}, ${grp.base}) to [[n:compare]], [[n:math]] or [[n:threshold]] to calculate with it whatever unit it is written in.`,
+      `To convert, wire the **Quantity** output of one ${q.name} module into the **Quantity** input of another and set its **Prefix** and **Unit** to what you want to read.`,
+    ],
+    tips: [
+      `Units here: ${names}. Every one of them takes every SI prefix: q r y z a f p n μ m c d da h k M G T P E Z Y R Q.`,
+      'Set **Prefix** to *auto* and the module picks the step of 1000 that keeps the amount between 1 and 999, so 0.0000025 s reads 2.5μs.',
+      'Amount, Prefix and Unit also have setting pins on the left edge, so a signal can change them while the program runs. The module is made tall enough that the pins keep their distance.',
+      'Text on the Quantity input is read as <amount><unit>: 90min, 1.5e3m, 4.7µF. A plain number is an amount in the unit chosen on this module.',
+      ...(q.id === 'mass' ? ['The gram takes the prefix, so the module starts as 1 kg: Prefix k and Unit g.'] : []),
+      ...(q.id === 'temperature' ? ['Celsius keeps its offset: 25 °C is 298.15 K in the SI value.'] : []),
+      ...(sameGroup.length ? [`${sameGroup.join(', ')} measures the same thing and converts with this module.`] : []),
+    ],
+    pitfalls: [
+      `The Quantity input only takes units of ${q.name.toLowerCase()}. Anything else (a mass given to a time module) raises an error that names the problem.`,
+      'A few spellings fit two units: **cd** is the candela or a centiday, **au** an astronomical unit or an attodalton. The module that is reading decides, so 5cd is a candela in Luminous intensity and five centidays in Time.',
+      'Prefix is case-sensitive: M is mega, m is milli; P is peta, p is pico. Write micro as μ or µ.',
+      'Amount is held to 12 significant digits; the SI value of a prefixed Celsius amount cannot be more exact than the 273.15 it is added to.',
+    ],
+    up: ['constant', 'random', 'wave', 'switch'], down: ['projector', 'text', 'compare', 'math', 'meter'],
+    alias: `quantity unit prefix ${q.words} ${q.units.join(' ')}`,
+    settings: {
+      amount: 'How much, in the prefix and unit below. Negative amounts are fine.',
+      prefix: 'none is ×1. auto chooses the best fit. The other 24 are the SI prefixes from quecto (q, 10⁻³⁰) to quetta (Q, 10³⁰).',
+      unit: `One of ${q.units.join(', ')}.`,
+    },
+    options: {
+      prefix: { none: 'No prefix: the unit as it is.', auto: 'Pick the step of 1000 that keeps the amount between 1 and 999.', ...Object.fromEntries(PREFIXES.map((x) => [x.sym, `${x.name}: multiplies the unit by 10^${x.exp}.`])) },
+      unit: Object.fromEntries(q.units.map((u) => [u, `${UNIT_BY_SYM.get(u)!.name}.`])),
+    },
+  };
+}

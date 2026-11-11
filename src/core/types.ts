@@ -143,9 +143,10 @@ export type Family =
   | 'projector'
   | 'node'
   | 'timekeeping'
+  | 'quantity'
   | 'info';
 
-export type Category = 'Sensor' | 'Nucleus' | 'Behavior' | 'Node' | 'Timekeeping' | 'Info';
+export type Category = 'Sensor' | 'Nucleus' | 'Behavior' | 'Node' | 'Timekeeping' | 'Quantities' | 'Info';
 
 export interface ModuleDoc {
   summary: string;

@@ -104,13 +104,15 @@ src/
 │   ├── equation.ts    Safe expression parser, equation data and plot sampler
 │   ├── util.ts        Coercion, RNG, image statistics
 │   ├── timekeeping.ts Duration formatting, time-of-day parsing, time-zone maths for the Timekeeping modules
+│   ├── quantities.ts  Quantities: the SI prefixes, the unit table, <amount><unit> parsing and conversion
 │   ├── core.test.ts   54 tests
 │   └── modules/       The module catalogue
 │       ├── sensors.ts   Vision, hearing, touch, motion, keys…
 │       ├── nuclei.ts    Sense, knowledge, imagination, attention, fear, memory…
 │       ├── nodes.ts     Constant, random, pulse, adder, subtractor, multiplier, divisor, math, delay…
 │       ├── behavior.ts  Text, image, projector, meter, audio, haptic, notify…
-│       └── timekeeping.ts  Timekeeping section: Timer, Alarm, Stopwatch, World Clock
+│       ├── timekeeping.ts  Timekeeping section: Timer, Alarm, Stopwatch, World Clock
+│       └── quantities.ts   Quantities section: one module per kind of quantity (Time, Length, Pressure…)
 ├── runtime/        Browser-side runtime: sensors (camera/mic/etc.), session, outputs
 ├── state/          Zustand store, undo/redo, localStorage persistence
 ├── ui/             Canvas, node views, inspector, library, dialogs, chrome

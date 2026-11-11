@@ -243,7 +243,7 @@ fieldset.driven { margin: 0; padding: 0; border: 0; min-width: 0; opacity: 0.5; 
 .node.preview { filter: none; position: absolute; }
 .f-sensor { --f: #120000; } .f-sense { --f: #021014; } .f-knowledge { --f: #05000f; } .f-attention { --f: #100a00; } .f-fear { --f: #02120a; }
 .f-memory { --f: #021510; } .f-apparatus { --f: #01120f; } .f-emotion { --f: #100400; } .f-behavior { --f: #000; } .f-projector { --f: #000; }
-.f-node { --f: #0e0900; } .f-info { --f: #05071a; } .f-timekeeping { --f: #14030d; }
+.f-node { --f: #0e0900; } .f-info { --f: #05071a; } .f-timekeeping { --f: #14030d; } .f-quantity { --f: #0b1203; }
 .node-title { position: absolute; left: 12px; right: 10px; top: 9px; height: 16px; display: flex; align-items: center; gap: 7px; font-size: 11.5px; letter-spacing: 0.07em; text-transform: uppercase; white-space: nowrap; line-height: 16px; }
 .node-title .t { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .dot { flex: none; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid currentColor; } .dot.live { background: currentColor; }
@@ -365,3 +365,11 @@ fieldset.driven { margin: 0; padding: 0; border: 0; min-width: 0; opacity: 0.5; 
 .tk.ringing .tk-time, .tk.ringing .tk-state { color: #fff; animation: tk-ring 0.7s ease-in-out infinite alternate; }
 @keyframes tk-ring { from { opacity: 1; } to { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) { html:not(.full-motion) .tk.ringing .tk-time, html:not(.full-motion) .tk.ringing .tk-state { animation: none; } }
+
+/* Quantities: one module per kind of quantity. The face is <amount><unit>; the unit is tinted from the section colour (--c, lime #b6e34a). */
+.qty { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; min-width: 0; }
+.qty-val { max-width: 100%; font-size: 21px; line-height: 1.1; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.qty-val.n2 { font-size: 16px; } .qty-val.n3 { font-size: 12.5px; }
+.qty-val .qa { color: #e9f7c4; } .qty-val .qu { color: var(--c, #b6e34a); margin-left: 1px; }
+.qty-sub { font-size: 10.5px; color: #8fa85a; max-width: 100%; min-height: 1.2em; font-variant-numeric: tabular-nums; }
+.qty.idle .qty-val { opacity: 0.72; }

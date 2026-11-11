@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef, type ReactElement } from 'react';
 import type { ModuleDef, NodeInst } from '../core/types';
 import { SIZES } from '../core/types';
-import { SETTING_PREFIX, nodeSize, nodeTitle, portSide } from '../core/registry';
+import { SETTING_PREFIX, defaultParams, nodeSize, nodeTitle, portSide } from '../core/registry';
 import { clamp, fmtNum, isImage, toText } from '../core/util';
 import { engine, useNodeVer } from '../runtime/session';
 import { getSensorState, subscribeSensors, sensorVersion } from '../runtime/sensors';
@@ -12,7 +12,7 @@ import { EquationPlot } from './EquationPlot';
 
 export const FAMILY_VAR: Record<string, string> = {
   sensor: '#ff2a2a', sense: '#6fd3ee', knowledge: '#a259ff', attention: '#f7c52b', fear: '#3ddc97', memory: '#86f0cc', apparatus: '#2fd6c0',
-  emotion: '#ff8a50', behavior: '#f4f4f4', projector: '#2fd9cf', node: '#ffc933', timekeeping: '#ff7ac6', info: '#7b8cff',
+  emotion: '#ff8a50', behavior: '#f4f4f4', projector: '#2fd9cf', node: '#ffc933', timekeeping: '#ff7ac6', quantity: '#b6e34a', info: '#7b8cff',
 };
 
 const TK_STATE: Record<string, string> = { idle: 'Ready', running: 'Running', paused: 'Paused', done: 'Done', stopped: 'Stopped', limit: 'Limit reached', armed: 'Armed', ringing: 'Ringing', snoozed: 'Snoozed' };
@@ -50,6 +50,20 @@ export function Art({ kind, level = 0.4, extra }: { kind: string; level?: number
     default: return null;
   }
   return <svg className="art" viewBox="0 0 100 70" preserveAspectRatio="xMidYMid meet" aria-hidden="true">{g}</svg>;
+}
+
+/** The face of a Quantities module: <amount><unit> in large type, and the SI value (or the unit's name) underneath. */
+function QuantityFace({ text, sub, dim }: { text: string; sub: string; dim?: boolean }) {
+  const m = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)(.*)$/.exec(text);
+  const amount = m ? m[1] : text;
+  const unit = m ? m[2] : '';
+  const n = text.length;
+  return (
+    <div className={`qty ${dim ? 'idle' : ''}`}>
+      <div className={`qty-val ${n > 14 ? 'n3' : n > 9 ? 'n2' : ''}`} title={text}><span className="qa">{amount}</span><span className="qu">{unit}</span></div>
+      <div className="qty-sub clamp1" title={sub}>{sub || ' '}</div>
+    </div>
+  );
 }
 
 export function ImageCanvas({ img }: { img: unknown }) {
@@ -242,7 +256,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
     case 'decision': body = <Art kind="fork" level={(view.best ?? -1) >= 0 ? 1 : 0.2} />; break;
     case 'state': body = <><Art kind="cycle" level={0.7} extra={Math.max(0, Number(out('index')) || 0)} /><div className="state-name clamp1">{view.state ?? ''}</div></>; break;
     case 'compound': body = <Art kind="grid" level={0.4} />; break;
-    default: body = null;
+    default: body = def.family === 'quantity' ? <QuantityFace text={String(view.text ?? def.chip?.(params) ?? '')} sub={String(view.sub ?? '')} dim={view.text === undefined} /> : null;
   }
 
   const style = { transform: `translate(${node.x}px, ${node.y}px)`, width: size.w, height: size.h, ['--c' as string]: col } as React.CSSProperties;
@@ -315,6 +329,7 @@ export function PreviewNode({ def, scale = 0.78 }: { def: ModuleDef; scale?: num
   else if (def.type === 'timer') body = <div className="tk"><div className="tk-time">05:00.000</div><div className="tk-bar"><i style={{ width: '40%' }} /></div><div className="tk-state">Running</div></div>;
   else if (def.type === 'alarm') body = <div className="tk"><div className="tk-time long">07:30:00.000</div><div className="tk-state">Armed</div><div className="tk-sub">in 08:12:00.250</div></div>;
   else if (def.type === 'stopwatch') body = <div className="tk"><div className="tk-time">01:23.400</div><div className="tk-state">Running</div></div>;
+  else if (def.family === 'quantity') body = <QuantityFace text={def.chip?.(defaultParams(def)) ?? ''} sub="" />;
   else if (def.type === 'vital') body = <svg className="art" viewBox="0 0 100 40"><circle cx="50" cy="20" r="8" fill="currentColor" /></svg>;
   return (
     <div className="pv-wrap" style={{ width: size.w * scale, height: size.h * scale }}>
