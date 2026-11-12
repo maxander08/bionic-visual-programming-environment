@@ -1,0 +1,251 @@
+/* ==========================================================================
+   Application shell — typography, surfaces and controls.
+
+   Scope: toolbar, status bar, library / inspector panels, menus, toasts,
+   dialogs and the documentation viewer. It is loaded after index.css and
+   docs.css and never targets node selectors (.node, .node-*, .chip-*, .art,
+   .pad, .sw, .big, .text-body, .proj-text, ...).
+
+   System
+   · Type    Instrument Sans 12 / 11 / 13 px, weights 400 + 500 only.
+             Commit Mono for readouts (clock, tick, zoom, codes) only.
+   · Surface canvas #000 · chrome #0b0b0c · hover #18181a · selected #232326
+             hairline #1f1f22 · strong hairline #2c2c30
+   · Radius  4 (tags, keys) · 6 (controls) · 10 (popovers, dialogs)
+   · Accent  teal, used for focus, the Run action and live state only.
+   · Glass   transient floating layers only: menus, toasts, minimap.
+   ========================================================================== */
+
+@font-face { font-family: "Instrument Sans"; src: url("../../node_modules/@fontsource/instrument-sans/files/instrument-sans-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Instrument Sans"; src: url("../../node_modules/@fontsource/instrument-sans/files/instrument-sans-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Commit Mono"; src: url("../../node_modules/@fontsource/commit-mono/files/commit-mono-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Commit Mono"; src: url("../../node_modules/@fontsource/commit-mono/files/commit-mono-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+
+:root {
+  --ui: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --code: "Commit Mono", "NS Fallback Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --chrome: #0b0b0c;
+  --hover: #18181a;
+  --selected: #232326;
+  --hair: #1f1f22;
+  --hair2: #2c2c30;
+  --ink: #ededee;
+  --ink2: #a4a4a9;
+  --ink3: #75757b;
+  --r-s: 4px; --r-m: 6px; --r-l: 10px;
+}
+
+/* ---------- node isolation ------------------------------------------------
+   Nodes inherit their typography from <body>. The shell sets its own type on
+   its own containers, so the original inherited values are pinned here for
+   every node wherever it is rendered (canvas, library, docs, viewer).
+   :where() has zero specificity: any rule the node system declares itself
+   still wins, so this can only restore what was inherited before. */
+:where(.node) {
+  font-family: var(--font);
+  font-size: 12.5px;
+  line-height: 1.5;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-transform: none;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- shell type ---------- */
+.toolbar, .statusbar, .panel, .modal, .menu-pop, .toasts, .diag-pop, .port-tip, .dx-shell { font-family: var(--ui); word-spacing: 0.1em; }
+.mono, .code, .statusbar .stat, .zoom-pct, .num-box input, .ptype, .imeta code, .port-tip .v, .integrity dd, .dx-shell .dx-code { word-spacing: normal; }
+.panel, .modal { font-size: 12px; line-height: 1.5; }
+.mono, .modal .mono, .panel .mono, .code { font-family: var(--code); }
+
+/* ---------- toolbar ---------- */
+.toolbar { height: 40px; gap: 4px; padding: 0 8px; background: var(--chrome); border-bottom: 1px solid var(--hair); font-size: 12px; }
+.tb-group { gap: 1px; }
+.tb-group + .tb-group::before { height: 16px; background: var(--hair2); margin: 0 7px; }
+.logo { margin: 0 2px 0 4px; }
+.prog-name { height: 28px; padding: 0 7px; border-radius: var(--r-m); font-size: 13px; font-weight: 500; letter-spacing: 0; }
+.prog-name:hover { background: var(--hover); }
+.prog-name:focus { background: var(--hover); border-color: var(--hair2); }
+.tb-btn { height: 28px; min-width: 28px; padding: 0 7px; border: 0; border-radius: var(--r-m); color: var(--ink2); gap: 6px; font-size: 12px; font-weight: 400; transition: background var(--dur-micro), color var(--dur-micro); }
+.tb-btn:hover:not(:disabled) { background: var(--hover); color: var(--ink); }
+.tb-btn:active:not(:disabled) { background: var(--selected); transform: none; }
+.tb-btn:disabled { opacity: 0.35; }
+.tb-btn.on { background: var(--selected); color: var(--ink); border: 0; }
+.tb-btn.live { color: var(--ink); }
+.tb-btn.live svg { color: var(--acc); }
+.tb-btn .tb-text { font-size: 12px; font-weight: 500; }
+/* Run is the one primary action in the shell */
+.tb-btn.go { background: var(--acc); color: #001412; padding: 0 10px 0 8px; border: 0; }
+.tb-btn.go:hover:not(:disabled) { background: #5be8df; color: #001412; }
+.run-group .tb-btn.live, .run-group .tb-btn.go { min-width: 74px; }
+.zoom-pct { height: 28px; width: 46px; min-width: 46px; padding: 0; border-radius: var(--r-m); font-family: var(--code); font-size: 11px; color: var(--ink2); text-align: center; }
+.zoom-pct:hover { background: var(--hover); color: var(--ink); }
+
+/* ---------- menus (transient, floating: glass) ---------- */
+.menu-pop { min-width: 224px; padding: 4px; border-radius: var(--r-l); font-size: 12px;
+  background: rgb(30 30 33 / 0.74); -webkit-backdrop-filter: blur(24px) saturate(1.5); backdrop-filter: blur(24px) saturate(1.5);
+  border: 1px solid rgb(255 255 255 / 0.09); box-shadow: 0 10px 28px rgb(0 0 0 / 0.5); }
+.menu-pop button { padding: 6px 10px; border-radius: var(--r-s); gap: 24px; color: var(--ink); }
+.menu-pop button:hover, .menu-pop button:focus-visible { background: rgb(255 255 255 / 0.1); outline: none; }
+.menu-pop button.danger { color: #ff8f80; }
+.menu-pop kbd { border: 0; padding: 0; font-family: var(--ui); font-size: 11px; color: var(--ink3); }
+.menu-pop .sep { background: rgb(255 255 255 / 0.09); margin: 4px 6px; }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .menu-pop, .toast, .minimap { background: #1b1b1e; } }
+
+/* ---------- panels ---------- */
+.panel { background: var(--chrome); }
+.side.left .panel { border-right: 1px solid var(--hair); }
+.side.right .panel { border-left: 1px solid var(--hair); }
+.panel-head { border-bottom: 1px solid var(--hair); padding: 0 6px; }
+.tabs { gap: 2px; }
+.tabs button { flex: none; height: 36px; padding: 0 10px; border-bottom: 1.5px solid transparent; margin-bottom: -1px; font-size: 12px; font-weight: 500; color: var(--ink3); }
+.tabs button:hover { color: var(--ink2); }
+.tabs button.on { color: var(--ink); border-bottom-color: var(--ink); }
+.search { margin: 10px 10px 2px; height: 28px; padding: 0 8px; border: 1px solid transparent; border-radius: var(--r-m); background: var(--hover); color: var(--ink3); font-size: 12px; }
+.search:focus-within { border-color: var(--hair2); color: var(--ink2); }
+.search input { font-size: 12px; }
+.search input::placeholder { color: var(--ink3); }
+.icon-btn { border-radius: var(--r-m); color: var(--ink3); }
+.icon-btn:hover { background: var(--hover); color: var(--ink); }
+.sec { font-size: 11px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink3); margin: 16px 12px 8px; }
+.lib-item .cap { font-size: 11px; line-height: 1.3; color: var(--ink3); }
+.peek { border-top: 1px solid var(--hair); font-size: 11.5px; color: var(--ink2); }
+.peek p { color: var(--ink2); }
+.tag, .badge { font-size: 10.5px; letter-spacing: 0; text-transform: none; border: 0; border-radius: var(--r-s); background: var(--hover); padding: 0 5px; color: var(--ink2); }
+.tag.sel { background: var(--selected); color: var(--ink); }
+.badge.available { color: var(--ok); background: transparent; padding: 0; } .badge.unavailable { color: var(--warn); background: transparent; padding: 0; }
+.preset-list li { border-bottom: 1px solid var(--hair); }
+.preset-meta p { color: var(--ink3); }
+
+/* example / template rows: separated by hairlines rather than boxed */
+.ex-list { padding: 4px 0; }
+.ex, .tpl { background: none; border: 0; border-top: 1px solid var(--hair); border-radius: 0; margin: 0; padding: 11px 12px; gap: 4px; transition: background var(--dur-micro); }
+.ex:hover, .tpl:hover { background: var(--hover); border-color: var(--hair); }
+.ex:active, .tpl:active { transform: none; background: var(--selected); }
+.ex b, .tpl b { font-size: 12.5px; }
+.ex span, .tpl span { color: var(--ink2); font-size: 12px; line-height: 1.5; }
+.ex i, .tpl i { color: var(--ink3); font-size: 11.5px; }
+.ex i u, .tpl i u, .tpl u { color: var(--ink2); }
+.tpl-grid { gap: 0 20px; border-bottom: 1px solid var(--hair); }
+.tpl { padding: 12px 6px 14px; }
+
+.resizer::after { background: var(--ink2); }
+
+/* ---------- inspector ---------- */
+.ihead { padding: 14px 12px 4px; }
+.ititle h2 { font-size: 13px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+.swatch { width: 9px; height: 9px; border-radius: 2px; }
+.imeta code { font-family: var(--code); font-size: 11px; }
+.isec { border-top: 1px solid var(--hair); margin-top: 8px; }
+.sec-toggle { font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink2); padding: 9px 12px; }
+.sec-toggle:hover { color: var(--ink); }
+.field > label { font-size: 12px; font-weight: 500; color: var(--ink); margin-bottom: 4px; }
+.field input[type="text"], .field select, .field textarea, .field input[type="file"] { background: #111113; border: 1px solid var(--hair2); border-radius: var(--r-m); font-size: 12px; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--acc); }
+.field input[type="text"], .field textarea { font-family: var(--ui); }
+.field textarea.mono { font-family: var(--code); }
+.doc { color: var(--ink3); font-size: 11px; }
+.doc .meta { color: var(--ink3); }
+.num-box { background: #111113; border-radius: var(--r-m); border-color: var(--hair2); }
+.num-box input { font-family: var(--code) !important; font-size: 11.5px; }
+.unit { font-size: 11px; }
+.toggle { width: 32px; height: 18px; border-radius: 9px; border-color: var(--hair2); background: #111113; }
+.toggle i { width: 12px; height: 12px; top: 2px; left: 2px; background: var(--ink2); }
+.toggle.on { background: var(--acc); border-color: var(--acc); } .toggle.on i { transform: translateX(14px); background: #001412; }
+.port-row { border-bottom: 1px solid var(--hair); }
+.pdir { font-size: 9.5px; letter-spacing: 0.02em; border-radius: var(--r-s); background: var(--selected); color: var(--ink2); }
+.pdir.out { background: var(--selected); color: var(--acc); }
+.ptype { font-family: var(--code); font-size: 10.5px; color: var(--ink3); }
+.pval { font-size: 12px; }
+.port-row select { background: #111113; border-color: var(--hair2); border-radius: var(--r-m); font-size: 12px; }
+
+/* messages: a rule and tinted text instead of a bordered box */
+.callout, .status-line { border: 0; border-left: 2px solid; border-radius: 0; background: none; padding: 2px 0 2px 10px; margin: 8px 12px; font-size: 12px; }
+.callout.error, .status-line.err { border-color: var(--err); background: none; color: #ff9c8d; }
+.callout.warn, .status-line.warn { border-color: var(--warn); background: none; color: #ffd666; }
+.callout.info, .status-line.info { border-color: var(--hair2); background: none; color: var(--ink2); }
+.status-line.ok { border-color: var(--ok); background: none; color: #7fe3b4; }
+.docs h4, h4.mini { font-size: 11px; letter-spacing: 0; text-transform: none; color: var(--ink3); }
+
+/* ---------- buttons ---------- */
+.btn { height: 28px; padding: 0 11px; border-radius: var(--r-m); border: 1px solid var(--hair2); background: transparent; color: var(--ink); font-size: 12px; font-weight: 500; transition: background var(--dur-micro); }
+.btn:hover:not(:disabled) { background: var(--hover); border-color: var(--hair2); }
+.btn:active:not(:disabled) { background: var(--selected); transform: none; }
+.btn.sm { height: 24px; padding: 0 8px; font-size: 11.5px; border-color: transparent; background: var(--hover); }
+.btn.sm:hover:not(:disabled) { background: var(--selected); border-color: transparent; }
+.btn.sm.danger { background: var(--hover); border-color: transparent; }
+.btn.primary { background: var(--acc); border-color: var(--acc); color: #001412; }
+.btn.primary:hover:not(:disabled) { background: #5be8df; border-color: #5be8df; }
+.btn.danger { background: transparent; color: #ff9585; border-color: #5a1a14; }
+.btn.danger:hover:not(:disabled) { background: #1a0907; }
+.btn.danger.solid { background: var(--err); border-color: var(--err); color: #000; }
+
+/* ---------- status bar ---------- */
+.statusbar { height: 24px; gap: 14px; padding: 0 10px; background: var(--chrome); border-top: 1px solid var(--hair); font-size: 11px; color: var(--ink3); }
+.statusbar .stat { font-family: var(--code); font-size: 10.5px; }
+.statusbar .stat.save { font-family: var(--ui); font-size: 11px; }
+.run-state { gap: 6px; color: var(--ink); font-weight: 500; }
+.run-state i { width: 7px; height: 7px; border-width: 1.5px; }
+.diag-btn { height: 20px; padding: 0 6px; border-radius: var(--r-s); font-size: 11px; font-family: var(--ui); }
+.diag-btn:hover { background: var(--hover); color: var(--ink); }
+.diag-pop { background: #101012; border-color: var(--hair2); border-radius: var(--r-l); box-shadow: 0 10px 28px rgb(0 0 0 / 0.5); font-size: 12px; }
+.diag-head { border-bottom-color: var(--hair); }
+
+/* ---------- floating over the workspace (glass) ---------- */
+.minimap { background: rgb(14 14 16 / 0.7); -webkit-backdrop-filter: blur(16px) saturate(1.3); backdrop-filter: blur(16px) saturate(1.3); border: 1px solid rgb(255 255 255 / 0.09); border-radius: var(--r-m); }
+.toasts { bottom: 36px; }
+.toast { background: rgb(30 30 33 / 0.78); -webkit-backdrop-filter: blur(24px) saturate(1.5); backdrop-filter: blur(24px) saturate(1.5); border: 1px solid rgb(255 255 255 / 0.09); border-radius: var(--r-l); box-shadow: 0 10px 28px rgb(0 0 0 / 0.5); font-size: 12px; color: var(--ink); }
+.toast.error { border-color: rgb(255 77 61 / 0.5); } .toast.ok { border-color: rgb(61 220 151 / 0.4); }
+.port-tip { background: #141416; border-color: var(--hair2); border-radius: var(--r-m); font-size: 11px; }
+.port-tip .v { font-family: var(--code); }
+
+/* ---------- dialogs: opaque, focused ---------- */
+.overlay, .dx-overlay { background: rgb(0 0 0 / 0.6); }
+.modal { background: #0e0e10; border: 1px solid var(--hair2); border-radius: var(--r-l); box-shadow: 0 20px 50px rgb(0 0 0 / 0.7); }
+.modal-head { padding: 10px 10px 10px 18px; border-bottom: 1px solid var(--hair); }
+.modal-head h2 { font-size: 13px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.prose { color: var(--ink2); }
+.saved-list li { border-bottom-color: var(--hair); }
+.saved-open:hover { background: var(--hover); }
+.code { background: #111113; border-color: var(--hair2); border-radius: var(--r-m); font-family: var(--code); }
+.integrity dd { font-family: var(--code); }
+.qr { background: #111113; border: 1px solid var(--hair2); border-radius: var(--r-m); }
+
+/* ---------- documentation viewer ---------- */
+.dx-shell { background: #0b0b0c; border-color: var(--hair2); border-radius: var(--r-l); box-shadow: 0 20px 60px rgb(0 0 0 / 0.7); }
+.dx-shell .dx-top { background: var(--chrome); border-bottom-color: var(--hair); }
+.dx-shell .dx-side { background: var(--chrome); border-right-color: var(--hair); }
+.dx-shell .dx-icon { border: 0; border-radius: var(--r-m); }
+.dx-shell .dx-icon:hover:not(:disabled) { background: var(--hover); }
+.dx-shell .dx-brand { color: var(--ink); font-size: 12.5px; letter-spacing: 0; text-transform: none; border-radius: var(--r-m); }
+.dx-shell .dx-brand:hover { background: var(--hover); }
+.dx-shell .dx-search { height: 32px; border-radius: var(--r-m); background: var(--hover); border-color: transparent; }
+.dx-shell .dx-search:focus-within { border-color: var(--hair2); box-shadow: none; color: var(--ink2); }
+.dx-shell .dx-search input { font-size: 12.5px; }
+.dx-shell .dx-search kbd { border: 0; background: var(--selected); border-radius: var(--r-s); }
+.dx-shell .dx-clear { background: var(--selected); border-radius: var(--r-s); }
+.dx-shell .dx-content { max-width: 780px; }
+.dx-shell .dx-h1 { font-size: 22px; font-weight: 500; letter-spacing: -0.005em; }
+.dx-shell .dx-h1.big { font-size: 26px; }
+.dx-shell .dx-h2 { font-size: 16px; margin-top: 32px; }
+.dx-shell .dx-h2::before { display: none; }
+.dx-shell .dx-h3 { font-size: 13.5px; }
+.dx-shell .dx-lead, .dx-shell .dx-p, .dx-shell .dx-ul, .dx-shell .dx-ol { font-size: 13px; line-height: 1.65; }
+.dx-shell .dx-code { font-family: var(--code); font-size: 0.88em; background: var(--hover); border: 0; border-radius: var(--r-s); color: #b9efe9; }
+.dx-shell .dx-eyebrow, .dx-shell .dx-tag, .dx-shell .dx-card-kind, .dx-shell .dx-table thead th, .dx-shell .dx-pairs > div > .dx-dim,
+.dx-shell .dx-deflist dt, .dx-shell .dx-kind, .dx-shell .dx-badge, .dx-shell .dx-rk, .dx-shell .dx-options em, .dx-shell .dx-selected small,
+.dx-shell .dx-advice b, .dx-shell .dx-tile-cap, .dx-shell .dx-toc h2 { text-transform: none; letter-spacing: 0; font-size: 11px; }
+.dx-shell .dx-group-head { text-transform: none; letter-spacing: 0; font-size: 12px; color: var(--ink2); border-radius: var(--r-m); }
+.dx-shell .dx-group-head:hover { background: var(--hover); color: var(--ink); }
+.dx-shell .dx-group-head small { font-family: var(--code); font-size: 10.5px; color: var(--ink3); }
+.dx-shell .dx-h1 { color: var(--ink); }
+.dx-shell .dx-eyebrow, .dx-shell .dx-card-kind { color: var(--ink3); }
+.dx-shell .dx-chip, .dx-shell .dx-facts li, .dx-shell .dx-nodechip, .dx-shell .dx-type, .dx-shell .dx-pm-pin, .dx-shell .dx-badge, .dx-shell .dx-kind { border-radius: var(--r-s); }
+.dx-shell .dx-card, .dx-shell .dx-tile, .dx-shell .dx-cat, .dx-shell .dx-goal, .dx-shell .dx-setting, .dx-shell .dx-pkg, .dx-shell .dx-selected,
+.dx-shell .dx-prevnext button, .dx-shell .dx-input, .dx-shell .dx-table-wrap, .dx-shell .dx-keys, .dx-shell .dx-wires, .dx-shell .dx-diagram, .dx-shell .dx-pinmap { border-radius: var(--r-m); }
+.dx-shell .dx-card, .dx-shell .dx-tile, .dx-shell .dx-cat, .dx-shell .dx-goal, .dx-shell .dx-setting, .dx-shell .dx-pkg { background: transparent; border-color: var(--hair); }
+.dx-shell .dx-card:hover { transform: none; background: var(--hover); border-color: var(--hair2); }
+.dx-shell .dx-tile:hover, .dx-shell .dx-cat:hover { background: var(--hover); }
+.dx-shell .dx-btn { border-radius: var(--r-m); }
+.dx-shell .dx-callout { border-radius: var(--r-m); }
+.dx-shell .dx-keys kbd { font-family: var(--ui); border-radius: var(--r-s); }
+.dx-shell .dx-flash { animation-duration: 1.2s; }
