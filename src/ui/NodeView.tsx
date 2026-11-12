@@ -9,7 +9,7 @@ import { useSyncExternalStore } from 'react';
 import { useStore } from '../state/store';
 import { Icon } from './icons';
 import { EquationPlot } from './EquationPlot';
-import { langInfo, normalizeLang, tr } from '../i18n';
+import { getLang, langInfo, normalizeLang, tr } from '../i18n';
 
 export const FAMILY_VAR: Record<string, string> = {
   sensor: '#ff2a2a', sense: '#6fd3ee', knowledge: '#a259ff', attention: '#f7c52b', fear: '#3ddc97', memory: '#86f0cc', apparatus: '#2fd6c0',
@@ -167,7 +167,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
       body = (
         <div className="lang-face" lang={li.tag}>
           <b>{li.native}</b>
-          <span>{params.mode === 'signal' ? tr('on Apply signal') : tr('auto')}{pinned('language') ? ' · ' + tr('pin') : ''}</span>
+          <span lang={langInfo(getLang()).tag}>{params.mode === 'signal' ? tr('on Apply signal') : tr('auto')}{pinned('language') ? ' · ' + tr('pin') : ''}</span>
         </div>
       );
       break;
@@ -332,7 +332,7 @@ export function PreviewNode({ def, scale = 0.78 }: { def: ModuleDef; scale?: num
   if (def.type === 'touch') body = <div className="pad" />;
   else if (def.type === 'switch') body = <span className="sw" />;
   else if (def.type === 'info') body = <div className="text-body pre">hello</div>;
-  else if (def.type === 'setlanguage') body = <div className="lang-face"><b>文A</b><span>EN · 简 · 繁</span></div>;
+  else if (def.type === 'setlanguage') body = <div className="lang-face"><b lang={getLang() === 'zh-Hant' ? 'zh-Hant' : 'zh-Hans'}>文A</b><span>EN · <span lang="zh-Hans">简</span> · <span lang="zh-Hant">繁</span></span></div>;
   else if (def.type === 'equation') body = <div className="text-body eq pre">{"y = sin(x)"}</div>;
   else if (def.type === 'text') body = <div className="text-body">{"Hello World"}</div>;
   else if (def.type === 'color') body = <div className="hsv"><div><span>H</span><span>S</span><span>V</span></div><i style={{ background: '#0a7aff' }} /></div>;

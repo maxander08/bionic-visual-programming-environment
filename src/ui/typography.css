@@ -1,0 +1,86 @@
+/* ==========================================================================
+   Typography — the single source of truth for every font stack in the app.
+
+   CHINESE TEXT RULE (strict)
+   Chinese characters may only ever be drawn with one of two typefaces, both bundled with the app:
+     · Noto Sans SC — Simplified Chinese mode  (html lang="zh-Hans")
+     · Noto Sans TC — Traditional Chinese mode (html lang="zh-Hant")
+   No other family name — system, vendor, “CJK” or generic — appears in any stack below for Chinese.
+   The bundled faces are subsets restricted (unicode-range) to CJK blocks, so Latin and digits keep using
+   Instrument Sans / Commit Mono / JetBrains Mono, and Chinese always resolves to the Noto face of the
+   current language. font-display is `block`: text waits for the (inlined) font instead of flashing a
+   system face.
+
+   Loaded last (see main.tsx) so it wins over index.css / docs.css / shell.css.
+   ========================================================================== */
+
+/* ── Noto Sans SC / TC (SIL OFL 1.1) — variable weight 400–700, subset by scripts/fonts/build-noto-subsets.py ── */
+@font-face {
+  font-family: "Noto Sans SC";
+  src: url("../assets/fonts/NotoSansSC-subset.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: block;
+  unicode-range: U+2E80-2FDF, U+3000-303F, U+3100-312F, U+31C0-31EF, U+3200-33FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FE30-FE4F, U+FF00-FFEF;
+}
+@font-face {
+  font-family: "Noto Sans TC";
+  src: url("../assets/fonts/NotoSansTC-subset.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: block;
+  unicode-range: U+2E80-2FDF, U+3000-303F, U+3100-312F, U+31C0-31EF, U+3200-33FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FE30-FE4F, U+FF00-FFEF;
+}
+
+:root {
+  /* Interface (proportional) */
+  --ui-sc: "Instrument Sans", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
+  --ui-tc: "Instrument Sans", "Noto Sans TC", ui-sans-serif, system-ui, sans-serif;
+  /* Readouts, codes, ids (monospaced Latin) */
+  --code-sc: "Commit Mono", "NS Fallback Mono", "Noto Sans SC", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --code-tc: "Commit Mono", "NS Fallback Mono", "Noto Sans TC", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* Nodes (every node face, port label, node setting) */
+  --font-sc: "TT Autonomous", "NS Fallback Mono", "Noto Sans SC", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-tc: "TT Autonomous", "NS Fallback Mono", "Noto Sans TC", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Default = Simplified (also used in English mode, where Chinese only appears in the language names) */
+  --ui: var(--ui-sc);
+  --code: var(--code-sc);
+  --font: var(--font-sc);
+}
+:root:lang(zh-Hant) {
+  --ui: var(--ui-tc);
+  --code: var(--code-tc);
+  --font: var(--font-tc);
+}
+:root:lang(zh-Hans),
+:root:lang(zh-Hant) { --ls: 0; }
+
+/* Elements that carry their own lang (language picker, Set Language node face) pick the matching Noto face,
+   so “简体中文” is always Noto Sans SC and “繁體中文” is always Noto Sans TC, whatever the UI language is. */
+[lang="zh-Hans"]:not(:root) { font-family: var(--ui-sc); }
+[lang="zh-Hant"]:not(:root) { font-family: var(--ui-tc); }
+.node [lang="zh-Hans"] { font-family: var(--font-sc); }
+.node [lang="zh-Hant"] { font-family: var(--font-tc); }
+.mono[lang="zh-Hans"], .code[lang="zh-Hans"] { font-family: var(--code-sc); }
+.mono[lang="zh-Hant"], .code[lang="zh-Hant"] { font-family: var(--code-tc); }
+
+/* Native option lists and form controls must follow the page stack, never the OS widget font. */
+button, input, select, textarea, option, optgroup { font-family: inherit; }
+:lang(zh-Hans) .toolbar, :lang(zh-Hant) .toolbar,
+:lang(zh-Hans) .panel,   :lang(zh-Hant) .panel,
+:lang(zh-Hans) .modal,   :lang(zh-Hant) .modal { word-spacing: 0; line-height: 1.6; }
+/* Chinese must never be synthesised bold/italic from a different face. */
+:lang(zh-Hans), :lang(zh-Hant) { font-synthesis: none; }
+
+/* ── Custom tooltip (replaces native `title` bubbles, which are drawn by the OS in a system font) ── */
+.ns-tip {
+  position: fixed; z-index: 10000; left: 0; top: 0; max-width: min(360px, calc(100vw - 16px));
+  padding: 5px 9px; border-radius: var(--r-m, 6px);
+  background: #141416; border: 1px solid var(--hair2, #2c2c30); box-shadow: 0 8px 22px #00000080;
+  color: var(--ink, #ededee); font-family: var(--ui); font-size: 11.5px; font-weight: 400; line-height: 1.5;
+  pointer-events: none; white-space: pre-line; overflow-wrap: anywhere;
+  opacity: 0; transform: translateY(2px); transition: opacity var(--dur-micro, 140ms), transform var(--dur-micro, 140ms);
+}
+.ns-tip.on { opacity: 1; transform: none; }
+.ns-tip:lang(zh-Hans), .ns-tip:lang(zh-Hant) { line-height: 1.6; }

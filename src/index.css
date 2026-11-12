@@ -10,7 +10,7 @@
 @font-face { font-family: "NS Fallback Mono"; src: url("../node_modules/@fontsource/jetbrains-mono/files/jetbrains-mono-latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: swap; }
 
 :root {
-  --font: "TT Autonomous", "NS Fallback Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* --font is defined in ui/typography.css (single source for all font stacks) */
   --bg: #000; --panel: #070707; --raise: #0d0d0d; --line: #1c1c1c; --line2: #2b2b2b;
   --text: #ececec; --dim: #8d8d8d; --acc: #2fd9cf; --acc-dim: #0d3d3a; --err: #ff4d3d; --warn: #ffc933; --ok: #3ddc97;
   /* motion tokens (mirrors src/ui/motion.ts) */

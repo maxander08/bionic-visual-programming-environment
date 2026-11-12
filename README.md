@@ -33,6 +33,22 @@ Requires **Node ≥ 20.19** (Vite 7's minimum).
 
 ---
 
+## Chinese typography (strict)
+
+Chinese text is drawn with **only two typefaces**, both bundled in the build (no network, no system fonts):
+
+| Interface language | `<html lang>` | Typeface |
+| --- | --- | --- |
+| 简体中文 | `zh-Hans` | **Noto Sans SC** |
+| 繁體中文 | `zh-Hant` | **Noto Sans TC** |
+
+* `src/ui/typography.css` is the single source of every font stack (UI, monospaced readouts, and every node face / node setting).
+  No PingFang, YaHei, JhengHei, Heiti, Source Han or “Noto Sans CJK” names appear anywhere; `src/ui/typography.test.ts` enforces it.
+* Elements with their own `lang` (the language picker, the Set Language node) get the matching face regardless of the UI language.
+* The faces are variable-weight (400–700) subsets of Noto Sans SC/TC (SIL OFL 1.1): every character used in the app, plus GB2312 (SC) / Big5 level 1 (TC)
+  so user-typed text is covered. Regenerate with `python3 scripts/fonts/build-noto-subsets.py` (needs `pip install fonttools brotli`).
+* Native `title` bubbles are drawn by the OS in a system font, so `TitleTips` replaces them with an in-page tooltip that uses the app stack.
+
 ## Deploying to GitHub Pages
 
 The repo ships with `.github/workflows/deploy.yml`. Push to `main` and the workflow

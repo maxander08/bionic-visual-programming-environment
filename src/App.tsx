@@ -10,6 +10,7 @@ import { Library } from './ui/Library';
 import { Inspector } from './ui/Inspector';
 import { Minimap, StatusBar, Toolbar } from './ui/Chrome';
 import { Dialogs, Toasts } from './ui/Dialogs';
+import { TitleTips } from './ui/TitleTips';
 
 function Resizer({ side }: { side: 'left' | 'right' }) {
   const setUi = useStore((s) => s.setUi);
@@ -109,6 +110,7 @@ export default function App() {
       <StatusBar />
       <Dialogs />
       <Toasts />
+      <TitleTips />
     </div>
   );
 }
