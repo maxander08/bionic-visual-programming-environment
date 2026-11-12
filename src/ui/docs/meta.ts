@@ -34,4 +34,4 @@ export function routeKind(r: Route): string {
   }
 }
 
-export const CAT_LABEL: Record<string, string> = { Sensor: 'Sensors', Nucleus: 'Nuclei', Behavior: 'Behaviors', Node: 'Utility nodes', 'Base Data': 'Base data', Timekeeping: 'Timekeeping', Quantities: 'Quantities', Info: 'Info' };
+export const CAT_LABEL: Record<string, string> = { Sensor: 'Sensors', Nucleus: 'Nuclei', Behavior: 'Behaviors', Node: 'Utility nodes', 'Base Data': 'Base data', Timekeeping: 'Timekeeping', Quantities: 'Quantities', Info: 'Info', 'Workspace Settings': 'Workspace settings' };

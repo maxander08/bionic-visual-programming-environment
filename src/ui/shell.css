@@ -249,3 +249,33 @@
 .dx-shell .dx-callout { border-radius: var(--r-m); }
 .dx-shell .dx-keys kbd { font-family: var(--ui); border-radius: var(--r-s); }
 .dx-shell .dx-flash { animation-duration: 1.2s; }
+
+/* ───── Languages: CJK fallbacks, so Chinese text never falls back to a mismatched system face ───── */
+:root {
+  --ui: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC", sans-serif;
+  --font: "TT Autonomous", "NS Fallback Mono", ui-monospace, "SF Mono", Menlo, Consolas, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", monospace;
+}
+:root:lang(zh-Hant) {
+  --ui: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang TC", "Heiti TC", "Microsoft JhengHei", "Noto Sans CJK TC", "Noto Sans TC", "Source Han Sans TC", sans-serif;
+  --font: "TT Autonomous", "NS Fallback Mono", ui-monospace, "SF Mono", Menlo, Consolas, "PingFang TC", "Microsoft JhengHei", "Noto Sans CJK TC", "Noto Sans TC", monospace;
+}
+:root:lang(zh-Hans), :root:lang(zh-Hant) { --ls: 0; }
+:lang(zh-Hans) .toolbar, :lang(zh-Hant) .toolbar, :lang(zh-Hans) .panel, :lang(zh-Hant) .panel, :lang(zh-Hans) .modal, :lang(zh-Hant) .modal { word-spacing: 0; line-height: 1.6; }
+
+/* ───── Workspace Settings ───── */
+.f-workspace { --f: #0d0719; }
+.settings-group .tb-btn { gap: 6px; }
+.settings-group .tb-btn.on { background: var(--selected); color: var(--ink); }
+.sec.first { margin-top: 0; }
+.lang-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 2px 0 10px; }
+.lang-opt { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 10px 12px; text-align: left; background: transparent; color: var(--ink2); border: 1px solid var(--hair2); border-radius: var(--r-m); transition: background var(--dur-micro), border-color var(--dur-micro), color var(--dur-micro); }
+.lang-opt b { font-size: 14px; font-weight: 500; color: var(--ink); }
+.lang-opt span { font-size: 10.5px; color: var(--ink3); }
+.lang-opt:hover { background: var(--hover); }
+.lang-opt.on { border-color: #c9a3ff; background: #1a1226; }
+.lang-opt.on span { color: #c9a3ff; }
+.lang-opt:focus-visible { outline: 2px solid #c9a3ff; outline-offset: 1px; }
+@media (max-width: 520px) { .lang-grid { grid-template-columns: 1fr; } }
+.lang-face { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; height: 100%; text-align: center; color: #c9a3ff; }
+.lang-face b { font-size: 17px; font-weight: 500; letter-spacing: 0; line-height: 1.2; white-space: nowrap; }
+.lang-face span { font-size: 10px; color: var(--ink3, #75757b); letter-spacing: 0; }

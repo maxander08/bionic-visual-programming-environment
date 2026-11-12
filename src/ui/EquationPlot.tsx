@@ -1,4 +1,5 @@
 import type { Plot } from '../core/equation';
+import { tr } from '../i18n';
 import { niceTicks } from '../core/equation';
 import { fmtNum } from '../core/util';
 
@@ -46,7 +47,7 @@ export function EquationPlot({ plot, detail = false, className }: { plot: Plot; 
   const axisProps = { stroke: AXIS, strokeOpacity: AXIS_OPACITY, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' as const };
 
   return (
-    <svg className={className ?? 'art eqplot'} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio={detail ? 'xMidYMid meet' : 'none'} role="img" aria-label={`Graph of ${title}`}>
+    <svg className={className ?? 'art eqplot'} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio={detail ? 'xMidYMid meet' : 'none'} role="img" aria-label={tr('Graph of {title}', { title })}>
       <title>{title}</title>
       <defs><clipPath id={clipId}><rect x={pad.l} y={pad.t} width={iw} height={ih} /></clipPath></defs>
       {detail && <rect x={pad.l} y={pad.t} width={iw} height={ih} fill="none" stroke={AXIS} strokeOpacity={0.18} />}

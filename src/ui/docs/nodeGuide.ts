@@ -444,6 +444,15 @@ export const GUIDE: Record<string, NodeGuide> = {
     up: ['pulse', 'threshold', 'keys'], down: ['state'], alias: 'trigger signal message emit named',
     settings: { name: 'The text State machines match on, such as `next`.' },
   },
+  setlanguage: {
+    when: 'You want the editor itself to switch between English, Simplified Chinese and Traditional Chinese: from a program, a switch or a timer.',
+    steps: ['Add **Set Language** from **Workspace Settings**, the last section of the library.', 'Pick the **Language** in the inspector: *English*, *简体中文* (Simplified) or *繁體中文* (Traditional).', 'Press **Run**. With **Apply when** on *Program starts or setting changes*, the whole editor switches at once.', 'To switch on demand instead, set **Apply when** to *Apply pin receives a signal* and connect a [[n:switch]] or [[n:pulse]] to **Apply**.', 'To choose the language from the program, connect text (`en`, `zh-Hans` or `zh-Hant`) to the **Language** setting pin on the left edge.'],
+    tips: ['Every setting has a pin: **Language**, **Apply when**, **Remember choice** and **Show notice** can all be driven by signals.', 'The **Language** and **Name** outputs report the language the module is set to, so other modules can react to it. **Applied** fires once each time the module applies it.', 'The same choice is always available from the **Settings** button on the toolbar.', 'The language only changes the editor. Programs, saved files and share codes are identical in every language.'],
+    pitfalls: ['A Language pin carrying an unknown code falls back to English.', 'With **Remember choice** off the language lasts for this session only; the next visit starts in the language saved in Settings.', 'In *Signal* mode nothing happens until a truthy value reaches **Apply**.'],
+    up: ['switch', 'pulse', 'constant', 'keys'], down: ['text', 'comment'], alias: 'language locale translate translation chinese simplified traditional english interface i18n 中文 简体 繁體 workspace settings',
+    settings: { language: 'The language to switch to. Codes for the pin: `en`, `zh-Hans`, `zh-Hant`.', mode: 'Auto is enough for a fixed choice. Use Signal to switch at a moment you control.', remember: 'Saved in this browser, like the choice in Settings.', notice: 'A small message confirming the switch. Turn off for silent switching.' },
+    options: { language: { en: 'English.', 'zh-Hans': 'Simplified Chinese, as used in mainland China and Singapore.', 'zh-Hant': 'Traditional Chinese, as used in Taiwan, Hong Kong and Macau.' }, mode: { auto: 'Applies when the program starts and whenever the Language setting changes.', signal: 'Applies each time a truthy value reaches the Apply pin.' } },
+  },
   comment: {
     when: 'You want to leave a note on the workspace.',
     steps: ['Add **Comment** and edit **Note** in the inspector.'],

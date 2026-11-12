@@ -145,9 +145,10 @@ export type Family =
   | 'data'
   | 'timekeeping'
   | 'quantity'
-  | 'info';
+  | 'info'
+  | 'workspace';
 
-export type Category = 'Sensor' | 'Nucleus' | 'Behavior' | 'Node' | 'Base Data' | 'Timekeeping' | 'Quantities' | 'Info';
+export type Category = 'Sensor' | 'Nucleus' | 'Behavior' | 'Node' | 'Base Data' | 'Timekeeping' | 'Quantities' | 'Info' | 'Workspace Settings';
 
 export interface ModuleDoc {
   summary: string;

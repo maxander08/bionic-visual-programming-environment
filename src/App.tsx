@@ -1,3 +1,4 @@
+import { tr } from './i18n';
 import { useCallback, useEffect, useRef } from 'react';
 import { bridge, useStore } from './state/store';
 import { autosave } from './state/storage';
@@ -24,7 +25,7 @@ function Resizer({ side }: { side: 'left' | 'right' }) {
     window.addEventListener('pointerup', up);
   };
   return (
-    <div className={`resizer ${side}`} role="separator" aria-orientation="vertical" aria-label={`Resize ${side === 'left' ? 'library' : 'inspector'}`} aria-valuenow={w} aria-valuemin={220} aria-valuemax={520} tabIndex={0}
+    <div className={`resizer ${side}`} role="separator" aria-orientation="vertical" aria-label={tr(side === 'left' ? 'Resize library' : 'Resize inspector')} aria-valuenow={w} aria-valuemin={220} aria-valuemax={520} tabIndex={0}
       onPointerDown={down} onKeyDown={(e) => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); const d = (e.key === 'ArrowRight' ? 1 : -1) * (side === 'left' ? 1 : -1) * 16; setUi({ [key]: clamp(w + d) } as any); } }} />
   );
 }

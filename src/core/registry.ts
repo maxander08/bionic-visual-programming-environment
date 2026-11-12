@@ -7,6 +7,9 @@ import { baseData } from './modules/basedata';
 import { behaviors } from './modules/behavior';
 import { timekeeping } from './modules/timekeeping';
 import { quantities } from './modules/quantities';
+import { workspace } from './modules/workspace';
+import { getLang, tr } from '../i18n';
+import { localizeDef } from './localize';
 import { txt } from './modules/kit';
 import { clamp, fmtNum } from './util';
 
@@ -31,9 +34,11 @@ const compoundShell: ModuleDef = {
   doc: { summary: 'A reusable subsystem: a group of modules wrapped with defined inputs, outputs and exposed settings.', runtime: 'At run time the compound is expanded into its inner modules. Open it to inspect the inner graph.' },
 };
 
-export const MODULES: ModuleDef[] = [...sensors, ...nuclei, ...behaviors, ...nodes, ...baseData, ...timekeeping, ...quantities, ...info];
+export const MODULES: ModuleDef[] = [...sensors, ...nuclei, ...behaviors, ...nodes, ...baseData, ...timekeeping, ...quantities, ...info, ...workspace];
 const BY_TYPE = new Map(MODULES.map((m) => [m.type, m]));
-export const CATEGORIES = ['Sensor', 'Nucleus', 'Behavior', 'Node', 'Base Data', 'Timekeeping', 'Quantities', 'Info'] as const;
+/** Library view: the modules with their text in the current language. */
+export const localizedModules = (): ModuleDef[] => MODULES.map(localizeDef);
+export const CATEGORIES = ['Sensor', 'Nucleus', 'Behavior', 'Node', 'Base Data', 'Timekeeping', 'Quantities', 'Info', 'Workspace Settings'] as const;
 
 // ---- setting pins -------------------------------------------------------------------------------------------
 // Every setting of a module (number, choice, text, switch) also exists as an optional input pin. While a signal
@@ -49,16 +54,18 @@ const edgeNeed = (n: number) => (n <= 1 ? 0 : Math.ceil(((n + 1) * PIN_SPACING) 
 
 const PIN_TYPE: Record<'number' | 'select' | 'text' | 'bool', PortType> = { number: 'num', select: 'text', text: 'text', bool: 'bool' };
 
+const joinText = (...parts: string[]) => parts.filter(Boolean).join(getLang() === 'en' ? ' ' : '');
+
 function settingPin(p: ParamDef): PortDef | null {
   if (p.kind === 'action' || p.hidden || p.pin === false) return null;
   const hint =
-    p.kind === 'number' ? ` Number from ${fmtNum(p.min)} to ${fmtNum(p.max)}${p.unit ? ' ' + p.unit : ''}; values outside are clamped.`
-    : p.kind === 'bool' ? ' True or false.'
-    : p.kind === 'select' ? ` Text, one of: ${p.options.map((o) => o.value).join(', ')}.`
+    p.kind === 'number' ? tr('Number from {min} to {max}{unit}; values outside are clamped.', { min: fmtNum(p.min), max: fmtNum(p.max), unit: p.unit ? ' ' + p.unit : '' })
+    : p.kind === 'bool' ? tr('True or false.')
+    : p.kind === 'select' ? tr('Text, one of: {list}.', { list: p.options.map((o) => o.value).join(', ') })
     : '';
   return {
     id: SETTING_PREFIX + p.key, label: p.label, type: PIN_TYPE[p.kind], optional: true, param: p.key,
-    doc: `Setting “${p.label}”. While connected, its signal replaces the value set in the inspector. ${p.doc}${hint}`,
+    doc: joinText(tr('Setting “{label}”. While connected, its signal replaces the value set in the inspector.', { label: p.label }), p.doc, hint),
   };
 }
 
@@ -103,15 +110,15 @@ function withSettingPins(def: ModuleDef, params: ParamDef[]): ModuleDef {
   return d;
 }
 
-const compoundCache = new WeakMap<CompoundDef, ModuleDef>();
+const compoundCache = new WeakMap<CompoundDef, { lang: string; def: ModuleDef }>();
 
 export function compoundModuleDef(cd: CompoundDef): ModuleDef {
-  let d = compoundCache.get(cd);
-  if (!d) {
-    const raw = rawCompoundDef(cd);
-    compoundCache.set(cd, (d = placeSettingPins(raw, raw.params)));
-  }
-  return d;
+  const hit = compoundCache.get(cd);
+  if (hit && hit.lang === getLang()) return hit.def;
+  const raw = rawCompoundDef(cd);
+  const def = placeSettingPins(raw, raw.params);
+  compoundCache.set(cd, { lang: getLang(), def });
+  return def;
 }
 
 function rawCompoundDef(cd: CompoundDef): ModuleDef {
@@ -138,8 +145,10 @@ export function getDef(type: string, compounds?: Record<string, CompoundDef>, pa
     const cd = compounds?.[String(params?.def)];
     return cd ? compoundModuleDef(cd) : undefined;
   }
-  const def = BY_TYPE.get(type);
-  return def && withSettingPins(def, paramDefsOf(def, params ?? {}));
+  const base = BY_TYPE.get(type);
+  if (!base) return undefined;
+  const def = localizeDef(base);
+  return withSettingPins(def, paramDefsOf(def, params ?? {}));
 }
 
 export function paramDefsOf(def: ModuleDef, params: Params): ParamDef[] {

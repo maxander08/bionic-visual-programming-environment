@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { CompoundDef, ModuleDef } from '../core/types';
-import { CATEGORIES, MODULES, compoundModuleDef } from '../core/registry';
+import { CATEGORIES, compoundModuleDef, localizedModules } from '../core/registry';
 import { PACKAGES } from '../core/packages';
 import { TEMPLATES, builtinCompounds } from '../core/library';
 import { bridge, useStore } from '../state/store';
 import { openTemplate } from '../state/actions';
 import { Icon } from './icons';
 import { PreviewNode } from './NodeView';
+import { tr } from '../i18n';
 
 type Payload = { kind: 'module'; def: ModuleDef; params?: Record<string, unknown> } | { kind: 'compound'; cdef: CompoundDef; def: ModuleDef };
 
@@ -63,7 +64,7 @@ function useAddDrag() {
 
 function Item({ def, payload, onPeek, d, label }: { def: ModuleDef; payload: Payload; onPeek: (p: ModuleDef | null) => void; d: ReturnType<typeof useAddDrag>; label?: string }) {
   return (
-    <button className="lib-item" aria-label={`Add ${label ?? def.name} module. Drag onto the workspace or press Enter.`} onPointerDown={(e) => d.down(e, payload)} onKeyDown={(e) => d.key(e, payload)}
+    <button className="lib-item" aria-label={tr('Add {name} module. Drag onto the workspace or press Enter.', { name: label ?? def.name })} onPointerDown={(e) => d.down(e, payload)} onKeyDown={(e) => d.key(e, payload)}
       onMouseEnter={() => onPeek(def)} onFocus={() => onPeek(def)} onMouseLeave={() => onPeek(null)} onBlur={() => onPeek(null)}>
       <PreviewNode def={def} />
       <span className="cap">{label ?? def.caption}</span>
@@ -86,33 +87,35 @@ export function Library() {
     return () => window.removeEventListener('keydown', h);
   }, [setUi]);
 
+  const lang = useStore((s) => s.settings.language);
+  const mods = useMemo(() => localizedModules(), [lang]);
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
-    return MODULES.filter((m) => !t || `${m.name} ${m.caption} ${m.category} ${m.keywords ?? ''} ${m.doc.summary}`.toLowerCase().includes(t));
-  }, [q]);
+    return mods.filter((m) => !t || `${m.name} ${m.caption} ${m.category} ${m.keywords ?? ''} ${m.doc.summary}`.toLowerCase().includes(t));
+  }, [q, mods]);
 
   const compounds = useMemo(() => {
     const map = new Map<string, { c: CompoundDef; src: string }>();
-    builtinCompounds().forEach((c) => map.set(c.id, { c, src: 'Built-in' }));
-    Object.values(userC).forEach((c) => map.set(c.id, { c, src: 'My library' }));
-    Object.values(project.compounds).forEach((c) => { if (!map.has(c.id)) map.set(c.id, { c, src: 'This program' }); });
+    builtinCompounds().forEach((c) => map.set(c.id, { c, src: tr("Built-in") }));
+    Object.values(userC).forEach((c) => map.set(c.id, { c, src: tr('My library') }));
+    Object.values(project.compounds).forEach((c) => { if (!map.has(c.id)) map.set(c.id, { c, src: tr("This program") }); });
     return [...map.values()];
-  }, [userC, project.compounds]);
+  }, [userC, project.compounds, lang]);
 
   return (
-    <aside className="panel lib" aria-label="Module library">
+    <aside className="panel lib" aria-label={tr("Module library")}>
       <div className="panel-head">
-        <div className="tabs" role="tablist" aria-label="Library sections">
+        <div className="tabs" role="tablist" aria-label={tr("Library sections")}>
           {(['modules', 'presets', 'examples'] as const).map((t) => (
-            <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? 'on' : ''} onClick={() => setUi({ libTab: t })}>{t === 'modules' ? 'Modules' : t === 'presets' ? 'Presets' : 'Examples'}</button>
+            <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? 'on' : ''} onClick={() => setUi({ libTab: t })}>{t === 'modules' ? tr("Modules") : t === 'presets' ? tr("Presets") : tr("Examples")}</button>
           ))}
         </div>
       </div>
       {tab === 'modules' && (
         <div className="search">
           <Icon name="search" size={14} />
-          <input ref={search} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search modules  ( / )" aria-label="Search modules" spellCheck={false} />
-          {q && <button className="icon-btn sm" aria-label="Clear search" onClick={() => setQ('')}><Icon name="close" size={12} /></button>}
+          <input ref={search} value={q} onChange={(e) => setQ(e.target.value)} placeholder={tr("Search modules  ( / )")} aria-label={tr("Search modules")} spellCheck={false} />
+          {q && <button className="icon-btn sm" aria-label={tr("Clear search")} onClick={() => setQ('')}><Icon name="close" size={12} /></button>}
         </div>
       )}
       <div className="panel-scroll">
@@ -123,41 +126,41 @@ export function Library() {
               if (!list.length) return null;
               return (
                 <section key={cat}>
-                  <h3 className="sec">{cat}</h3>
+                  <h3 className="sec">{tr(cat)}</h3>
                   <div className="lib-grid">{list.map((m) => <Item key={m.type} def={m} payload={{ kind: 'module', def: m }} onPeek={setPeek} d={d} />)}</div>
                 </section>
               );
             })}
-            {!filtered.length && <p className="muted pad12">No module matches “{q}”.</p>}
+            {!filtered.length && <p className="muted pad12">{tr("No module matches “{q}”.", { q })}</p>}
           </>
         )}
         {tab === 'presets' && (
           <>
-            <h3 className="sec">Inference packages</h3>
-            <p className="muted pad12 tight">Packages run inside a Knowledge or Imagination nucleus. Each states its technique and limits.</p>
+            <h3 className="sec">{tr("Inference packages")}</h3>
+            <p className="muted pad12 tight">{tr("Packages run inside a Knowledge or Imagination nucleus. Each states its technique and limits.")}</p>
             <ul className="preset-list">
               {PACKAGES.map((p) => {
-                const host = MODULES.find((m) => m.type === p.host)!;
+                const host = mods.find((m) => m.type === p.host)!;
                 return (
                   <li key={p.id}>
-                    <Item def={host} label={p.short} payload={{ kind: 'module', def: host, params: { package: p.id } }} onPeek={() => {}} d={d} />
+                    <Item def={host} label={tr(p.short)} payload={{ kind: 'module', def: host, params: { package: p.id } }} onPeek={() => {}} d={d} />
                     <div className="preset-meta">
-                      <b>{p.name}</b>
-                      <span className={`badge ${p.status}`}>{p.status === 'available' ? 'available' : 'unavailable'}</span>
-                      <p>{p.technique}</p>
+                      <b>{tr(p.name)}</b>
+                      <span className={`badge ${p.status}`}>{p.status === 'available' ? tr('available') : tr('unavailable')}</span>
+                      <p>{tr(p.technique)}</p>
                     </div>
                   </li>
                 );
               })}
             </ul>
-            <h3 className="sec">Compound systems</h3>
+            <h3 className="sec">{tr("Compound systems")}</h3>
             <ul className="preset-list">
               {compounds.map(({ c, src }) => {
                 const md = compoundModuleDef(c);
                 return (
                   <li key={c.id}>
-                    <Item def={md} label={c.name} payload={{ kind: 'compound', cdef: c, def: md }} onPeek={() => {}} d={d} />
-                    <div className="preset-meta"><b>{c.name}</b><span className="badge">{src}</span><p>{c.description || `${c.inputs.length} in, ${c.outputs.length} out`}</p></div>
+                    <Item def={md} label={tr(c.name)} payload={{ kind: 'compound', cdef: c, def: md }} onPeek={() => {}} d={d} />
+                    <div className="preset-meta"><b>{tr(c.name)}</b><span className="badge">{src}</span><p>{tr(c.description) || tr('{a} in, {b} out', { a: c.inputs.length, b: c.outputs.length })}</p></div>
                   </li>
                 );
               })}
@@ -169,9 +172,9 @@ export function Library() {
             {TEMPLATES.map((t) => (
               <li key={t.id}>
                 <button onClick={() => openTemplate(t)} className="ex">
-                  <b>{t.name}</b>
-                  <span>{t.summary}</span>
-                  <i>Expected: {t.expect}</i>
+                  <b>{tr(t.name)}</b>
+                  <span>{tr(t.summary)}</span>
+                  <i>{tr("Expected:")} {tr(t.expect)}</i>
                 </button>
               </li>
             ))}
@@ -180,7 +183,7 @@ export function Library() {
       </div>
       {tab === 'modules' && (
         <div className="peek" aria-live="polite">
-          {peek ? (<><b>{peek.name}</b><span className="tag">{peek.category}</span><p>{peek.doc.summary}</p></>) : <p className="muted">Hover a module to read what it does. Drag it onto the workspace, or press Enter on it to add it.</p>}
+          {peek ? (<><b>{peek.name}</b><span className="tag">{tr(peek.category)}</span><p>{peek.doc.summary}</p></>) : <p className="muted">{tr("Hover a module to read what it does. Drag it onto the workspace, or press Enter on it to add it.")}</p>}
         </div>
       )}
       {d.ghostEl}

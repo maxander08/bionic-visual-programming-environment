@@ -10,6 +10,7 @@ import { getSensorState, sensorVersion, subscribeSensors } from '../runtime/sens
 import { audio, notificationState, requestNotifications, vibrationSupported } from '../runtime/outputs';
 import { bridge, useStore } from '../state/store';
 import { Icon } from './icons';
+import { tr } from '../i18n';
 
 function NumberField({ p, value, onChange }: { p: Extract<ParamDef, { kind: 'number' }>; value: number; onChange: (v: number) => void }) {
   const [text, setText] = useState(String(value));
@@ -25,7 +26,7 @@ function NumberField({ p, value, onChange }: { p: Extract<ParamDef, { kind: 'num
     <div className="num-field">
       {sliderOk && <input type="range" min={p.min} max={p.max} step={p.step} value={value} aria-label={p.label} onChange={(e) => onChange(Number(e.target.value))} />}
       <div className="num-box">
-        <input type="text" inputMode="decimal" value={text} aria-label={`${p.label} value`} onChange={(e) => commit(e.target.value)} onBlur={() => setText(String(value))}
+        <input type="text" inputMode="decimal" value={text} aria-label={tr('{label} value', { label: p.label })} onChange={(e) => commit(e.target.value)} onBlur={() => setText(String(value))}
           onKeyDown={(e) => { if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); const d = (e.key === 'ArrowUp' ? 1 : -1) * p.step * (e.shiftKey ? 10 : 1); onChange(Math.min(p.max, Math.max(p.min, Math.round((value + d) / p.step) * p.step))); } }} />
         {p.unit && <span className="unit">{p.unit}</span>}
       </div>
@@ -59,12 +60,12 @@ function ParamRow({ p, value, onChange, onAction, driven }: { p: ParamDef; value
     ); break;
     case 'action': control = <button className="btn" onClick={() => onAction?.(p.command)}>{p.label}</button>; break;
   }
-  const meta = p.kind === 'number' ? `Range ${fmtNum(p.min)} to ${fmtNum(p.max)} · default ${fmtNum(p.default)}${p.unit ? ' ' + p.unit : ''}` : p.kind === 'select' ? `Default: ${p.options.find((o) => o.value === p.default)?.label}` : p.kind === 'bool' ? `Default: ${p.default ? 'on' : 'off'}` : undefined;
+  const meta = p.kind === 'number' ? tr('Range {min} to {max} · default {def}{unit}', { min: fmtNum(p.min), max: fmtNum(p.max), def: fmtNum(p.default), unit: p.unit ? ' ' + p.unit : '' }) : p.kind === 'select' ? tr('Default: {value}', { value: String(p.options.find((o) => o.value === p.default)?.label) }) : p.kind === 'bool' ? tr('Default: {value}', { value: p.default ? tr('on') : tr('off') }) : undefined;
   return (
     <div className={`field ${p.kind === 'bool' ? 'inline' : ''}`}>
-      <label htmlFor={id}>{p.kind === 'action' ? 'Action' : p.label}</label>
+      <label htmlFor={id}>{p.kind === 'action' ? tr("Action") : p.label}</label>
       {driven ? <fieldset className="driven" disabled>{control}</fieldset> : control}
-      {driven && <p className="doc driven-note">Driven by the “{p.label}” pin: the connected signal is in effect. Disconnect the pin to edit this setting.</p>}
+      {driven && <p className="doc driven-note">{tr("Driven by the “{label}” pin: the connected signal is in effect. Disconnect the pin to edit this setting.", { label: p.label })}</p>}
       <p className="doc">{p.doc}{meta && <span className="meta"> {meta}</span>}</p>
     </div>
   );
@@ -72,10 +73,10 @@ function ParamRow({ p, value, onChange, onAction, driven }: { p: ParamDef; value
 
 function ClockInfo({ city }: { city: string }) {
   const c = findCity(city);
-  if (!c) return <p className="callout warn"><Icon name="alert" size={14} />“{city.trim() || '…'}” is not a known city yet. Start typing and pick one of the suggestions.</p>;
+  if (!c) return <p className="callout warn"><Icon name="alert" size={14} />{tr("“{city}” is not a known city yet. Start typing and pick one of the suggestions.", { city: city.trim() || '…' })}</p>;
   let off = '';
   try { off = fmtOffset(readClock(c.tz, Date.now(), false, false).offset); } catch { /* unknown zone */ }
-  return <p className="doc"><b>{c.label}</b> · {c.tz}{off ? ` · ${off} now` : ''} · population {c.pop.toLocaleString('en-US')}</p>;
+  return <p className="doc"><b>{c.label}</b> · {c.tz}{off ? tr(' · {off} now', { off }) : ''} · {tr("population")} {c.pop.toLocaleString('en-US')}</p>;
 }
 
 function Section({ title, children, open = true, right }: { title: string; children: React.ReactNode; open?: boolean; right?: React.ReactNode }) {
@@ -104,29 +105,29 @@ function PortTable({ node, def }: { node: NodeInst; def: ModuleDef }) {
   const st = useStore.getState();
   return (
     <div className="ports">
-      {def.inputs.length === 0 && def.outputs.length === 0 && <p className="muted">This module has no ports.</p>}
+      {def.inputs.length === 0 && def.outputs.length === 0 && <p className="muted">{tr("This module has no ports.")}</p>}
       {def.inputs.map((p) => {
         const edge = Object.values(graph.edges).find((e) => e.to === node.id && e.toPort === p.id);
         const sig = rt?.inputs[p.id];
         const sel = edge ? `${edge.from}|${edge.fromPort}` : '';
         return (
           <div className="port-row" key={`i${p.id}`}>
-            <div className="ph"><span className="pdir">IN</span><b>{p.label}</b><span className="ptype">{p.type}{p.optional ? ' · optional' : ''}</span></div>
-            <div className="pval">{sig ? <>{describe(sig.v)}<i> strength {sig.s.toFixed(2)}</i></> : <span className="muted">{edge ? 'no signal yet' : p.optional ? 'not connected (optional)' : 'not connected (required)'}</span>}</div>
-            <select aria-label={`Source for input ${p.label}`} value={sel} onChange={(e) => {
+            <div className="ph"><span className="pdir">{tr("IN")}</span><b>{p.label}</b><span className="ptype">{p.type}{p.optional ? ' · optional' : ''}</span></div>
+            <div className="pval">{sig ? <>{describe(sig.v)}<i> {tr("strength")} {sig.s.toFixed(2)}</i></> : <span className="muted">{edge ? tr('no signal yet') : p.optional ? tr("not connected (optional)") : tr("not connected (required)")}</span>}</div>
+            <select aria-label={tr('Source for input {label}', { label: p.label })} value={sel} onChange={(e) => {
               if (!e.target.value) { if (edge) st.removeEdge(edge.id); return; }
               const [fn, fp] = e.target.value.split('|');
               st.edit((s) => {
                 const chk = checkConnection(s.graph, fn, fp, node.id, p.id, s.compounds);
-                if (!chk.ok) { st.toast(chk.reason ?? 'Incompatible', 'error'); return null; }
+                if (!chk.ok) { st.toast(chk.reason ?? tr("Incompatible"), 'error'); return null; }
                 return null;
               });
               st.connectPorts(fn, fp, node.id, p.id);
             }}>
-              <option value="">— not connected —</option>
+              <option value="">{tr("— not connected —")}</option>
               {options.map((o) => {
                 const chk = checkConnection(graph, o.node, o.port, node.id, p.id, compounds);
-                return <option key={o.id} value={o.id} disabled={!chk.ok}>{o.label}{chk.ok ? '' : ` — incompatible (${o.type} → ${p.type})`}</option>;
+                return <option key={o.id} value={o.id} disabled={!chk.ok}>{o.label}{chk.ok ? '' : tr(' — incompatible ({from} → {to})', { from: o.type, to: p.type })}</option>;
               })}
             </select>
             <p className="doc">{p.doc}</p>
@@ -137,8 +138,8 @@ function PortTable({ node, def }: { node: NodeInst; def: ModuleDef }) {
         const sig = rt?.outputs[p.id];
         return (
           <div className="port-row" key={`o${p.id}`}>
-            <div className="ph"><span className="pdir out">OUT</span><b>{p.label}</b><span className="ptype">{p.type}</span></div>
-            <div className="pval">{sig ? <>{describe(sig.v)}<i> strength {sig.s.toFixed(2)}</i></> : <span className="muted">no signal</span>}</div>
+            <div className="ph"><span className="pdir out">{tr("OUT")}</span><b>{p.label}</b><span className="ptype">{p.type}</span></div>
+            <div className="pval">{sig ? <>{describe(sig.v)}<i> {tr("strength")} {sig.s.toFixed(2)}</i></> : <span className="muted">{tr("no signal")}</span>}</div>
             <p className="doc">{p.doc}</p>
           </div>
         );
@@ -154,14 +155,14 @@ function useSensor(id: string) {
 
 function OutputStatus({ def }: { def: ModuleDef }) {
   const [, force] = useState(0);
-  if (def.type === 'audio') return <p className={`status-line ${audio.state === 'running' ? 'ok' : 'warn'}`}>Speaker: {audio.state === 'running' ? 'unlocked and ready' : audio.state === 'locked' ? 'locked until you press Run or Step (browser rule)' : 'Web Audio is not available'}.</p>;
-  if (def.type === 'haptic') return <p className={`status-line ${vibrationSupported() ? 'ok' : 'warn'}`}>Vibration: {vibrationSupported() ? 'supported on this device' : 'not supported on this device or browser'}.</p>;
+  if (def.type === 'audio') return <p className={`status-line ${audio.state === 'running' ? 'ok' : 'warn'}`}>{tr("Speaker:")} {audio.state === 'running' ? tr('unlocked and ready') : audio.state === 'locked' ? tr("locked until you press Run or Step (browser rule)") : tr("Web Audio is not available")}.</p>;
+  if (def.type === 'haptic') return <p className={`status-line ${vibrationSupported() ? 'ok' : 'warn'}`}>{tr("Vibration:")} {vibrationSupported() ? tr('supported on this device') : tr('not supported on this device or browser')}.</p>;
   if (def.type === 'notify') {
     const s = notificationState();
     return (
       <div>
-        <p className={`status-line ${s === 'granted' ? 'ok' : 'warn'}`}>Notifications: {s === 'granted' ? 'permission granted' : s === 'denied' ? 'blocked in browser settings' : s === 'unsupported' ? 'not supported here' : 'permission not yet requested'}.</p>
-        {s === 'default' && <button className="btn" onClick={async () => { await requestNotifications(); force((x) => x + 1); }}>Request permission</button>}
+        <p className={`status-line ${s === 'granted' ? 'ok' : 'warn'}`}>{tr("Notifications:")} {s === 'granted' ? tr('permission granted') : s === 'denied' ? tr('blocked in browser settings') : s === 'unsupported' ? tr('not supported here') : tr('permission not yet requested')}.</p>
+        {s === 'default' && <button className="btn" onClick={async () => { await requestNotifications(); force((x) => x + 1); }}>{tr("Request permission")}</button>}
       </div>
     );
   }
@@ -175,19 +176,19 @@ function SensorStatus({ node, def }: { node: NodeInst; def: ModuleDef }) {
   const sim = src === 'sim';
   const running = useStore((x) => x.run) !== 'stopped';
   let text: string, kind: string;
-  if (def.type === 'touch') { text = 'Manual input: press the pad inside the node.'; kind = 'ok'; }
-  else if (sim) { text = 'Simulated source: deterministic, no hardware needed.'; kind = 'ok'; }
-  else if (!running) { text = 'Not connected. Press Run to request access to the real device.'; kind = 'warn'; }
-  else if (s) { text = s.message || s.state; kind = s.state === 'live' ? 'ok' : s.state === 'requesting' ? 'info' : 'err'; }
-  else { text = 'Starting…'; kind = 'info'; }
-  return <p className={`status-line ${kind}`}><b>Input:</b> {text}</p>;
+  if (def.type === 'touch') { text = tr("Manual input: press the pad inside the node."); kind = 'ok'; }
+  else if (sim) { text = tr("Simulated source: deterministic, no hardware needed."); kind = 'ok'; }
+  else if (!running) { text = tr("Not connected. Press Run to request access to the real device."); kind = 'warn'; }
+  else if (s) { text = tr(s.message || s.state); kind = s.state === 'live' ? 'ok' : s.state === 'requesting' ? 'info' : 'err'; }
+  else { text = tr("Starting…"); kind = 'info'; }
+  return <p className={`status-line ${kind}`}><b>{tr("Input:")}</b> {tr(text)}</p>;
 }
 
 function VisionFile({ node }: { node: NodeInst }) {
   const st = useStore.getState();
   return (
     <div className="field">
-      <label htmlFor="vfile">Image file</label>
+      <label htmlFor="vfile">{tr("Image file")}</label>
       <input id="vfile" type="file" accept="image/*" onChange={(e) => {
         const f = e.target.files?.[0];
         if (!f) return;
@@ -200,14 +201,14 @@ function VisionFile({ node }: { node: NodeInst }) {
             cv.width = Math.max(1, Math.round(im.width * k)); cv.height = Math.max(1, Math.round(im.height * k));
             cv.getContext('2d')!.drawImage(im, 0, 0, cv.width, cv.height);
             st.setNodeParams(node.id, { source: 'file', fileData: cv.toDataURL('image/jpeg', 0.8) });
-            st.toast('Image stored in the program (downscaled to 160 px).', 'ok');
+            st.toast(tr("Image stored in the program (downscaled to 160 px)."), 'ok');
           };
-          im.onerror = () => st.toast('That file is not a readable image.', 'error');
+          im.onerror = () => st.toast(tr("That file is not a readable image."), 'error');
           im.src = String(r.result);
         };
         r.readAsDataURL(f);
       }} />
-      <p className="doc">{node.params.fileData ? 'An image is stored in this program. Choose another to replace it.' : 'Pick an image; it is downscaled and kept inside the program, so it works offline.'}</p>
+      <p className="doc">{node.params.fileData ? tr("An image is stored in this program. Choose another to replace it.") : tr("Pick an image; it is downscaled and kept inside the program, so it works offline.")}</p>
     </div>
   );
 }
@@ -217,23 +218,23 @@ function DocBlock({ def, node }: { def: ModuleDef; node?: NodeInst }) {
   return (
     <div className="docs">
       <p>{def.doc.summary}</p>
-      <h4>Runtime behavior</h4>
+      <h4>{tr("Runtime behavior")}</h4>
       <p>{def.doc.runtime}</p>
       {pkg && (
         <>
-          <h4>Package: {pkg.name}</h4>
+          <h4>{tr("Package:")} {pkg.name}</h4>
           <dl>
-            <dt>Technique</dt><dd>{pkg.technique}</dd>
-            <dt>Status</dt><dd>{pkg.status === 'available' ? 'Available offline' : 'Unavailable in this build'}</dd>
-            <dt>Requirements</dt><dd>{pkg.requirements}</dd>
-            <dt>Limitations</dt><dd>{pkg.limitations}</dd>
-            <dt>Inputs</dt><dd>{pkg.inputs}</dd>
-            <dt>Outputs</dt><dd>{pkg.outputs}</dd>
+            <dt>{tr("Technique")}</dt><dd>{pkg.technique}</dd>
+            <dt>{tr("Status")}</dt><dd>{pkg.status === 'available' ? tr("Available offline") : tr("Unavailable in this build")}</dd>
+            <dt>{tr("Requirements")}</dt><dd>{pkg.requirements}</dd>
+            <dt>{tr("Limitations")}</dt><dd>{pkg.limitations}</dd>
+            <dt>{tr("Inputs")}</dt><dd>{pkg.inputs}</dd>
+            <dt>{tr("Outputs")}</dt><dd>{pkg.outputs}</dd>
           </dl>
         </>
       )}
-      {def.doc.errors && <><h4>Error conditions</h4><ul>{def.doc.errors.map((e) => <li key={e}>{e}</li>)}</ul></>}
-      {def.doc.examples && <><h4>Examples</h4><ul>{def.doc.examples.map((e) => <li key={e}>{e}</li>)}</ul></>}
+      {def.doc.errors && <><h4>{tr("Error conditions")}</h4><ul>{def.doc.errors.map((e) => <li key={e}>{e}</li>)}</ul></>}
+      {def.doc.examples && <><h4>{tr("Examples")}</h4><ul>{def.doc.examples.map((e) => <li key={e}>{e}</li>)}</ul></>}
     </div>
   );
 }
@@ -242,24 +243,24 @@ function CompoundPanel({ node, cdef }: { node: NodeInst; cdef: CompoundDef }) {
   const st = useStore.getState();
   const inLib = useStore((s) => !!s.userCompounds[cdef.id]);
   return (
-    <Section title="Compound">
-      <div className="field"><label htmlFor="cname">Name</label><input id="cname" type="text" value={cdef.name} maxLength={60} onChange={(e) => st.updateCompound(cdef.id, (c) => ({ ...c, name: e.target.value }))} /></div>
-      <div className="field"><label htmlFor="cdesc">Description</label><textarea id="cdesc" rows={2} value={cdef.description} maxLength={300} onChange={(e) => st.updateCompound(cdef.id, (c) => ({ ...c, description: e.target.value }))} /></div>
+    <Section title={tr("Compound")}>
+      <div className="field"><label htmlFor="cname">{tr("Name")}</label><input id="cname" type="text" value={cdef.name} maxLength={60} onChange={(e) => st.updateCompound(cdef.id, (c) => ({ ...c, name: e.target.value }))} /></div>
+      <div className="field"><label htmlFor="cdesc">{tr("Description")}</label><textarea id="cdesc" rows={2} value={cdef.description} maxLength={300} onChange={(e) => st.updateCompound(cdef.id, (c) => ({ ...c, description: e.target.value }))} /></div>
       <div className="btn-row">
-        <button className="btn" onClick={() => st.openDialog('compound', { defId: cdef.id, nodeId: node.id })}><Icon name="open" size={14} />Open inner graph</button>
-        <button className="btn" onClick={() => st.saveCompoundToLibrary(cdef.id)}><Icon name="save" size={14} />{inLib ? 'Update library' : 'Save to library'}</button>
+        <button className="btn" onClick={() => st.openDialog('compound', { defId: cdef.id, nodeId: node.id })}><Icon name="open" size={14} />{tr("Open inner graph")}</button>
+        <button className="btn" onClick={() => st.saveCompoundToLibrary(cdef.id)}><Icon name="save" size={14} />{inLib ? tr("Update library") : tr("Save to library")}</button>
       </div>
-      <h4 className="mini">External ports</h4>
+      <h4 className="mini">{tr("External ports")}</h4>
       {[...cdef.inputs.map((p) => ({ ...p, dir: 'in' as const })), ...cdef.outputs.map((p) => ({ ...p, dir: 'out' as const }))].map((p) => (
         <div className="field inline-edit" key={p.dir + p.id}>
           <span className={`pdir ${p.dir === 'out' ? 'out' : ''}`}>{p.dir === 'in' ? 'IN' : 'OUT'}</span>
-          <input type="text" aria-label={`Label of ${p.dir === 'in' ? 'input' : 'output'} ${p.id}`} value={p.label} maxLength={40}
+          <input type="text" aria-label={tr(p.dir === 'in' ? 'Label of input {id}' : 'Label of output {id}', { id: p.id })} value={p.label} maxLength={40}
             onChange={(e) => st.updateCompound(cdef.id, (c) => ({ ...c, [p.dir === 'in' ? 'inputs' : 'outputs']: (p.dir === 'in' ? c.inputs : c.outputs).map((q) => (q.id === p.id ? { ...q, label: e.target.value } : q)) }))} />
           <span className="ptype">{p.type}</span>
         </div>
       ))}
-      <h4 className="mini">Exposed settings</h4>
-      <p className="doc">Tick inner settings to make them configurable on every instance of this compound.</p>
+      <h4 className="mini">{tr("Exposed settings")}</h4>
+      <p className="doc">{tr("Tick inner settings to make them configurable on every instance of this compound.")}</p>
       {Object.values(cdef.graph.nodes).map((n) => {
         const d = getDef(n.type, undefined, n.params);
         if (!d) return null;
@@ -290,7 +291,7 @@ function NodePanel({ id }: { id: string }) {
   const st = useStore.getState();
   if (!node) return null;
   const def = getDef(node.type, compounds, node.params);
-  if (!def) return <p className="muted pad12">Unknown module type “{node.type}”.</p>;
+  if (!def) return <p className="muted pad12">{tr("Unknown module type “{type}”.", { type: node.type })}</p>;
   const rt = engine.nodes.get(id);
   const defs = paramDefsOf(def, node.params).filter((p) => !p.hidden);
   const diag = getDiagnostics().filter((d) => d.nodeId === id);
@@ -302,34 +303,34 @@ function NodePanel({ id }: { id: string }) {
     <>
       <header className="ihead">
         <div className="ititle"><span className={`swatch f-${def.family}`} /><h2 title={def.name}>{nodeTitle(def, node.params)}</h2></div>
-        <div className="imeta"><span className="tag">{def.category}</span><code title="Module id">{node.id}</code></div>
+        <div className="imeta"><span className="tag">{def.category}</span><code title={tr("Module id")}>{node.id}</code></div>
         <div className="btn-row">
-          <button className="btn sm" onClick={() => bridge.focus?.([id])}><Icon name="focus" size={13} />Focus</button>
-          <button className="btn sm" onClick={() => st.duplicateSelection()}><Icon name="copy" size={13} />Duplicate</button>
-          <button className="btn sm" onClick={() => st.toggleDisabled([id])} aria-pressed={!!node.disabled}><Icon name="power" size={13} />{node.disabled ? 'Enable' : 'Disable'}</button>
-          <button className="btn sm danger" onClick={() => st.removeSelection()}><Icon name="trash" size={13} />Delete</button>
+          <button className="btn sm" onClick={() => bridge.focus?.([id])}><Icon name="focus" size={13} />{tr("Focus")}</button>
+          <button className="btn sm" onClick={() => st.duplicateSelection()}><Icon name="copy" size={13} />{tr("Duplicate")}</button>
+          <button className="btn sm" onClick={() => st.toggleDisabled([id])} aria-pressed={!!node.disabled}><Icon name="power" size={13} />{node.disabled ? tr("Enable") : tr("Disable")}</button>
+          <button className="btn sm danger" onClick={() => st.removeSelection()}><Icon name="trash" size={13} />{tr("Delete")}</button>
         </div>
       </header>
-      {diag.length > 0 && <div className="callouts">{diag.map((d, i) => <p key={i} className={`callout ${d.level}`}><Icon name="alert" size={14} />{d.message}</p>)}</div>}
-      {live && missing.length > 0 && !node.disabled && <p className="callout info"><Icon name="alert" size={14} />Waiting for required input{missing.length > 1 ? 's' : ''}: {missing.join(', ')}. The module stays idle until {missing.length > 1 ? 'they have' : 'it has'} a signal.</p>}
-      {node.disabled && <p className="callout info"><Icon name="alert" size={14} />Disabled: this module does not run and emits nothing.</p>}
+      {diag.length > 0 && <div className="callouts">{diag.map((d, i) => <p key={i} className={`callout ${d.level}`}><Icon name="alert" size={14} />{tr(d.message)}</p>)}</div>}
+      {live && missing.length > 0 && !node.disabled && <p className="callout info"><Icon name="alert" size={14} />{tr(missing.length > 1 ? "Waiting for required inputs: {list}. The module stays idle until they have a signal." : "Waiting for required input: {list}. The module stays idle until it has a signal.", { list: missing.join(', ') })}</p>}
+      {node.disabled && <p className="callout info"><Icon name="alert" size={14} />{tr("Disabled: this module does not run and emits nothing.")}</p>}
       <SensorStatus node={node} def={def} />
       <OutputStatus def={def} />
-      {rt && rt.evals > 0 && <p className="runline">Evaluated {rt.evals}×{rt.lastFire >= 0 ? ' · last output at ' + fmtNum(rt.lastFire / 1000, 2) + ' s simulated' : ' · no output signal'}</p>}
+      {rt && rt.evals > 0 && <p className="runline">{tr("Evaluated")} {rt.evals}×{rt.lastFire >= 0 ? tr(" · last output at ") + fmtNum(rt.lastFire / 1000, 2) + ' s simulated' : tr(" · no output signal")}</p>}
       {cdef && <CompoundPanel node={node} cdef={cdef} />}
       {defs.length > 0 && (
-        <Section title="Settings">
+        <Section title={tr("Settings")}>
           {def.type === 'vision' && node.params.source === 'file' && <VisionFile node={node} />}
           {def.type === 'clock' && <ClockInfo city={String((rt?.driven ? rt.live.city : undefined) ?? node.params.city ?? '')} />}
           {defs.map((p) => {
             const driven = p.kind !== 'action' && pinDriven(p.key);
             const v = (driven && rt?.driven ? rt.live[p.key] : undefined) ?? node.params[p.key] ?? (p as any).default;
-            return <ParamRow key={p.key} p={p} value={v} driven={driven} onChange={(val) => st.setNodeParams(id, { [p.key]: val }, p.key)} onAction={(c) => { engine.command(id, c); st.toast('Done.', 'ok'); }} />;
+            return <ParamRow key={p.key} p={p} value={v} driven={driven} onChange={(val) => st.setNodeParams(id, { [p.key]: val }, p.key)} onAction={(c) => { engine.command(id, c); st.toast(tr("Done."), 'ok'); }} />;
           })}
         </Section>
       )}
-      <Section title="Connections and signals"><PortTable node={node} def={def} /></Section>
-      <Section title="Documentation" open={false}><DocBlock def={def} node={node} /></Section>
+      <Section title={tr("Connections and signals")}><PortTable node={node} def={def} /></Section>
+      <Section title={tr("Documentation")} open={false}><DocBlock def={def} node={node} /></Section>
     </>
   );
 }
@@ -348,18 +349,18 @@ function EdgePanel({ id }: { id: string }) {
   return (
     <>
       <header className="ihead">
-        <div className="ititle"><span className="swatch wire" /><h2>Connection</h2></div>
+        <div className="ititle"><span className="swatch wire" /><h2>{tr("Connection")}</h2></div>
         <p className="route"><b>{da?.name}</b> {po?.label} <span>→</span> <b>{db?.name}</b> {pi?.label}</p>
-        <p className="muted">{po?.type} → {pi?.type}{po && pi && po.type !== pi.type && po.type !== 'any' && pi.type !== 'any' ? ' (values are converted)' : ''}</p>
-        <div className="btn-row"><button className="btn sm danger" onClick={() => st.removeEdge(id)}><Icon name="trash" size={13} />Disconnect</button></div>
+        <p className="muted">{po?.type} → {pi?.type}{po && pi && po.type !== pi.type && po.type !== 'any' && pi.type !== 'any' ? tr(" (values are converted)") : ''}</p>
+        <div className="btn-row"><button className="btn sm danger" onClick={() => st.removeEdge(id)}><Icon name="trash" size={13} />{tr("Disconnect")}</button></div>
       </header>
-      <Section title="Signal processing">
-        <ParamRow p={{ key: 'weight', label: 'Strength weight', kind: 'number', min: 0, max: 4, step: 0.05, default: 1, doc: 'Multiplies the strength of every signal on this connection. 0 silences it; Attention, Hypernerve and Reward read strength.' }} value={edge.weight} onChange={(v) => st.setEdge(id, { weight: Number(v) }, 'w')} />
-        <ParamRow p={{ key: 'delay', label: 'Propagation delay', kind: 'number', min: 0, max: 5000, step: 10, default: 0, unit: 'ms', doc: 'Simulation milliseconds each signal waits on this connection. Delayed connections also make feedback loops legal.' }} value={edge.delay} onChange={(v) => st.setEdge(id, { delay: Number(v) }, 'd')} />
-        <ParamRow p={{ key: 'enabled', label: 'Enabled', kind: 'bool', default: true, doc: 'Disabled connections carry nothing and are drawn dashed.' }} value={edge.enabled} onChange={(v) => st.setEdge(id, { enabled: !!v })} />
+      <Section title={tr("Signal processing")}>
+        <ParamRow p={{ key: 'weight', label: tr("Strength weight"), kind: 'number', min: 0, max: 4, step: 0.05, default: 1, doc: tr("Multiplies the strength of every signal on this connection. 0 silences it; Attention, Hypernerve and Reward read strength.") }} value={edge.weight} onChange={(v) => st.setEdge(id, { weight: Number(v) }, 'w')} />
+        <ParamRow p={{ key: 'delay', label: tr("Propagation delay"), kind: 'number', min: 0, max: 5000, step: 10, default: 0, unit: 'ms', doc: tr("Simulation milliseconds each signal waits on this connection. Delayed connections also make feedback loops legal.") }} value={edge.delay} onChange={(v) => st.setEdge(id, { delay: Number(v) }, 'd')} />
+        <ParamRow p={{ key: 'enabled', label: tr("Enabled"), kind: 'bool', default: true, doc: tr("Disabled connections carry nothing and are drawn dashed.") }} value={edge.enabled} onChange={(v) => st.setEdge(id, { enabled: !!v })} />
       </Section>
-      <Section title="Live signal">
-        <p className="pval">{sig ? <>{describe(sig.v)}<i> strength {sig.s.toFixed(2)}</i></> : <span className="muted">No signal at the source output.</span>}</p>
+      <Section title={tr("Live signal")}>
+        <p className="pval">{sig ? <>{describe(sig.v)}<i> {tr("strength")} {sig.s.toFixed(2)}</i></> : <span className="muted">{tr("No signal at the source output.")}</span>}</p>
       </Section>
     </>
   );
@@ -374,27 +375,27 @@ function ProgramPanel() {
   return (
     <>
       <header className="ihead">
-        <div className="ititle"><span className="swatch prog" /><h2>Program</h2></div>
-        <p className="muted">{Object.keys(project.graph.nodes).length} modules · {Object.keys(project.graph.edges).length} connections · {run}</p>
+        <div className="ititle"><span className="swatch prog" /><h2>{tr("Program")}</h2></div>
+        <p className="muted">{tr("{n} modules · {m} connections · {run}", { n: Object.keys(project.graph.nodes).length, m: Object.keys(project.graph.edges).length, run: tr(run) })}</p>
       </header>
-      <Section title="Details">
-        <div className="field"><label htmlFor="pn">Name</label><input id="pn" type="text" value={project.name} maxLength={80} onChange={(e) => st.rename(e.target.value)} /></div>
-        <div className="field"><label htmlFor="pa">Author</label><input id="pa" type="text" value={project.author} maxLength={60} placeholder="optional" onChange={(e) => st.setMeta({ author: e.target.value })} /><p className="doc">A label only. It does not prove who made the program.</p></div>
-        <div className="field"><label htmlFor="pd">Description</label><textarea id="pd" rows={4} value={project.description} maxLength={600} placeholder="What does this program do?" onChange={(e) => st.setMeta({ description: e.target.value })} /></div>
+      <Section title={tr("Details")}>
+        <div className="field"><label htmlFor="pn">{tr("Name")}</label><input id="pn" type="text" value={project.name} maxLength={80} onChange={(e) => st.rename(e.target.value)} /></div>
+        <div className="field"><label htmlFor="pa">{tr("Author")}</label><input id="pa" type="text" value={project.author} maxLength={60} placeholder={tr("optional")} onChange={(e) => st.setMeta({ author: e.target.value })} /><p className="doc">{tr("A label only. It does not prove who made the program.")}</p></div>
+        <div className="field"><label htmlFor="pd">{tr("Description")}</label><textarea id="pd" rows={4} value={project.description} maxLength={600} placeholder={tr("What does this program do?")} onChange={(e) => st.setMeta({ description: e.target.value })} /></div>
       </Section>
-      <Section title={`Diagnostics (${diag.length})`}>
-        {diag.length === 0 ? <p className="muted">No errors or warnings.</p> : (
+      <Section title={tr('Diagnostics ({n})', { n: diag.length })}>
+        {diag.length === 0 ? <p className="muted">{tr("No errors or warnings.")}</p> : (
           <ul className="diag-list">{diag.map((d, i) => (
-            <li key={i} className={d.level}><button onClick={() => { if (d.nodeId) { const top = d.nodeId.split('/')[0]; if (project.graph.nodes[top]) { st.select([top]); bridge.focus?.([top]); } } }}><Icon name="alert" size={13} /><span>{d.message}</span></button></li>
+            <li key={i} className={d.level}><button onClick={() => { if (d.nodeId) { const top = d.nodeId.split('/')[0]; if (project.graph.nodes[top]) { st.select([top]); bridge.focus?.([top]); } } }}><Icon name="alert" size={13} /><span>{tr(d.message)}</span></button></li>
           ))}</ul>
         )}
       </Section>
-      <Section title="Quick start" open={!Object.keys(project.graph.nodes).length}>
+      <Section title={tr("Quick start")} open={!Object.keys(project.graph.nodes).length}>
         <ol className="tips">
-          <li>Drag a module from the library onto the workspace.</li>
-          <li>Drag from a small tab on a module’s edge to a tab on another to connect them. Compatible ports light up.</li>
-          <li>Select a module to edit it here. Press Run to execute.</li>
-          <li>Share a program as a short code from the Share button.</li>
+          <li>{tr("Drag a module from the library onto the workspace.")}</li>
+          <li>{tr("Drag from a small tab on a module’s edge to a tab on another to connect them. Compatible ports light up.")}</li>
+          <li>{tr("Select a module to edit it here. Press Run to execute.")}</li>
+          <li>{tr("Share a program as a short code from the Share button.")}</li>
         </ol>
       </Section>
     </>
@@ -406,16 +407,16 @@ function MultiPanel({ ids }: { ids: string[] }) {
   return (
     <>
       <header className="ihead">
-        <div className="ititle"><span className="swatch prog" /><h2>{ids.length} modules selected</h2></div>
+        <div className="ititle"><span className="swatch prog" /><h2>{tr("{n} modules selected", { n: ids.length })}</h2></div>
         <div className="btn-row">
-          <button className="btn" onClick={() => st.openDialog('group')}><Icon name="group" size={14} />Group as compound</button>
-          <button className="btn" onClick={() => st.duplicateSelection()}><Icon name="copy" size={14} />Duplicate</button>
-          <button className="btn" onClick={() => st.toggleDisabled(ids)}><Icon name="power" size={14} />Toggle enabled</button>
-          <button className="btn" onClick={() => bridge.focus?.(ids)}><Icon name="focus" size={14} />Focus</button>
-          <button className="btn danger" onClick={() => st.removeSelection()}><Icon name="trash" size={14} />Delete</button>
+          <button className="btn" onClick={() => st.openDialog('group')}><Icon name="group" size={14} />{tr("Group as compound")}</button>
+          <button className="btn" onClick={() => st.duplicateSelection()}><Icon name="copy" size={14} />{tr("Duplicate")}</button>
+          <button className="btn" onClick={() => st.toggleDisabled(ids)}><Icon name="power" size={14} />{tr("Toggle enabled")}</button>
+          <button className="btn" onClick={() => bridge.focus?.(ids)}><Icon name="focus" size={14} />{tr("Focus")}</button>
+          <button className="btn danger" onClick={() => st.removeSelection()}><Icon name="trash" size={14} />{tr("Delete")}</button>
         </div>
       </header>
-      <p className="doc pad12">Grouping wraps the selection into one reusable compound. Connections that cross the boundary become its inputs and outputs.</p>
+      <p className="doc pad12">{tr("Grouping wraps the selection into one reusable compound. Connections that cross the boundary become its inputs and outputs.")}</p>
     </>
   );
 }
@@ -425,7 +426,7 @@ export function Inspector() {
   const selEdge = useStore((s) => s.selEdge);
   const kind = selEdge ? 'edge' : selection.length === 1 ? 'node' : selection.length > 1 ? 'multi' : 'program';
   return (
-    <aside className="panel insp" aria-label="Inspector">
+    <aside className="panel insp" aria-label={tr("Inspector")}>
       <div className="panel-scroll" key={kind + (kind === 'node' ? selection[0] : kind === 'edge' ? selEdge : '')}>
         {kind === 'edge' ? <EdgePanel id={selEdge!} /> : kind === 'node' ? <NodePanel id={selection[0]} /> : kind === 'multi' ? <MultiPanel ids={selection} /> : <ProgramPanel />}
       </div>

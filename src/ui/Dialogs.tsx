@@ -12,6 +12,7 @@ import { Canvas } from './Canvas';
 import { Icon } from './icons';
 import { Docs } from './docs/Docs';
 import { CURVE_COLORS, EquationPlot } from './EquationPlot';
+import { LANGS, tr } from '../i18n';
 
 function Modal({ title, onClose, children, wide, label }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean; label?: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -37,7 +38,7 @@ function Modal({ title, onClose, children, wide, label }: { title: string; onClo
   return (
     <div className="overlay" onPointerDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div ref={ref} className={`modal ${wide ? 'wide' : ''}`} role="dialog" aria-modal="true" aria-label={label ?? title} tabIndex={-1}>
-        <div className="modal-head"><h2>{title}</h2><button className="icon-btn" aria-label="Close dialog" onClick={onClose}><Icon name="close" size={16} /></button></div>
+        <div className="modal-head"><h2>{title}</h2><button className="icon-btn" aria-label={tr("Close dialog")} onClick={onClose}><Icon name="close" size={16} /></button></div>
         <div className="modal-body">{children}</div>
       </div>
     </div>
@@ -49,7 +50,7 @@ function Confirm({ onClose }: { onClose: () => void }) {
   return (
     <Modal title={a.title} onClose={onClose}>
       <p className="prose">{a.body}</p>
-      <div className="btn-row end"><button className="btn" onClick={onClose}>Cancel</button><button data-autofocus className={`btn ${a.danger ? 'danger solid' : 'primary'}`} onClick={() => { onClose(); a.onConfirm(); }}>{a.confirm}</button></div>
+      <div className="btn-row end"><button className="btn" onClick={onClose}>{tr("Cancel")}</button><button data-autofocus className={`btn ${a.danger ? 'danger solid' : 'primary'}`} onClick={() => { onClose(); a.onConfirm(); }}>{a.confirm}</button></div>
     </Modal>
   );
 }
@@ -58,23 +59,23 @@ function Group({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState('My compound');
   const ids = useStore((s) => s.selection);
   return (
-    <Modal title="Group as compound" onClose={onClose}>
-      <p className="prose">{ids.length} module{ids.length === 1 ? '' : 's'} will be wrapped into one reusable compound. Connections that cross the boundary become its inputs and outputs.</p>
-      <div className="field"><label htmlFor="gname">Name</label><input id="gname" data-autofocus type="text" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { onClose(); useStore.getState().groupSelection(name); } }} /></div>
-      <div className="btn-row end"><button className="btn" onClick={onClose}>Cancel</button><button className="btn primary" onClick={() => { onClose(); useStore.getState().groupSelection(name); }}>Create compound</button></div>
+    <Modal title={tr("Group as compound")} onClose={onClose}>
+      <p className="prose">{tr(ids.length === 1 ? "{n} module will be wrapped into one reusable compound. Connections that cross the boundary become its inputs and outputs." : "{n} modules will be wrapped into one reusable compound. Connections that cross the boundary become its inputs and outputs.", { n: ids.length })}</p>
+      <div className="field"><label htmlFor="gname">{tr("Name")}</label><input id="gname" data-autofocus type="text" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { onClose(); useStore.getState().groupSelection(name); } }} /></div>
+      <div className="btn-row end"><button className="btn" onClick={onClose}>{tr("Cancel")}</button><button className="btn primary" onClick={() => { onClose(); useStore.getState().groupSelection(name); }}>{tr("Create compound")}</button></div>
     </Modal>
   );
 }
 
 function Templates({ onClose }: { onClose: () => void }) {
   return (
-    <Modal title="Example programs" onClose={onClose} wide>
-      <p className="prose">Each example is built from the real module registry and runs on the same engine as your own programs. Your current program is kept under Saved programs.</p>
+    <Modal title={tr("Example programs")} onClose={onClose} wide>
+      <p className="prose">{tr("Each example is built from the real module registry and runs on the same engine as your own programs. Your current program is kept under Saved programs.")}</p>
       <ul className="tpl-grid">
         {TEMPLATES.map((t) => (
           <li key={t.id}>
             <button className="tpl" onClick={() => openTemplate(t)}>
-              <b>{t.name}</b><span>{t.summary}</span><i><u>Expected:</u> {t.expect}</i>
+              <b>{tr(t.name)}</b><span>{tr(t.summary)}</span><i><u>{tr("Expected:")}</u> {tr(t.expect)}</i>
             </button>
           </li>
         ))}
@@ -89,33 +90,33 @@ function Projects({ onClose }: { onClose: () => void }) {
   const file = useRef<HTMLInputElement>(null);
   const st = useStore.getState();
   return (
-    <Modal title="Open or import" onClose={onClose}>
-      <h3 className="sec">Saved programs {storageAvailable() ? '' : '(storage unavailable)'}</h3>
-      {!storageAvailable() && <p className="callout warn"><Icon name="alert" size={14} />Browser storage is not available here (private mode or restricted file access). Use Export and Import files instead.</p>}
-      {list.length === 0 ? <p className="muted">Nothing saved yet. Use File → Save in browser.</p> : (
+    <Modal title={tr("Open or import")} onClose={onClose}>
+      <h3 className="sec">{tr("Saved programs")} {storageAvailable() ? '' : tr("(storage unavailable)")}</h3>
+      {!storageAvailable() && <p className="callout warn"><Icon name="alert" size={14} />{tr("Browser storage is not available here (private mode or restricted file access). Use Export and Import files instead.")}</p>}
+      {list.length === 0 ? <p className="muted">{tr("Nothing saved yet. Use File → Save in browser.")}</p> : (
         <ul className="saved-list">
           {list.map((p) => (
             <li key={p.id}>
-              <button className="saved-open" onClick={() => { const pr = projects.load(p.id); if (pr) { openWithBackup(pr, `Opened “${pr.name}”.`); onClose(); } else st.toast('That saved program is damaged and could not be opened.', 'error'); }}>
-                <b>{p.name}</b><span>{p.nodes} modules · {new Date(p.modified).toLocaleString()}</span>
+              <button className="saved-open" onClick={() => { const pr = projects.load(p.id); if (pr) { openWithBackup(pr, tr('Opened “{name}”.', { name: pr.name })); onClose(); } else st.toast(tr("That saved program is damaged and could not be opened."), 'error'); }}>
+                <b>{p.name}</b><span>{tr("{n} modules · {date}", { n: p.nodes, date: new Date(p.modified).toLocaleString() })}</span>
               </button>
-              <button className="icon-btn" aria-label={`Delete saved program ${p.name}`} onClick={() => { projects.remove(p.id); setList(projects.list()); }}><Icon name="trash" size={14} /></button>
+              <button className="icon-btn" aria-label={tr('Delete saved program {name}', { name: p.name })} onClick={() => { projects.remove(p.id); setList(projects.list()); }}><Icon name="trash" size={14} /></button>
             </li>
           ))}
         </ul>
       )}
-      <h3 className="sec">Import</h3>
-      <div className="btn-row"><button className="btn" onClick={() => file.current?.click()}><Icon name="open" size={14} />Choose program file…</button>
+      <h3 className="sec">{tr("Import")}</h3>
+      <div className="btn-row"><button className="btn" onClick={() => file.current?.click()}><Icon name="open" size={14} />{tr("Choose program file…")}</button>
         <input ref={file} type="file" accept=".json,.txt,application/json,text/plain" hidden onChange={async (e) => { const f = e.target.files?.[0]; if (f && (await importFile(f))) onClose(); e.target.value = ''; }} /></div>
-      <div className="field"><label htmlFor="icode">Or paste a share code</label><textarea id="icode" className="mono" rows={3} value={code} placeholder="NS1.…" spellCheck={false} onChange={(e) => setCode(e.target.value)} /></div>
-      <div className="btn-row end"><button className="btn primary" disabled={!code.trim()} onClick={() => { if (importCode(code)) onClose(); }}>Import code</button></div>
+      <div className="field"><label htmlFor="icode">{tr("Or paste a share code")}</label><textarea id="icode" className="mono" rows={3} value={code} placeholder={tr("NS1.…")} spellCheck={false} onChange={(e) => setCode(e.target.value)} /></div>
+      <div className="btn-row end"><button className="btn primary" disabled={!code.trim()} onClick={() => { if (importCode(code)) onClose(); }}>{tr("Import code")}</button></div>
     </Modal>
   );
 }
 
 function QR({ text }: { text: string }) {
   const r = useMemo(() => {
-    if (text.length > QR_BYTE_LIMIT) return { error: `This program’s code is ${text.length} characters, above the ${QR_BYTE_LIMIT}-character limit a QR code can reliably hold. Use the code text or Export file instead.` };
+    if (text.length > QR_BYTE_LIMIT) return { error: tr('This program’s code is {n} characters, above the {limit}-character limit a QR code can reliably hold. Use the code text or Export file instead.', { n: text.length, limit: QR_BYTE_LIMIT }) };
     try {
       const q = qrcode(0, 'L');
       q.addData(text, 'Byte');
@@ -125,14 +126,14 @@ function QR({ text }: { text: string }) {
       for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (q.isDark(y, x)) d += `M${x} ${y}h1v1h-1z`;
       return { n, d };
     } catch {
-      return { error: 'The code is too large to fit in a QR code. Use the code text or Export file instead.' };
+      return { error: tr("The code is too large to fit in a QR code. Use the code text or Export file instead.") };
     }
   }, [text]);
   if ('error' in r) return <p className="callout warn"><Icon name="alert" size={14} />{r.error}</p>;
   return (
     <figure className="qr">
-      <svg viewBox={`-3 -3 ${r.n! + 6} ${r.n! + 6}`} role="img" aria-label="QR code containing the share code" shapeRendering="crispEdges"><path d={r.d} fill="#a0fbe8" /></svg>
-      <figcaption>Scan to read the share code as text. Paste it into Import.</figcaption>
+      <svg viewBox={`-3 -3 ${r.n! + 6} ${r.n! + 6}`} role="img" aria-label={tr("QR code containing the share code")} shapeRendering="crispEdges"><path d={r.d} fill="#a0fbe8" /></svg>
+      <figcaption>{tr("Scan to read the share code as text. Paste it into Import.")}</figcaption>
     </figure>
   );
 }
@@ -146,36 +147,36 @@ function Share({ onClose }: { onClose: () => void }) {
   useEffect(() => { let on = true; sha256Hex(code).then((h) => on && setSha(h)); return () => { on = false; }; }, [code]);
   const st = useStore.getState();
   const copy = async () => {
-    try { await navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1600); st.toast('Share code copied.', 'ok'); }
-    catch { const ta = document.getElementById('scode') as HTMLTextAreaElement | null; ta?.select(); st.toast('Clipboard is blocked here. The code is selected: press Ctrl/⌘+C.', 'info'); }
+    try { await navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1600); st.toast(tr("Share code copied."), 'ok'); }
+    catch { const ta = document.getElementById('scode') as HTMLTextAreaElement | null; ta?.select(); st.toast(tr("Clipboard is blocked here. The code is selected: press Ctrl/⌘+C."), 'info'); }
   };
   return (
-    <Modal title="Share" onClose={onClose} wide>
+    <Modal title={tr("Share")} onClose={onClose} wide>
       <div className="share-grid">
         <div>
-          <h3 className="sec">Share code</h3>
-          <p className="prose">The whole program, compressed into text. Anyone can paste it into Import to get a copy.</p>
-          <textarea id="scode" className="mono code" readOnly rows={6} value={code} aria-label="Share code" onFocus={(e) => e.currentTarget.select()} />
+          <h3 className="sec">{tr("Share code")}</h3>
+          <p className="prose">{tr("The whole program, compressed into text. Anyone can paste it into Import to get a copy.")}</p>
+          <textarea id="scode" className="mono code" readOnly rows={6} value={code} aria-label={tr("Share code")} onFocus={(e) => e.currentTarget.select()} />
           <div className="btn-row">
-            <button className="btn primary" data-autofocus onClick={copy}><Icon name={copied ? 'check' : 'copy'} size={14} />{copied ? 'Copied' : 'Copy code'}</button>
-            <button className="btn" onClick={() => { exportJSON(); }}><Icon name="save" size={14} />Export file</button>
-            <button className="btn" onClick={() => download(`${fileSlug(project.name)}.nscode.txt`, code, 'text/plain')}>Download code</button>
+            <button className="btn primary" data-autofocus onClick={copy}><Icon name={copied ? 'check' : 'copy'} size={14} />{copied ? tr("Copied") : tr("Copy code")}</button>
+            <button className="btn" onClick={() => { exportJSON(); }}><Icon name="save" size={14} />{tr("Export file")}</button>
+            <button className="btn" onClick={() => download(`${fileSlug(project.name)}.nscode.txt`, code, 'text/plain')}>{tr("Download code")}</button>
           </div>
-          <p className="stat-line">{code.length} characters · {Object.keys(project.graph.nodes).length} modules</p>
+          <p className="stat-line">{tr("{c} characters · {n} modules", { c: code.length, n: Object.keys(project.graph.nodes).length })}</p>
           <dl className="integrity">
-            <dt>CRC-32 checksum</dt><dd className="mono">{crc32(code.split('.')[1] ?? '').toString(16).padStart(8, '0')}</dd>
-            <dt>SHA-256 fingerprint</dt><dd className="mono">{sha === undefined ? 'computing…' : sha ?? 'unavailable in this context'}</dd>
+            <dt>{tr("CRC-32 checksum")}</dt><dd className="mono">{crc32(code.split('.')[1] ?? '').toString(16).padStart(8, '0')}</dd>
+            <dt>{tr("SHA-256 fingerprint")}</dt><dd className="mono">{sha === undefined ? tr('computing…') : sha ?? tr('unavailable in this context')}</dd>
           </dl>
-          <p className="doc">The checksum is embedded in the code and detects accidental corruption. The fingerprint identifies exact content. Neither is a signature: they do not prove who made the program, and anyone can create a valid code for edited content. Codes are not encrypted, permanent, or tamper-proof.</p>
+          <p className="doc">{tr("The checksum is embedded in the code and detects accidental corruption. The fingerprint identifies exact content. Neither is a signature: they do not prove who made the program, and anyone can create a valid code for edited content. Codes are not encrypted, permanent, or tamper-proof.")}</p>
         </div>
         <div>
-          <h3 className="sec">QR code</h3>
+          <h3 className="sec">{tr("QR code")}</h3>
           <QR text={code} />
         </div>
       </div>
-      <h3 className="sec">Import a code</h3>
-      <div className="field"><textarea className="mono" rows={2} value={paste} placeholder="Paste a share code (NS1.…)" aria-label="Paste share code to import" spellCheck={false} onChange={(e) => setPaste(e.target.value)} /></div>
-      <div className="btn-row end"><button className="btn" disabled={!paste.trim()} onClick={() => { if (importCode(paste)) onClose(); }}>Import as new program</button></div>
+      <h3 className="sec">{tr("Import a code")}</h3>
+      <div className="field"><textarea className="mono" rows={2} value={paste} placeholder={tr("Paste a share code (NS1.…)")} aria-label={tr("Paste share code to import")} spellCheck={false} onChange={(e) => setPaste(e.target.value)} /></div>
+      <div className="btn-row end"><button className="btn" disabled={!paste.trim()} onClick={() => { if (importCode(paste)) onClose(); }}>{tr("Import as new program")}</button></div>
     </Modal>
   );
 }
@@ -185,22 +186,32 @@ function Settings({ onClose }: { onClose: () => void }) {
   const set = useStore((x) => x.setSettings);
   const st = useStore.getState();
   return (
-    <Modal title="Settings" onClose={onClose}>
-      <div className="field inline"><label htmlFor="s-snap">Snap modules to the grid</label><button id="s-snap" role="switch" aria-checked={s.snap} className={`toggle ${s.snap ? 'on' : ''}`} onClick={() => set({ snap: !s.snap })}><i /></button><p className="doc">While dragging, a dashed outline shows where the module will settle.</p></div>
-      <div className="field inline"><label htmlFor="s-map">Overview map</label><button id="s-map" role="switch" aria-checked={s.minimap} className={`toggle ${s.minimap ? 'on' : ''}`} onClick={() => set({ minimap: !s.minimap })}><i /></button></div>
-      <div className="field"><label htmlFor="s-motion">Motion</label>
-        <select id="s-motion" value={s.motion} onChange={(e) => set({ motion: e.target.value as any })}><option value="system">Follow system setting</option><option value="reduced">Reduce motion</option><option value="full">Full motion</option></select>
-        <p className="doc">Reduced motion removes camera transitions and settling movement; state changes stay visible.</p></div>
-      <div className="field"><label htmlFor="s-tick">Simulation tick</label>
-        <select id="s-tick" value={s.tickMs} onChange={(e) => set({ tickMs: Number(e.target.value) })}>{[10, 20, 25, 50, 100, 200].map((t) => <option key={t} value={t}>{t} ms ({Math.round(1000 / t)} Hz)</option>)}</select>
-        <p className="doc">Time resolution of the engine. Shorter ticks give finer timing but evaluate more often. Output values never depend on screen refresh.</p></div>
-      <div className="field"><label htmlFor="s-speed">Simulation speed</label>
+    <Modal title={tr("Workspace settings")} onClose={onClose}>
+      <h3 className="sec first">{tr("Language")}</h3>
+      <div className="lang-grid" role="radiogroup" aria-label={tr("Interface language")}>
+        {LANGS.map((l) => (
+          <button key={l.code} type="button" role="radio" aria-checked={s.language === l.code} lang={l.tag} className={`lang-opt ${s.language === l.code ? 'on' : ''}`} onClick={() => set({ language: l.code })}>
+            <b>{l.native}</b><span className="mono">{l.tag}</span>
+          </button>
+        ))}
+      </div>
+      <p className="doc">{tr("Changes the language of the whole editor and is remembered in this browser. A Set Language module (library → Workspace Settings) can switch it from inside a program.")}</p>
+      <h3 className="sec">{tr("Workspace")}</h3>
+      <div className="field inline"><label htmlFor="s-snap">{tr("Snap modules to the grid")}</label><button id="s-snap" role="switch" aria-checked={s.snap} className={`toggle ${s.snap ? 'on' : ''}`} onClick={() => set({ snap: !s.snap })}><i /></button><p className="doc">{tr("While dragging, a dashed outline shows where the module will settle.")}</p></div>
+      <div className="field inline"><label htmlFor="s-map">{tr("Overview map")}</label><button id="s-map" role="switch" aria-checked={s.minimap} className={`toggle ${s.minimap ? 'on' : ''}`} onClick={() => set({ minimap: !s.minimap })}><i /></button></div>
+      <div className="field"><label htmlFor="s-motion">{tr("Motion")}</label>
+        <select id="s-motion" value={s.motion} onChange={(e) => set({ motion: e.target.value as any })}><option value="system">{tr("Follow system setting")}</option><option value="reduced">{tr("Reduce motion")}</option><option value="full">{tr("Full motion")}</option></select>
+        <p className="doc">{tr("Reduced motion removes camera transitions and settling movement; state changes stay visible.")}</p></div>
+      <div className="field"><label htmlFor="s-tick">{tr("Simulation tick")}</label>
+        <select id="s-tick" value={s.tickMs} onChange={(e) => set({ tickMs: Number(e.target.value) })}>{[10, 20, 25, 50, 100, 200].map((t) => <option key={t} value={t}>{tr("{ms} ms ({hz} Hz)", { ms: t, hz: Math.round(1000 / t) })}</option>)}</select>
+        <p className="doc">{tr("Time resolution of the engine. Shorter ticks give finer timing but evaluate more often. Output values never depend on screen refresh.")}</p></div>
+      <div className="field"><label htmlFor="s-speed">{tr("Simulation speed")}</label>
         <select id="s-speed" value={s.speed} onChange={(e) => set({ speed: Number(e.target.value) })}>{[0.25, 0.5, 1, 2, 4].map((t) => <option key={t} value={t}>×{t}</option>)}</select></div>
-      <h3 className="sec">Storage</h3>
-      <p className="prose">{storageAvailable() ? 'Autosave and saved programs use this browser’s local storage.' : 'Local storage is unavailable. Use File → Export to keep your work.'}</p>
-      <div className="btn-row"><button className="btn danger" onClick={() => st.confirm({ title: 'Erase all saved data?', body: 'This deletes autosave, saved programs, your compound library and settings from this browser. The current workspace stays open until you reload.', confirm: 'Erase data', danger: true, onConfirm: () => { clearAll(); st.toast('Browser data erased.', 'ok'); } })}>Erase browser data…</button></div>
-      <h3 className="sec">About</h3>
-      <p className="prose">Inspired by the workflow of NEURO by THIX; an independent implementation with original code and assets. Typeface: “TT Autonomous” is requested first; the bundled fallback is JetBrains Mono.</p>
+      <h3 className="sec">{tr("Storage")}</h3>
+      <p className="prose">{storageAvailable() ? tr("Autosave and saved programs use this browser’s local storage.") : tr("Local storage is unavailable. Use File → Export to keep your work.")}</p>
+      <div className="btn-row"><button className="btn danger" onClick={() => st.confirm({ title: tr("Erase all saved data?"), body: tr("This deletes autosave, saved programs, your compound library and settings from this browser. The current workspace stays open until you reload."), confirm: tr("Erase data"), danger: true, onConfirm: () => { clearAll(); st.toast(tr("Browser data erased."), 'ok'); } })}>{tr("Erase browser data…")}</button></div>
+      <h3 className="sec">{tr("About")}</h3>
+      <p className="prose">{tr("Inspired by the workflow of NEURO by THIX; an independent implementation with original code and assets. Typeface: “TT Autonomous” is requested first; the bundled fallback is JetBrains Mono.")}</p>
     </Modal>
   );
 }
@@ -211,8 +222,8 @@ function CompoundViewer({ onClose }: { onClose: () => void }) {
   const compounds = useStore((s) => s.project.compounds);
   if (!def) return null;
   return (
-    <Modal title={`Inside “${def.name}”`} onClose={onClose} wide>
-      <p className="prose">Read-only view of the compound’s internal graph. Live values appear while the program runs. Change its exposed settings from the inspector.</p>
+    <Modal title={tr('Inside “{name}”', { name: def.name })} onClose={onClose} wide>
+      <p className="prose">{tr("Read-only view of the compound’s internal graph. Live values appear while the program runs. Change its exposed settings from the inspector.")}</p>
       <div className="viewer"><Canvas graph={def.graph} compounds={compounds} prefix={`${arg.nodeId}/`} ro /></div>
     </Modal>
   );
@@ -224,9 +235,9 @@ function MeterGraph({ onClose }: { onClose: () => void }) {
   const v = (engine.nodes.get(id)?.viewData ?? {}) as any;
   const plot = v.plot as Plot | undefined;
   return (
-    <Modal title="Graph" onClose={onClose} wide>
+    <Modal title={tr("Graph")} onClose={onClose} wide>
       <div className="graph-full" aria-live="polite">
-        {plot ? <EquationPlot plot={plot} detail /> : <p className="muted">No equation yet. Route an Equation node to this Meter and press Run.</p>}
+        {plot ? <EquationPlot plot={plot} detail /> : <p className="muted">{tr("No equation yet. Route an Equation node to this Meter and press Run.")}</p>}
       </div>
       {plot && (
         <ul className="graph-legend">
@@ -262,7 +273,7 @@ export function Toasts() {
   return (
     <div className="toasts" role="status" aria-live="polite">
       {toasts.map((t) => (
-        <div key={t.id} className={`toast ${t.kind}`}><span>{t.msg}</span><button className="icon-btn sm" aria-label="Dismiss notification" onClick={() => dismiss(t.id)}><Icon name="close" size={12} /></button></div>
+        <div key={t.id} className={`toast ${t.kind}`}><span>{t.msg}</span><button className="icon-btn sm" aria-label={tr("Dismiss notification")} onClick={() => dismiss(t.id)}><Icon name="close" size={12} /></button></div>
       ))}
     </div>
   );

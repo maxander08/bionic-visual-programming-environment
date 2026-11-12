@@ -9,6 +9,7 @@ import { mainView, subscribeView, viewZoomPct } from './viewBus';
 import type { CompoundDef, Graph } from '../core/types';
 import { compoundModuleDef } from '../core/registry';
 import { fmtNum } from '../core/util';
+import { tr } from '../i18n';
 
 function IconBtn({ icon, label, onClick, disabled, on, danger, text, tone }: { icon: string; label: string; onClick: () => void; disabled?: boolean; on?: boolean; danger?: boolean; text?: string; tone?: string }) {
   return (
@@ -72,7 +73,7 @@ const MI = ({ onClick, children, kbd, danger }: { onClick: () => void; children:
 
 function Zoom() {
   const pct = useSyncExternalStore(subscribeView, viewZoomPct);
-  return <button className="zoom-pct" onClick={() => bridge.resetView?.()} title="Reset zoom to 100%" aria-label={`Zoom ${pct}%. Click to reset to 100%`}>{pct}%</button>;
+  return <button className="zoom-pct" onClick={() => bridge.resetView?.()} title={tr("Reset zoom to 100%")} aria-label={tr('Zoom {pct}%. Click to reset to 100%', { pct })}>{pct}%</button>;
 }
 
 export function Toolbar() {
@@ -87,52 +88,54 @@ export function Toolbar() {
   const st = useStore.getState();
   const [draft, setDraft] = useState<string | null>(null);
   return (
-    <header className="toolbar" role="toolbar" aria-label="Main toolbar">
+    <header className="toolbar" role="toolbar" aria-label={tr("Main toolbar")}>
       <div className="tb-group brand">
         <svg className="logo" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="3.5" width="19" height="17" rx="5" fill="none" stroke="#2fd9cf" strokeWidth="1.5" /><circle cx="8.5" cy="12" r="1.7" fill="#ff2a2a" /><path d="M11 12h4.5M15.5 12v4" stroke="#fff" strokeWidth="1.4" fill="none" /></svg>
-        <input className="prog-name" value={draft ?? name} aria-label="Program name" maxLength={80} spellCheck={false} title={name}
+        <input className="prog-name" value={draft ?? name} aria-label={tr("Program name")} maxLength={80} spellCheck={false} title={name}
           onChange={(e) => setDraft(e.target.value)} onBlur={() => { if (draft !== null) rename(draft); setDraft(null); }} onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') { setDraft(null); (e.target as HTMLInputElement).blur(); } }} />
       </div>
       <div className="tb-group">
-        <Menu label="File" icon="file" text="File">
+        <Menu label={tr("File")} icon="file" text={tr("File")}>
           {(close) => (
             <>
-              <MI onClick={() => { close(); newProgram(); }}>New program</MI>
-              <MI onClick={() => { close(); st.openDialog('projects'); }}>Open or import…</MI>
-              <MI onClick={() => { close(); saveToBrowser(); }} kbd="⌘S">Save in browser</MI>
-              <MI onClick={() => { close(); exportJSON(); }}>Export program file</MI>
-              <MI onClick={() => { close(); duplicateProgram(); }}>Duplicate program</MI>
+              <MI onClick={() => { close(); newProgram(); }}>{tr("New program")}</MI>
+              <MI onClick={() => { close(); st.openDialog('projects'); }}>{tr("Open or import…")}</MI>
+              <MI onClick={() => { close(); saveToBrowser(); }} kbd="⌘S">{tr("Save in browser")}</MI>
+              <MI onClick={() => { close(); exportJSON(); }}>{tr("Export program file")}</MI>
+              <MI onClick={() => { close(); duplicateProgram(); }}>{tr("Duplicate program")}</MI>
               <div className="sep" role="separator" />
-              <MI onClick={() => { close(); st.openDialog('templates'); }}>Example programs…</MI>
-              <MI danger onClick={() => { close(); resetWorkspace(); }}>Clear workspace…</MI>
+              <MI onClick={() => { close(); st.openDialog('templates'); }}>{tr("Example programs…")}</MI>
+              <MI danger onClick={() => { close(); resetWorkspace(); }}>{tr("Clear workspace…")}</MI>
             </>
           )}
         </Menu>
-        <IconBtn icon="undo" label="Undo (Ctrl/⌘+Z)" onClick={() => st.undo()} disabled={!past} />
-        <IconBtn icon="redo" label="Redo (Ctrl/⌘+Shift+Z)" onClick={() => st.redo()} disabled={!future} />
+        <IconBtn icon="undo" label={tr("Undo (Ctrl/⌘+Z)")} onClick={() => st.undo()} disabled={!past} />
+        <IconBtn icon="redo" label={tr("Redo (Ctrl/⌘+Shift+Z)")} onClick={() => st.redo()} disabled={!future} />
       </div>
-      <div className="tb-group run-group" role="group" aria-label="Execution">
+      <div className="tb-group run-group" role="group" aria-label={tr("Execution")}>
         {run === 'running'
-          ? <IconBtn icon="pause" label="Pause (Space)" onClick={pause} on tone="live" text="Pause" />
-          : <IconBtn icon="play" label={run === 'paused' ? 'Resume (Space)' : 'Run (Space)'} onClick={play} tone="go" text={run === 'paused' ? 'Resume' : 'Run'} />}
-        <IconBtn icon="step" label="Step one tick (.)" onClick={stepOnce} disabled={run === 'running'} />
-        <IconBtn icon="stop" label="Stop and reset (Esc)" onClick={stop} disabled={run === 'stopped'} />
+          ? <IconBtn icon="pause" label={tr("Pause (Space)")} onClick={pause} on tone="live" text={tr("Pause")} />
+          : <IconBtn icon="play" label={run === 'paused' ? tr("Resume (Space)") : tr("Run (Space)")} onClick={play} tone="go" text={run === 'paused' ? tr("Resume") : 'Run'} />}
+        <IconBtn icon="step" label={tr("Step one tick (.)")} onClick={stepOnce} disabled={run === 'running'} />
+        <IconBtn icon="stop" label={tr("Stop and reset (Esc)")} onClick={stop} disabled={run === 'stopped'} />
       </div>
       <div className="tb-spacer" />
-      <div className="tb-group" role="group" aria-label="Workspace view">
-        <IconBtn icon="minus" label="Zoom out" onClick={() => bridge.zoomBy?.(1 / 1.25)} />
+      <div className="tb-group" role="group" aria-label={tr("Workspace view")}>
+        <IconBtn icon="minus" label={tr("Zoom out")} onClick={() => bridge.zoomBy?.(1 / 1.25)} />
         <Zoom />
-        <IconBtn icon="plus" label="Zoom in" onClick={() => bridge.zoomBy?.(1.25)} />
-        <IconBtn icon="fit" label="Fit program in view (F)" onClick={() => bridge.fit?.()} />
-        <IconBtn icon="focus" label="Focus selected module (Shift+F)" onClick={() => sel.length && bridge.focus?.(sel)} disabled={!sel.length} />
-        <IconBtn icon="map" label="Toggle overview map" on={settings.minimap} onClick={() => st.setSettings({ minimap: !settings.minimap })} />
+        <IconBtn icon="plus" label={tr("Zoom in")} onClick={() => bridge.zoomBy?.(1.25)} />
+        <IconBtn icon="fit" label={tr("Fit program in view (F)")} onClick={() => bridge.fit?.()} />
+        <IconBtn icon="focus" label={tr("Focus selected module (Shift+F)")} onClick={() => sel.length && bridge.focus?.(sel)} disabled={!sel.length} />
+        <IconBtn icon="map" label={tr("Toggle overview map")} on={settings.minimap} onClick={() => st.setSettings({ minimap: !settings.minimap })} />
       </div>
       <div className="tb-group">
-        <IconBtn icon="docs" label="Documentation for the current selection" onClick={() => st.openDialog('docs')} text="Docs" />
-        <IconBtn icon="share" label="Share or export" onClick={() => st.openDialog('share')} text="Share" />
-        <IconBtn icon="gear" label="Settings" onClick={() => st.openDialog('settings')} />
-        <IconBtn icon="panelL" label="Toggle module library" on={ui.lib} onClick={() => st.setUi({ lib: !ui.lib })} />
-        <IconBtn icon="panelR" label="Toggle inspector" on={ui.insp} onClick={() => st.setUi({ insp: !ui.insp })} />
+        <IconBtn icon="docs" label={tr("Documentation for the current selection")} onClick={() => st.openDialog('docs')} text={tr("Docs")} />
+        <IconBtn icon="share" label={tr("Share or export")} onClick={() => st.openDialog('share')} text={tr("Share")} />
+        <IconBtn icon="panelL" label={tr("Toggle module library")} on={ui.lib} onClick={() => st.setUi({ lib: !ui.lib })} />
+        <IconBtn icon="panelR" label={tr("Toggle inspector")} on={ui.insp} onClick={() => st.setUi({ insp: !ui.insp })} />
+      </div>
+      <div className="tb-group settings-group" role="group" aria-label={tr("Workspace settings")}>
+        <IconBtn icon="gear" label={tr("Workspace settings: language, grid, motion, simulation")} onClick={() => st.openDialog('settings')} on={ui.dialog === 'settings'} text={tr("Settings")} />
       </div>
     </header>
   );
@@ -156,24 +159,24 @@ export function StatusBar() {
   const st = useStore.getState();
   return (
     <footer className="statusbar" role="contentinfo">
-      <span className={`run-state ${run}`} role="status"><i />{run === 'running' ? 'Running' : run === 'paused' ? 'Paused' : 'Stopped'}</span>
-      <span className="stat" title="Simulation clock. It advances in fixed ticks and does not depend on screen refresh.">t {fmtNum(engine.time / 1000, 2)} s</span>
-      <span className="stat" title="Simulation tick period and speed">{settings.tickMs} ms ×{settings.speed}</span>
-      <span className="stat hide-sm">{Object.keys(project.graph.nodes).length} modules · {Object.keys(project.graph.edges).length} links</span>
-      <span className="stat hide-sm" title="Modules evaluated in the last tick; only modules whose inputs changed run.">{s.evalsLastTick} evals · {s.tickMicros} µs</span>
+      <span className={`run-state ${run}`} role="status"><i />{run === 'running' ? tr("Running") : run === 'paused' ? tr("Paused") : tr("Stopped")}</span>
+      <span className="stat" title={tr("Simulation clock. It advances in fixed ticks and does not depend on screen refresh.")}>t {fmtNum(engine.time / 1000, 2)} s</span>
+      <span className="stat" title={tr("Simulation tick period and speed")}>{tr("{ms} ms ×{speed}", { ms: settings.tickMs, speed: settings.speed })}</span>
+      <span className="stat hide-sm">{tr("{n} modules · {m} links", { n: Object.keys(project.graph.nodes).length, m: Object.keys(project.graph.edges).length })}</span>
+      <span className="stat hide-sm" title={tr("Modules evaluated in the last tick; only modules whose inputs changed run.")}>{tr("{n} evals · {us} µs", { n: s.evalsLastTick, us: s.tickMicros })}</span>
       <span className="tb-spacer" />
-      <button className={`diag-btn ${errors ? 'err' : warns ? 'warn' : ''}`} aria-expanded={open} onClick={() => setOpen(!open)} aria-label={`${errors} errors, ${warns} warnings. Show diagnostics`}>
-        <Icon name="alert" size={13} />{errors} error{errors === 1 ? '' : 's'} · {warns} warning{warns === 1 ? '' : 's'}
+      <button className={`diag-btn ${errors ? 'err' : warns ? 'warn' : ''}`} aria-expanded={open} onClick={() => setOpen(!open)} aria-label={tr('{e} errors, {w} warnings. Show diagnostics', { e: errors, w: warns })}>
+        <Icon name="alert" size={13} />{tr(errors === 1 ? "{n} error" : "{n} errors", { n: errors })} · {tr(warns === 1 ? "{n} warning" : "{n} warnings", { n: warns })}
       </button>
-      <span className={`stat save ${saveState}`} title={saveState === 'unavailable' ? 'Browser storage is unavailable (private mode or restricted file access). Use File → Export to keep your work.' : 'Autosave keeps the latest state in this browser.'}>
-        {saveState === 'saved' ? 'Autosaved' : saveState === 'unsaved' ? 'Saving…' : 'Storage unavailable: export to keep work'}
+      <span className={`stat save ${saveState}`} title={saveState === 'unavailable' ? tr("Browser storage is unavailable (private mode or restricted file access). Use File → Export to keep your work.") : tr("Autosave keeps the latest state in this browser.")}>
+        {saveState === 'saved' ? tr("Autosaved") : saveState === 'unsaved' ? tr("Saving…") : tr("Storage unavailable: export to keep work")}
       </span>
       {open && (
-        <div className="diag-pop" role="dialog" aria-label="Diagnostics">
-          <div className="diag-head"><b>Diagnostics</b><button className="icon-btn sm" aria-label="Close diagnostics" onClick={() => setOpen(false)}><Icon name="close" size={13} /></button></div>
-          {diag.length === 0 ? <p className="muted pad12">Nothing to report.</p> : (
+        <div className="diag-pop" role="dialog" aria-label={tr("Diagnostics")}>
+          <div className="diag-head"><b>{tr("Diagnostics")}</b><button className="icon-btn sm" aria-label={tr("Close diagnostics")} onClick={() => setOpen(false)}><Icon name="close" size={13} /></button></div>
+          {diag.length === 0 ? <p className="muted pad12">{tr("Nothing to report.")}</p> : (
             <ul className="diag-list">{diag.map((d, i) => (
-              <li key={i} className={d.level}><button onClick={() => { const top = d.nodeId?.split('/')[0]; if (top && project.graph.nodes[top]) { st.select([top]); bridge.focus?.([top]); st.setUi({ insp: true }); } }}><Icon name="alert" size={13} /><span>{d.message}</span></button></li>
+              <li key={i} className={d.level}><button onClick={() => { const top = d.nodeId?.split('/')[0]; if (top && project.graph.nodes[top]) { st.select([top]); bridge.focus?.([top]); st.setUi({ insp: true }); } }}><Icon name="alert" size={13} /><span>{tr(d.message)}</span></button></li>
             ))}</ul>
           )}
         </div>
@@ -227,7 +230,7 @@ export function Minimap({ graph, compounds }: { graph: Graph; compounds: Record<
     window.dispatchEvent(new CustomEvent('ns:center', { detail: { x: ((e.clientX - r.left) - m.ox) / m.k, y: ((e.clientY - r.top) - m.oy) / m.k } }));
   };
   return (
-    <canvas ref={cv} className="minimap" style={{ width: W, height: H }} role="img" aria-label="Overview map of the program. Click or drag to move the view."
+    <canvas ref={cv} className="minimap" style={{ width: W, height: H }} role="img" aria-label={tr("Overview map of the program. Click or drag to move the view.")}
       onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); go(e); }} onPointerMove={(e) => { if (e.buttons) go(e); }} />
   );
 }

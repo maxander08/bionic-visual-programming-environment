@@ -9,10 +9,11 @@ import { useSyncExternalStore } from 'react';
 import { useStore } from '../state/store';
 import { Icon } from './icons';
 import { EquationPlot } from './EquationPlot';
+import { langInfo, normalizeLang, tr } from '../i18n';
 
 export const FAMILY_VAR: Record<string, string> = {
   sensor: '#ff2a2a', sense: '#6fd3ee', knowledge: '#a259ff', attention: '#f7c52b', fear: '#3ddc97', memory: '#86f0cc', apparatus: '#2fd6c0',
-  emotion: '#ff8a50', behavior: '#f4f4f4', projector: '#2fd9cf', node: '#ffc933', data: '#e84dff', timekeeping: '#ff7ac6', quantity: '#b6e34a', info: '#7b8cff',
+  emotion: '#ff8a50', behavior: '#f4f4f4', projector: '#2fd9cf', node: '#ffc933', data: '#e84dff', timekeeping: '#ff7ac6', quantity: '#b6e34a', info: '#7b8cff', workspace: '#c9a3ff',
 };
 
 const TK_STATE: Record<string, string> = { idle: 'Ready', running: 'Running', paused: 'Paused', done: 'Done', stopped: 'Stopped', limit: 'Limit reached', armed: 'Armed', ringing: 'Ringing', snoozed: 'Snoozed' };
@@ -100,6 +101,7 @@ interface Props {
 }
 
 function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
+  useStore((s) => s.settings.language); // memoised view: re-render when the language changes
   const rid = prefix + node.id;
   const ver = useNodeVer(rid);
   const rt = engine.nodes.get(rid);
@@ -127,7 +129,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
   const status = rt?.status ?? { level: 'ok', message: '' };
   const upstream = engine.propagated.get(rid);
   const level = status.level !== 'ok' ? status.level : upstream ? 'warn' : 'ok';
-  const msg = status.level !== 'ok' ? status.message : upstream ? `Waiting: upstream module “${upstream}” failed.` : '';
+  const msg = status.level !== 'ok' ? tr(status.message) : upstream ? tr('Waiting: upstream module “{name}” failed.', { name: upstream }) : '';
   const out = (p: string) => rt?.outputs[p]?.v;
   const title = nodeTitle(def, params);
   const connected = new Set(conn ? conn.split(',') : []);
@@ -145,7 +147,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
         engine.inject(rid, { x: clamp((e.clientX - r.left) / r.width, 0, 1), y: clamp((e.clientY - r.top) / r.height, 0, 1), press: down });
       };
       body = (
-        <div className="pad" data-interactive role="application" aria-label="Touch pad. Press or drag to send coordinates." style={{ touchAction: 'none' }}
+        <div className="pad" data-interactive role="application" aria-label={tr("Touch pad. Press or drag to send coordinates.")} style={{ touchAction: 'none' }}
           onPointerDown={(e) => { if (ro) return; e.currentTarget.setPointerCapture(e.pointerId); press(e, true); }}
           onPointerMove={(e) => { if (!ro && e.buttons) press(e, true); }}
           onPointerUp={(e) => { if (!ro) press(e, false); }} onPointerCancel={(e) => { if (!ro) press(e, false); }}>
@@ -156,10 +158,20 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
     }
     case 'switch':
       body = (
-        <button className={`sw ${params.on ? 'on' : ''}`} data-interactive role="switch" aria-checked={!!params.on} aria-label="Switch" disabled={ro || pinned('on')}
+        <button className={`sw ${params.on ? 'on' : ''}`} data-interactive role="switch" aria-checked={!!params.on} aria-label={tr("Switch")} disabled={ro || pinned('on')}
           onClick={() => setParam({ on: !node.params.on })} onKeyDown={(e) => e.stopPropagation()} />
       );
       break;
+    case 'setlanguage': {
+      const li = langInfo(normalizeLang(params.language) ?? 'en');
+      body = (
+        <div className="lang-face" lang={li.tag}>
+          <b>{li.native}</b>
+          <span>{params.mode === 'signal' ? tr('on Apply signal') : tr('auto')}{pinned('language') ? ' · ' + tr('pin') : ''}</span>
+        </div>
+      );
+      break;
+    }
     case 'info':
       body = <div className="text-body pre clamp2">{String(params.text ?? '')}</div>;
       break;
@@ -190,12 +202,12 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
       body = view.plot ? (
         <div className="meter-wrap">
           <EquationPlot plot={view.plot} />
-          {!ro && <button className="expand" data-interactive aria-label="Open graph full size" onClick={() => useStore.getState().openDialog('meter', rid)}><Icon name="expand" /></button>}
+          {!ro && <button className="expand" data-interactive aria-label={tr("Open graph full size")} onClick={() => useStore.getState().openDialog('meter', rid)}><Icon name="expand" /></button>}
         </div>
       ) : <div className="meter-wrap"><Meter hist={view.hist} auto={params.auto !== false} /><span className="meter-num">{view.last !== undefined ? fmtNum(view.last, 3) : ''}</span></div>;
       break;
     case 'equation':
-      body = <div className="text-body eq pre clamp2">{String(params.expr ?? '') || <span className="ph">y = sin(x)</span>}</div>;
+      body = <div className="text-body eq pre clamp2">{String(params.expr ?? '') || <span className="ph">{"y = sin(x)"}</span>}</div>;
       break;
     case 'audio': body = <Art kind="audio" level={view.mute ? 0 : (view.amp ?? 0) * (rt?.evals ? 1 : 0)} />; break;
     case 'haptic': body = <Art kind="haptic" />; break;
@@ -226,13 +238,13 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
       <div className={`tk ${view.state ?? 'idle'}`}>
         <div className={`tk-time ${String(view.time ?? '').length > 9 ? 'long' : ''}`}>{view.time ?? '--:--.---'}</div>
         <div className="tk-bar" aria-hidden="true"><i style={{ width: `${clamp(Number(view.progress) || 0, 0, 1) * 100}%` }} /></div>
-        <div className="tk-state">{TK_STATE[view.state ?? 'idle']}{Number(view.count) > 0 ? ` · ${view.count}×` : ''}</div>
+        <div className="tk-state">{tr(TK_STATE[view.state ?? 'idle'])}{Number(view.count) > 0 ? ` · ${view.count}×` : ''}</div>
       </div>
     ); break;
     case 'alarm': body = (
       <div className={`tk ${view.state ?? ''}`}>
         <div className={`tk-time ${String(view.time ?? '').length > 9 ? 'long' : ''}`}>{view.time ?? '--:--:--.---'}</div>
-        <div className="tk-state">{TK_STATE[view.state ?? 'armed']}</div>
+        <div className="tk-state">{tr(TK_STATE[view.state ?? 'armed'])}</div>
         <div className="tk-sub clamp1">{view.countdown ? `in ${view.countdown}` : ' '}</div>
         <div className="tk-sub clamp1">{view.place ?? String(params.city ?? '').split(',')[0]}</div>
       </div>
@@ -240,8 +252,8 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
     case 'stopwatch': body = (
       <div className={`tk ${view.state ?? 'stopped'}`}>
         <div className={`tk-time ${String(view.time ?? '').length > 9 ? 'long' : ''}`}>{view.time ?? '00:00.000'}</div>
-        <div className="tk-state">{TK_STATE[view.state ?? 'stopped']}</div>
-        <div className="tk-sub clamp1">{Number(view.laps) > 0 ? `Lap ${view.laps} · ${view.lap}` : ' '}</div>
+        <div className="tk-state">{tr(TK_STATE[view.state ?? 'stopped'])}</div>
+        <div className="tk-sub clamp1">{Number(view.laps) > 0 ? tr('Lap {n} · {t}', { n: String(view.laps), t: String(view.lap) }) : ' '}</div>
       </div>
     ); break;
     case 'comment': body = <div className="text-body note clamp3">{String(params.text ?? '')}</div>; break;
@@ -277,7 +289,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
   };
 
   return (
-    <div ref={el} className={classes} data-node={node.id} style={style} aria-label={`${def.name} module${selected ? ', selected' : ''}`} title={level !== 'ok' ? msg : undefined}>
+    <div ref={el} className={classes} data-node={node.id} style={style} aria-label={tr(selected ? '{name} module, selected' : '{name} module', { name: def.name })} title={level !== 'ok' ? msg : undefined}>
       {chip ? (
         <div className="chip-row">
           <span className="chip-glyph">{def.glyph}</span>
@@ -288,7 +300,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
           <div className="node-title">
             {dot}
             <span className="t" title={title}>{title}</span>
-            {level !== 'ok' && <span className={`mark ${level}`} aria-label={level === 'error' ? 'Error' : 'Warning'}>{level === 'error' ? '×' : '!'}</span>}
+            {level !== 'ok' && <span className={`mark ${level}`} aria-label={level === 'error' ? tr("Error") : tr("Warning")}>{level === 'error' ? '×' : '!'}</span>}
           </div>
           <div className="node-body">{body}</div>
         </>
@@ -320,18 +332,19 @@ export function PreviewNode({ def, scale = 0.78 }: { def: ModuleDef; scale?: num
   if (def.type === 'touch') body = <div className="pad" />;
   else if (def.type === 'switch') body = <span className="sw" />;
   else if (def.type === 'info') body = <div className="text-body pre">hello</div>;
-  else if (def.type === 'equation') body = <div className="text-body eq pre">y = sin(x)</div>;
-  else if (def.type === 'text') body = <div className="text-body">Hello World</div>;
+  else if (def.type === 'setlanguage') body = <div className="lang-face"><b>文A</b><span>EN · 简 · 繁</span></div>;
+  else if (def.type === 'equation') body = <div className="text-body eq pre">{"y = sin(x)"}</div>;
+  else if (def.type === 'text') body = <div className="text-body">{"Hello World"}</div>;
   else if (def.type === 'color') body = <div className="hsv"><div><span>H</span><span>S</span><span>V</span></div><i style={{ background: '#0a7aff' }} /></div>;
   else if (def.type === 'projector') body = <i className="grad" />;
   else if (def.type === 'meter') body = <svg className="art meter" viewBox="0 0 100 40" preserveAspectRatio="none"><polyline points="0,22 20,22 30,8 38,34 46,22 60,18 100,22" fill="none" stroke="currentColor" strokeWidth="1.4" vectorEffect="non-scaling-stroke" /></svg>;
   else if (def.type === 'image') body = <i className="grad dark" />;
   else if (def.type === 'motion') body = <div className="cross"><i /><b /></div>;
-  else if (def.type === 'comment') body = <div className="text-body note">Note</div>;
+  else if (def.type === 'comment') body = <div className="text-body note">{tr("Note")}</div>;
   else if (def.type === 'clock') body = <div className="clock"><div className="clock-time">12:00</div><div className="clock-city">Tokyo</div></div>;
-  else if (def.type === 'timer') body = <div className="tk"><div className="tk-time">05:00.000</div><div className="tk-bar"><i style={{ width: '40%' }} /></div><div className="tk-state">Running</div></div>;
-  else if (def.type === 'alarm') body = <div className="tk"><div className="tk-time long">07:30:00.000</div><div className="tk-state">Armed</div><div className="tk-sub">in 08:12:00.250</div></div>;
-  else if (def.type === 'stopwatch') body = <div className="tk"><div className="tk-time">01:23.400</div><div className="tk-state">Running</div></div>;
+  else if (def.type === 'timer') body = <div className="tk"><div className="tk-time">05:00.000</div><div className="tk-bar"><i style={{ width: '40%' }} /></div><div className="tk-state">{tr("Running")}</div></div>;
+  else if (def.type === 'alarm') body = <div className="tk"><div className="tk-time long">07:30:00.000</div><div className="tk-state">{tr("Armed")}</div><div className="tk-sub">in 08:12:00.250</div></div>;
+  else if (def.type === 'stopwatch') body = <div className="tk"><div className="tk-time">01:23.400</div><div className="tk-state">{tr("Running")}</div></div>;
   else if (def.family === 'quantity') body = <QuantityFace text={def.chip?.(defaultParams(def)) ?? ''} sub="" />;
   else if (def.type === 'vital') body = <svg className="art" viewBox="0 0 100 40"><circle cx="50" cy="20" r="8" fill="currentColor" /></svg>;
   return (

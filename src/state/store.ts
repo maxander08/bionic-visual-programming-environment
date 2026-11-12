@@ -4,14 +4,15 @@ import { addNode, connect, createCompound, disconnect, duplicateNodes, moveNodes
 import { TEMPLATES } from '../core/library';
 import { cleanName, newProject } from '../core/project';
 import { autosave, settingsStore, storageAvailable, userLibrary } from './storage';
+import { detectLang, langInfo, normalizeLang, setActiveLang, tr, type Lang } from '../i18n';
 
 export interface Snapshot { graph: Graph; compounds: Record<string, CompoundDef>; name: string }
-export interface Settings { snap: boolean; motion: 'system' | 'reduced' | 'full'; minimap: boolean; tickMs: number; speed: number }
+export interface Settings { snap: boolean; motion: 'system' | 'reduced' | 'full'; minimap: boolean; tickMs: number; speed: number; language: Lang }
 export type DialogKind = null | 'templates' | 'projects' | 'share' | 'docs' | 'settings' | 'compound' | 'meter' | 'confirm' | 'group';
 export interface Toast { id: number; msg: string; kind: 'info' | 'error' | 'ok' }
 export interface ConfirmArg { title: string; body: string; confirm: string; danger?: boolean; onConfirm: () => void }
 
-export const DEFAULT_SETTINGS: Settings = { snap: true, motion: 'system', minimap: true, tickMs: 50, speed: 1 };
+export const DEFAULT_SETTINGS: Settings = { snap: true, motion: 'system', minimap: true, tickMs: 50, speed: 1, language: detectLang() };
 
 interface State {
   project: Project;
@@ -47,6 +48,8 @@ interface State {
   select(ids: string[], edge?: string | null): void;
   setRun(r: State['run']): void;
   setSettings(p: Partial<Settings>): void;
+  /** Switch the interface language. `persist: false` keeps the choice for this session only. */
+  setLanguage(lang: Lang, opts?: { persist?: boolean; notice?: boolean }): void;
   setUi(p: Partial<State['ui']>): void;
   openDialog(d: DialogKind, arg?: unknown): void;
   confirm(arg: ConfirmArg): void;
@@ -67,6 +70,8 @@ const initialProject = (): Project => {
 };
 
 let toastId = 1;
+let sessionLang = false;
+let storedLang: Lang = 'en';
 
 export const useStore = create<State>((set, get) => ({
   project: initialProject(),
@@ -138,7 +143,7 @@ export const useStore = create<State>((set, get) => ({
     get().edit((s) => {
       const r = connect(s.graph, from, fp, to, tp, s.compounds);
       if (r.error) { err = r.error; return null; }
-      if (r.replaced) msg = 'Replaced the previous connection: an input has one source.';
+      if (r.replaced) msg = tr("Replaced the previous connection: an input has one source.");
       return { ...s, graph: r.graph };
     });
     if (err) get().toast(err, 'error');
@@ -192,7 +197,7 @@ export const useStore = create<State>((set, get) => ({
       return { ...s, graph: r.graph, compounds: { ...s.compounds, [r.def.id]: r.def } };
     });
     if (error) get().toast(error, 'error');
-    else if (newId) { set({ selection: [newId] }); get().toast(`Created compound “${name}”. Open it from the inspector.`, 'ok'); }
+    else if (newId) { set({ selection: [newId] }); get().toast(tr('Created compound “{name}”. Open it from the inspector.', { name }), 'ok'); }
   },
 
   updateCompound(id, fn) {
@@ -210,7 +215,7 @@ export const useStore = create<State>((set, get) => ({
     const lib = { ...get().userCompounds, [id]: def };
     set({ userCompounds: lib });
     const ok = userLibrary.write(lib);
-    get().toast(ok ? `Saved “${def.name}” to your library. It is available in other programs.` : 'Could not write to browser storage; export the program to keep this compound.', ok ? 'ok' : 'error');
+    get().toast(ok ? tr('Saved “{name}” to your library. It is available in other programs.', { name: def.name }) : tr("Could not write to browser storage; export the program to keep this compound."), ok ? 'ok' : 'error');
   },
 
   undo() {
@@ -239,8 +244,23 @@ export const useStore = create<State>((set, get) => ({
   setRun: (run) => set({ run }),
   setSettings(p) {
     const s = { ...get().settings, ...p };
+    s.language = normalizeLang(s.language) ?? 'en';
+    // The translator must know the new language before React renders with it.
+    setActiveLang(s.language);
     set({ settings: s });
-    settingsStore.write(s);
+    // An explicit language choice is a stored preference; a session-only one (Set Language, Remember off) stays out of storage.
+    if (p.language !== undefined) { storedLang = s.language; sessionLang = false; }
+    settingsStore.write(sessionLang ? { ...s, language: storedLang } : s);
+  },
+  setLanguage(lang, opts = {}) {
+    const next = normalizeLang(lang) ?? 'en';
+    const changed = next !== get().settings.language;
+    const s = { ...get().settings, language: next };
+    setActiveLang(next);
+    set({ settings: s });
+    // Session-only: the stored preference is left as it was.
+    if (opts.persist !== false) { storedLang = next; sessionLang = false; settingsStore.write(s); } else sessionLang = true;
+    if (changed && opts.notice) get().toast(tr('Language set to {name}.', { name: langInfo(next).native }), 'ok');
   },
   setUi: (p) => {
     const q = { ...p };
@@ -272,7 +292,7 @@ export const useStore = create<State>((set, get) => ({
     if (note) get().toast(note, 'ok');
   },
   newBlank() {
-    get().openProject(newProject(), 'New program.');
+    get().openProject(newProject(), tr("New program."));
   },
 }));
 
@@ -288,3 +308,11 @@ export const bridge: {
   zoomBy?: (f: number) => void;
   resetView?: () => void;
 } = {};
+
+// Make the translator match the stored language before the first render.
+{
+  const l = normalizeLang(useStore.getState().settings.language) ?? 'en';
+  setActiveLang(l);
+  storedLang = l;
+  if (useStore.getState().settings.language !== l) useStore.setState({ settings: { ...useStore.getState().settings, language: l } });
+}

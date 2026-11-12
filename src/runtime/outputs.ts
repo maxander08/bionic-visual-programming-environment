@@ -1,9 +1,11 @@
 // Browser-side effects of Behavior modules: sound, vibration, notifications. Everything reports its real availability.
 import type { Engine } from '../core/engine';
+import { useStore } from '../state/store';
 
 let ctx: AudioContext | null = null;
 const voices = new Map<string, { osc: OscillatorNode; gain: GainNode }>();
 const seen = new Map<string, number>();
+const langSeen = new Map<string, number>();
 
 export type AudioState = 'locked' | 'running' | 'unsupported';
 export const audio = {
@@ -59,6 +61,14 @@ export function processOutputs(engine: Engine, running: boolean) {
           voice.gain.gain.setTargetAtTime(Math.max(0, Math.min(0.5, (v.amp ?? 1) * (v.volume ?? 0.15))), t, 0.02);
         } else voice.gain.gain.setTargetAtTime(0, t, 0.03);
       }
+    } else if (n.type === 'setlanguage') {
+      // Workspace Settings: the module counts its applications in `n`; each new count switches the editor language.
+      const c = v.n as number | undefined;
+      if (c === undefined || c === 0) langSeen.delete(n.id);
+      else if (c !== langSeen.get(n.id)) {
+        langSeen.set(n.id, c);
+        useStore.getState().setLanguage(v.lang, { persist: !!v.remember, notice: !!v.notice });
+      }
     } else if (n.type === 'haptic' || n.type === 'notify') {
       const c = v.n as number | undefined;
       if (c !== undefined && c !== seen.get(n.id)) {
@@ -80,6 +90,7 @@ export function processOutputs(engine: Engine, running: boolean) {
 }
 
 export function silenceAll() {
+  langSeen.clear();
   if (!ctx) return;
   for (const v of voices.values()) v.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.03);
   seen.clear();

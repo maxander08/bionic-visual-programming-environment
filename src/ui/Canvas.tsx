@@ -8,6 +8,7 @@ import { FAMILY_VAR, NodeView } from './NodeView';
 import { easeInOutCubic, easeOutCubic, motion, tween } from './motion';
 import { emitView, mainView } from './viewBus';
 import { describe } from '../core/util';
+import { tr } from '../i18n';
 
 interface Layout { def: ModuleDef; w: number; h: number }
 type Pt = { x: number; y: number };
@@ -60,6 +61,7 @@ type Drag =
 interface Props { graph: Graph; compounds: Record<string, CompoundDef>; prefix?: string; ro?: boolean; main?: boolean }
 
 function CanvasImpl({ graph, compounds, prefix = '', ro = false, main = false }: Props) {
+  useStore((s) => s.settings.language); // re-render with translated module definitions when the language changes
   const root = useRef<HTMLDivElement>(null);
   const world = useRef<HTMLDivElement>(null);
   const svg = useRef<SVGSVGElement>(null);
@@ -526,7 +528,7 @@ function CanvasImpl({ graph, compounds, prefix = '', ro = false, main = false }:
     const rt = engine.nodes.get(prefix + hit.node);
     const sig = hit.dir === 'out' ? rt?.outputs[hit.port] : rt?.inputs[hit.port];
     const r = root.current!.getBoundingClientRect();
-    const text = `${l.def.name} · ${hit.dir === 'in' ? 'input' : 'output'} ${p.label} (${p.type})\n${sig ? `${describe(sig.v)}  ·  strength ${sig.s.toFixed(2)}` : 'no signal'}`;
+    const text = `${l.def.name} · ${hit.dir === 'in' ? tr('input') : tr('output')} ${p.label} (${p.type})\n${sig ? `${describe(sig.v)}  ·  ${tr('strength')} ${sig.s.toFixed(2)}` : tr('no signal')}`;
     // Same port and already shown: keep the frame-identical tooltip instead of restarting its animation.
     const k = `${hit.node}|${hit.dir}|${hit.port}`;
     if (hoverKey.current === k) return;
@@ -608,9 +610,9 @@ function CanvasImpl({ graph, compounds, prefix = '', ro = false, main = false }:
           if (hit && hit.node !== d.anchor.node && hit.dir === opp) {
             const [from, fp, to, tp] = d.anchor.dir === 'out' ? [d.anchor.node, d.anchor.port, hit.node, hit.port] : [hit.node, hit.port, d.anchor.node, d.anchor.port];
             const chk = checkConnection(live.current.graph, from, fp, to, tp, live.current.compounds);
-            st.toast(chk.reason ?? 'Those ports cannot be connected.', 'error');
-          } else if (hit && hit.node === d.anchor.node && hit.dir === opp) st.toast('A module cannot connect to itself. Route feedback through a Delay or another module.', 'info');
-          else if (d.replace) { st.removeEdge(d.replace.id); st.toast('Connection removed.', 'info'); }
+            st.toast(chk.reason ?? tr("Those ports cannot be connected."), 'error');
+          } else if (hit && hit.node === d.anchor.node && hit.dir === opp) st.toast(tr("A module cannot connect to itself. Route feedback through a Delay or another module."), 'info');
+          else if (d.replace) { st.removeEdge(d.replace.id); st.toast(tr("Connection removed."), 'info'); }
         }
       }
       // A wire just ended while the pointer never left its port: bring the tooltip back,
@@ -625,7 +627,7 @@ function CanvasImpl({ graph, compounds, prefix = '', ro = false, main = false }:
           const rt = engine.nodes.get(prefix + hit.node);
           const sig = hit.dir === 'out' ? rt?.outputs[hit.port] : rt?.inputs[hit.port];
           const r = root.current!.getBoundingClientRect();
-          const text = `${l.def.name} · ${hit.dir === 'in' ? 'input' : 'output'} ${p.label} (${p.type})\n${sig ? `${describe(sig.v)}  ·  strength ${sig.s.toFixed(2)}` : 'no signal'}`;
+          const text = `${l.def.name} · ${hit.dir === 'in' ? tr('input') : tr('output')} ${p.label} (${p.type})\n${sig ? `${describe(sig.v)}  ·  ${tr('strength')} ${sig.s.toFixed(2)}` : tr('no signal')}`;
           hoverKey.current = `${hit.node}|${hit.dir}|${hit.port}`;
           setHover({ x: e.clientX - r.left, y: e.clientY - r.top, text, mode: 'in' });
           root.current?.classList.add('overport');
@@ -670,7 +672,7 @@ function CanvasImpl({ graph, compounds, prefix = '', ro = false, main = false }:
   const selSet = new Set(selection);
 
   return (
-    <div ref={root} className={`canvas-root ${ro ? 'ro' : ''}`} tabIndex={0} role="application" aria-label={ro ? 'Compound inner graph (read only)' : 'Program workspace. Tab selects modules, arrow keys move them, Delete removes them.'}
+    <div ref={root} className={`canvas-root ${ro ? 'ro' : ''}`} tabIndex={0} role="application" aria-label={ro ? tr("Compound inner graph (read only)") : tr("Program workspace. Tab selects modules, arrow keys move them, Delete removes them.")}
       onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={(e) => endDrag(e, false)} onPointerCancel={(e) => endDrag(e, true)} onPointerLeave={() => { hoverKey.current = null; setHover((h) => (h && h.mode === 'in' ? { ...h, mode: 'out' } : h)); }} onDoubleClick={onDoubleClick} onKeyDown={onKeyDown} onContextMenu={(e) => e.preventDefault()}>
       <div ref={world} className="world" style={{ transform: `translate3d(${view.current.x}px, ${view.current.y}px, 0) scale(${view.current.k})` }}>
         <svg ref={svg} className="wires" width="1" height="1" aria-hidden="true">
@@ -693,7 +695,7 @@ function CanvasImpl({ graph, compounds, prefix = '', ro = false, main = false }:
       {hover && <div className={`port-tip ${hover.mode}`} style={{ left: hover.x + 14, top: hover.y + 14 }} role="status"
         onAnimationEnd={(ev) => { if (hover.mode === 'out' && ev.animationName === 'fade-out') setHover((h) => (h && h.mode === 'out' ? null : h)); }}>{hover.text.split('\n').map((t, i) => <div key={i} className={i ? 'v' : ''}>{t}</div>)}</div>}
       {Object.keys(graph.nodes).length === 0 && !ro && (
-        <div className="empty-hint"><p>Empty workspace</p><span>Drag a module from the library, or open an example from the toolbar.</span></div>
+        <div className="empty-hint"><p>{tr("Empty workspace")}</p><span>{tr("Drag a module from the library, or open an example from the toolbar.")}</span></div>
       )}
     </div>
   );
