@@ -71,7 +71,8 @@ function settingPin(p: ParamDef): PortDef | null {
 
 /** Append setting pins to a module and size the node so that no edge is crowded. */
 function placeSettingPins(def: ModuleDef, params: ParamDef[]): ModuleDef {
-  const pins = params.map(settingPin).filter(Boolean) as PortDef[];
+  const withPin = params.filter((q) => settingPin(q));
+  const pins = withPin.map((q) => settingPin(q)!);
   if (!pins.length) return def;
   const base = SIZES[def.size];
   const chip = def.size === 'chip';
@@ -85,8 +86,9 @@ function placeSettingPins(def: ModuleDef, params: ParamDef[]): ModuleDef {
   // use the top edge first. A side is only grown when neither side can take the pin within the tolerance.
   const order: Side[] = chip ? ['top', 'left'] : ['left', 'top'];
   const tol = chip ? 0 : GRID;
-  const placed = pins.map((pin) => {
-    let side = order.find((s) => cost(s) <= tol);
+  const placed = pins.map((pin, i) => {
+    const forced = withPin[i].pinSide;
+    let side = forced ?? order.find((s) => cost(s) <= tol);
     if (!side) side = order.reduce((a, b) => (cost(b) < cost(a) ? b : a));
     cin[side]++;
     return { ...pin, side };

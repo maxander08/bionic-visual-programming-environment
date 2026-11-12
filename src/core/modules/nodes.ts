@@ -61,29 +61,29 @@ export const nodes: ModuleDef[] = [
   },
   {
     ...chipBase, type: 'add', name: 'Adder', caption: 'Adder', glyph: '+', chip: (p) => fmtNum(Number(p.offset)),
-    inputs: [inp('a', 'A', 'num', 'First addend.'), inp('b', 'B', 'num', 'Second addend; 0 when not connected.', 'left', true)], outputs: [out('out', 'Sum', 'num', 'a + b + offset.')],
-    params: [num('offset', 'Offset', 0, -1e6, 1e6, 0.1, 'Constant added to the sum.')],
+    inputs: [inp('a', 'A', 'num', 'First addend.'), inp('b', 'B', 'num', 'Second addend; 0 when not connected.', 'top', true)], outputs: [out('out', 'Sum', 'num', 'a + b + offset.')],
+    params: [{ ...num('offset', 'Offset', 0, -1e6, 1e6, 0.1, 'Constant added to the sum.'), pinSide: 'left' }],
     run(c) { c.emit('out', r4(n(c.get('a')) + (c.has('b') ? n(c.get('b')) : 0) + c.num('offset'))); },
     doc: { summary: 'Adds numbers.', runtime: 'out = a + b + offset. Missing b counts as 0; a missing a keeps the node idle.' },
   },
   {
     ...chipBase, type: 'mul', name: 'Multiplier', caption: 'Multiplier', glyph: '×', chip: (p) => fmtNum(Number(p.factor), 2),
-    inputs: [inp('a', 'A', 'num', 'Value to scale.'), inp('b', 'B', 'num', 'Replaces the factor when connected.', 'left', true)], outputs: [out('out', 'Product', 'num', 'a × (b or factor).')],
-    params: [num('factor', 'Factor', 1, -1e6, 1e6, 0.1, 'Used when b is not connected.')],
+    inputs: [inp('a', 'A', 'num', 'Value to scale.'), inp('b', 'B', 'num', 'Replaces the factor when connected.', 'top', true)], outputs: [out('out', 'Product', 'num', 'a × (b or factor).')],
+    params: [{ ...num('factor', 'Factor', 1, -1e6, 1e6, 0.1, 'Used when b is not connected.'), pinSide: 'left' }],
     run(c) { c.emit('out', r4(n(c.get('a')) * (c.has('b') ? n(c.get('b')) : c.num('factor')))); },
     doc: { summary: 'Multiplies a signal.', runtime: 'out = a × b, or a × factor when b is not connected.' },
   },
   {
     ...chipBase, type: 'sub', name: 'Subtractor', caption: 'Subtractor', glyph: '−', chip: (p) => fmtNum(Number(p.offset)),
-    inputs: [inp('a', 'A', 'num', 'Minuend: the value to subtract from.'), inp('b', 'B', 'num', 'Subtrahend; 0 when not connected.', 'left', true)], outputs: [out('out', 'Difference', 'num', 'a − b − offset.')],
-    params: [num('offset', 'Offset', 0, -1e6, 1e6, 0.1, 'Constant subtracted from the difference.')],
+    inputs: [inp('a', 'A', 'num', 'Minuend: the value to subtract from.'), inp('b', 'B', 'num', 'Subtrahend; 0 when not connected.', 'top', true)], outputs: [out('out', 'Difference', 'num', 'a − b − offset.')],
+    params: [{ ...num('offset', 'Offset', 0, -1e6, 1e6, 0.1, 'Constant subtracted from the difference.'), pinSide: 'left' }],
     run(c) { c.emit('out', r4(n(c.get('a')) - (c.has('b') ? n(c.get('b')) : 0) - c.num('offset'))); },
     doc: { summary: 'Subtracts numbers.', runtime: 'out = a − b − offset. Missing b counts as 0; a missing a keeps the node idle.' },
   },
   {
     ...chipBase, type: 'div', name: 'Divisor', caption: 'Divisor', glyph: '÷', chip: (p) => fmtNum(Number(p.divisor), 2),
-    inputs: [inp('a', 'A', 'num', 'Dividend: the value to divide.'), inp('b', 'B', 'num', 'Replaces the divisor when connected.', 'left', true)], outputs: [out('out', 'Quotient', 'num', 'a ÷ (b or divisor).')],
-    params: [num('divisor', 'Divisor', 1, -1e6, 1e6, 0.1, 'Used when b is not connected.')],
+    inputs: [inp('a', 'A', 'num', 'Dividend: the value to divide.'), inp('b', 'B', 'num', 'Replaces the divisor when connected.', 'top', true)], outputs: [out('out', 'Quotient', 'num', 'a ÷ (b or divisor).')],
+    params: [{ ...num('divisor', 'Divisor', 1, -1e6, 1e6, 0.1, 'Used when b is not connected.'), pinSide: 'left' }],
     run(c) {
       const a = n(c.get('a')), d = c.has('b') ? n(c.get('b')) : c.num('divisor');
       if (d === 0) return c.fail(`Division by zero: ${fmtNum(a)} ÷ 0.`);
