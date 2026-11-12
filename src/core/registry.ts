@@ -3,6 +3,7 @@ import { GRID, SIZES } from './types';
 import { sensors } from './modules/sensors';
 import { nuclei } from './modules/nuclei';
 import { nodes } from './modules/nodes';
+import { baseData } from './modules/basedata';
 import { behaviors } from './modules/behavior';
 import { timekeeping } from './modules/timekeeping';
 import { quantities } from './modules/quantities';
@@ -30,9 +31,9 @@ const compoundShell: ModuleDef = {
   doc: { summary: 'A reusable subsystem: a group of modules wrapped with defined inputs, outputs and exposed settings.', runtime: 'At run time the compound is expanded into its inner modules. Open it to inspect the inner graph.' },
 };
 
-export const MODULES: ModuleDef[] = [...sensors, ...nuclei, ...behaviors, ...nodes, ...timekeeping, ...quantities, ...info];
+export const MODULES: ModuleDef[] = [...sensors, ...nuclei, ...behaviors, ...nodes, ...baseData, ...timekeeping, ...quantities, ...info];
 const BY_TYPE = new Map(MODULES.map((m) => [m.type, m]));
-export const CATEGORIES = ['Sensor', 'Nucleus', 'Behavior', 'Node', 'Timekeeping', 'Quantities', 'Info'] as const;
+export const CATEGORIES = ['Sensor', 'Nucleus', 'Behavior', 'Node', 'Base Data', 'Timekeeping', 'Quantities', 'Info'] as const;
 
 // ---- setting pins -------------------------------------------------------------------------------------------
 // Every setting of a module (number, choice, text, switch) also exists as an optional input pin. While a signal

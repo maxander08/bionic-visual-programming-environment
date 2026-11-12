@@ -19,6 +19,7 @@ export const ARTICLES: Article[] = [
         '**Nuclei** process them: [[n:sense]] normalizes, [[n:fear]] integrates threat, [[n:memory]] remembers, [[n:decision]] chooses.',
         '**Behaviors** show or act: [[n:projector]], [[n:meter]], [[n:audio]], [[n:light]], [[n:notify]].',
         '**Nodes** are the plumbing: math, timing, routing and logic such as [[n:add]], [[n:pulse]], [[n:relay]] and [[n:threshold]].',
+        '**Base Data** modules hold the six basic data types: [[n:integer]], [[n:decimal]], [[n:string]], [[n:character]], [[n:boolean]] and [[n:array]]. Each stores one value, converts whatever arrives on its Input pin into its type, and shows the value on its face.',
         '**Timekeeping** modules measure and tell time: [[n:timer]] counts down, [[n:stopwatch]] counts up, [[n:alarm]] rings at a time of day and [[n:clock]] shows the live time in any major city.',
         '**Quantities** hold an amount of something written <amount><unit>, like 2.5km or 101.325kPa. There is one module for each kind of quantity (Time, Length, Pressure, Energy and more). Every unit takes every SI prefix, from quecto (q) to quetta (Q), and each module converts between its units.',
         '**Info** modules label and inform: [[n:comment]] and [[n:by]] are notes that never run.',

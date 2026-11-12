@@ -534,3 +534,171 @@ for (const q of QUANTITIES) {
     },
   };
 }
+
+/* ───── Base Data: the six basic data types ───── */
+Object.assign(GUIDE, {
+  integer: {
+    when: 'You need a whole number: a count, a step, an index, a code.',
+    steps: [
+      'Add **Integer** and type a **Value**.',
+      'Connect **Integer** to anything that takes a number, such as [[n:add]], [[n:compare]] or [[n:projector]].',
+      'To turn another signal into a whole number, wire it into the **Input** pin on the left and pick a **Rounding**.',
+      'Pick a **Base** to read the number as binary, octal or hexadecimal on the node face and on the **Text** output.',
+    ],
+    tips: [
+      'Value, Rounding and Base each have a setting pin on the top edge, so a signal can change them while the program runs.',
+      'Input also understands text such as 42 or 0xFF, and reads true as 1 and false as 0.',
+      'The range is a signed 32-bit integer: −2 147 483 648 to 2 147 483 647.',
+    ],
+    pitfalls: [
+      'A fraction is never kept: 2.7 becomes 2 with *Toward zero*, 3 with *Nearest*. Use [[n:decimal]] when the fraction matters.',
+      'A number beyond the range is held at the limit and the node shows a warning.',
+      'The Integer output is always a plain number. Base only changes how it is written, on the face and on Text.',
+    ],
+    up: ['constant', 'random', 'decimal', 'string'], down: ['add', 'compare', 'projector', 'character'],
+    alias: 'int whole number counter hexadecimal binary octal base data type',
+    settings: {
+      value: 'Negative numbers are fine. Typing 3.9 here is made whole by Rounding.',
+      rounding: 'Applies to the Input pin and to a Value that arrives on its setting pin.',
+      base: 'Display only. 255 reads FF in hexadecimal, 11111111 in binary.',
+    },
+    options: {
+      rounding: { trunc: 'Cut the fraction off: 2.7 → 2 and −2.7 → −2.', round: 'The nearest whole number: 2.5 → 3.', floor: 'Always down: 2.7 → 2 and −2.1 → −3.', ceil: 'Always up: 2.1 → 3 and −2.7 → −2.' },
+      base: { dec: 'Ordinary digits, 0–9.', bin: 'Binary, written 0b101.', oct: 'Octal, written 0o17.', hex: 'Hexadecimal, written 0xFF.' },
+    },
+  },
+  decimal: {
+    when: 'You need a number that can have a fractional part, and control over how many places it keeps.',
+    steps: [
+      'Add **Decimal** and type a **Value** such as 3.14159.',
+      'Set **Decimal places** to the precision you want to keep.',
+      'Connect **Decimal** to anything that takes a number, or **Text** to a [[n:projector]] to display it.',
+    ],
+    tips: [
+      'Rounding to a few places tidies up float noise: 0.1 + 0.2 becomes 0.3 at 6 places.',
+      'Pick *Fixed* notation to always show every place (3.500) and *Scientific* for very large or small numbers (1.5e+3).',
+      'Value, Decimal places and Notation have setting pins on the top edge.',
+    ],
+    pitfalls: [
+      'Numbers are double-precision: about 15 significant digits are exact, so very long values lose their tail.',
+      'Decimal places apply to the output, not just the display: the Decimal output really is rounded.',
+      'Input text that is not a number (for example “1,5” with a comma) raises an error.',
+    ],
+    up: ['constant', 'random', 'integer', 'wave', 'string'], down: ['mul', 'add', 'compare', 'projector', 'meter'],
+    alias: 'float double real fraction floating point precision places scientific notation base data type',
+    settings: {
+      value: 'Any number from −10¹⁵ to 10¹⁵.',
+      places: '0 keeps whole numbers only; 12 is the most.',
+      notation: 'Display only: it changes the node face and the Text output, not the Decimal output.',
+    },
+    options: { notation: { plain: 'Trailing zeros dropped: 3.5.', fixed: 'Every place shown: 3.500.', sci: 'Mantissa and exponent: 3.5e+0.' } },
+  },
+  string: {
+    when: 'You need a piece of text: a message, a label, a name, a command.',
+    steps: [
+      'Add **String** and type the **Value**.',
+      'Connect **String** to a [[n:projector]] or [[n:text]] module to show it.',
+      'Connect **Length** to anything that takes a number to count its characters.',
+      'To turn any other signal into text, wire it into the **Input** pin on the left.',
+    ],
+    tips: [
+      'Case can change the text to capitals, small letters or Capitalize Words, and Trim removes stray spaces. Both have setting pins.',
+      'Length counts characters the way a person does: an emoji is one, not two.',
+      'Numbers arrive written the way they would appear in a display (1.5, not 1.500000), and lists arrive as their JSON text.',
+    ],
+    pitfalls: [
+      'Text is not a number: “42” only becomes 42 when you send it to a module that takes numbers. Use [[n:integer]] or [[n:decimal]] to convert it.',
+      'Capitalize Words only raises the first letter of each word; it never lowers the rest.',
+    ],
+    up: ['constant', 'integer', 'decimal', 'boolean', 'array'], down: ['projector', 'text', 'array', 'character'],
+    alias: 'text words sentence message label characters case upper lower trim length base data type',
+    settings: {
+      value: 'Up to 2000 characters. Line breaks are kept.',
+      case: 'Applies to the Value and to anything arriving on Input.',
+      trim: 'Only removes whitespace at the two ends, never inside.',
+    },
+    options: { case: { keep: 'Exactly as typed.', upper: 'Every letter a capital.', lower: 'Every letter small.', title: 'The first letter of each word a capital.' } },
+  },
+  character: {
+    when: 'You need exactly one letter, digit or symbol, or the code that stands for it.',
+    steps: [
+      'Add **Character** and type one character in **Value**.',
+      'Connect **Character** to anything that takes text, or **Code** (its Unicode code point) to anything that takes a number.',
+      'To pick the first letter of a word, wire a [[n:string]] into **Input**.',
+      'To turn a number into a letter, set **Number input** to *As code point* and wire the number into **Input**: 65 gives A.',
+    ],
+    tips: [
+      'Any Unicode character works: letters of any alphabet, digits, punctuation and emoji.',
+      'The face shows the character and its code point in the usual U+0041 form.',
+      'Value, Case and Number input have setting pins on the top edge.',
+    ],
+    pitfalls: [
+      'Only one character is kept. If you type more, the first is used and the node shows a warning.',
+      'An empty Value or Input is an error: a character cannot be nothing. Use [[n:string]] for text that may be empty.',
+      'In code point mode a number must be a whole number from 0 to 1 114 111 and not one of the surrogate halves 55 296–57 343.',
+    ],
+    up: ['string', 'integer', 'constant', 'keys'], down: ['string', 'compare', 'projector'],
+    alias: 'char letter symbol glyph unicode code point ascii emoji base data type',
+    settings: {
+      value: 'Exactly one character. Spaces count.',
+      case: 'Only letters change. In a few languages a capital would be longer than one character; the character is then left alone.',
+      numbers: 'Matters only for numbers arriving on Input. Text always uses its first character.',
+    },
+    options: {
+      case: { keep: 'Exactly as typed.', upper: 'The capital form of a letter.', lower: 'The small form of a letter.' },
+      numbers: { text: 'The number written out: 5 gives “5” and 42 gives “4”.', code: 'The number as a Unicode code point: 65 gives “A”.' },
+    },
+  },
+  boolean: {
+    when: 'You need a truth value: on or off, yes or no, true or false.',
+    steps: [
+      'Add **Boolean** and switch **Value** on or off.',
+      'Connect **Boolean** to anything that takes true or false, such as [[n:relay]].',
+      'Connect **Not** to get the opposite without a separate module.',
+      'To turn another signal into true or false, wire it into **Input**.',
+    ],
+    tips: [
+      'Words only changes how the value is written (yes / no, on / off, 1 / 0); the Boolean output stays true or false.',
+      'Input reads 0, empty text, an empty list and the words false, no, off, n and f as false. Everything else is true.',
+      'Value and Words have setting pins on the top edge.',
+    ],
+    pitfalls: [
+      'A text such as “off” is false here but would be true in a module that only checks for empty text. Boolean is the safer converter.',
+      'The Text output follows Words, so it can say “yes”. Use the Boolean output for logic.',
+    ],
+    up: ['compare', 'threshold', 'switch', 'pulse', 'string'], down: ['relay', 'combine', 'projector', 'string'],
+    alias: 'bool true false yes no on off flag truth logic toggle base data type',
+    settings: { value: 'The truth value emitted while Input is not connected.', words: 'Display and Text output only.' },
+    options: { words: { tf: 'true and false.', yn: 'yes and no.', oo: 'on and off.', bit: '1 and 0.' } },
+  },
+  array: {
+    when: 'You need a list of values kept together, in order: the readings of a day, the words of a sentence, a row of numbers.',
+    steps: [
+      'Add **Array** and type the **Items**: 1, 2, 3, or a JSON list such as [1, "a", true].',
+      'Connect **Length** to anything that takes a number to count the items.',
+      'Set **Index** to choose one item for the **Item** output. 0 is the first; −1 is the last.',
+      'To split text into a list, wire a [[n:string]] into **Input** and set the **Separator**.',
+    ],
+    tips: [
+      'Items as *Automatic* reads 12 as a number, true and false as booleans, and the rest as text. Choose *Text* to keep every item as typed.',
+      'An empty Separator makes every character an item, so “hello” becomes five items.',
+      'Items, Separator, Items as and Index all have setting pins on the top edge, so a signal can change the index to walk through the list.',
+      'A list wired to a text input arrives as its JSON text, ready for a [[n:projector]].',
+    ],
+    pitfalls: [
+      'Empty pieces are dropped: “1,,2” has two items, not three. Use a JSON list such as [1, "", 2] to keep an empty one.',
+      'An Index outside the list leaves **Item** empty and shows a warning.',
+      'A list holds at most 10 000 items.',
+      'Items as *Numbers* raises an error on the first item that is not a number.',
+    ],
+    up: ['string', 'constant', 'integer', 'array'], down: ['projector', 'compare', 'array', 'math'],
+    alias: 'list array items collection vector values index element length csv json split base data type',
+    settings: {
+      items: 'Comma-separated by default; write a JSON list to keep strings with commas.',
+      separator: 'Up to 8 characters. Spaces around items are trimmed.',
+      as: 'How each item is read when the text is split.',
+      index: 'Negative counts from the end.',
+    },
+    options: { as: { auto: 'Numbers, true/false and text, each read as it looks.', number: 'Every item must be a number.', text: 'Every item stays text.' } },
+  },
+} satisfies Record<string, NodeGuide>);

@@ -12,7 +12,7 @@ import { EquationPlot } from './EquationPlot';
 
 export const FAMILY_VAR: Record<string, string> = {
   sensor: '#ff2a2a', sense: '#6fd3ee', knowledge: '#a259ff', attention: '#f7c52b', fear: '#3ddc97', memory: '#86f0cc', apparatus: '#2fd6c0',
-  emotion: '#ff8a50', behavior: '#f4f4f4', projector: '#2fd9cf', node: '#ffc933', timekeeping: '#ff7ac6', quantity: '#b6e34a', info: '#7b8cff',
+  emotion: '#ff8a50', behavior: '#f4f4f4', projector: '#2fd9cf', node: '#ffc933', data: '#e84dff', timekeeping: '#ff7ac6', quantity: '#b6e34a', info: '#7b8cff',
 };
 
 const TK_STATE: Record<string, string> = { idle: 'Ready', running: 'Running', paused: 'Paused', done: 'Done', stopped: 'Stopped', limit: 'Limit reached', armed: 'Armed', ringing: 'Ringing', snoozed: 'Snoozed' };
@@ -259,6 +259,9 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
     default: body = def.family === 'quantity' ? <QuantityFace text={String(view.text ?? def.chip?.(params) ?? '')} sub={String(view.sub ?? '')} dim={view.text === undefined} /> : null;
   }
 
+  // Base Data chips show the value they last emitted, so a converted Input shows as what it became.
+  const chipText = (def.family === 'data' && typeof view.chip === 'string' ? view.chip : def.chip?.(params)) ?? '';
+
   const style = { transform: `translate(${node.x}px, ${node.y}px)`, width: size.w, height: size.h, ['--c' as string]: col } as React.CSSProperties;
   const classes = ['node', `f-${def.family}`, chip ? 'chip' : '', `sz-${def.size}`, selected ? 'sel' : '', level === 'error' ? 'err' : level === 'warn' ? 'warn' : '', node.disabled ? 'off' : ''].filter(Boolean).join(' ');
 
@@ -278,7 +281,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
       {chip ? (
         <div className="chip-row">
           <span className="chip-glyph">{def.glyph}</span>
-          <span className="chip-val" title={def.chip?.(params)}>{def.chip?.(params) ?? ''}</span>
+          <span className="chip-val" title={chipText}>{chipText}</span>
         </div>
       ) : (
         <>
