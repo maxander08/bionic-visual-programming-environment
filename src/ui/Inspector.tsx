@@ -10,6 +10,8 @@ import { getSensorState, sensorVersion, subscribeSensors } from '../runtime/sens
 import { audio, notificationState, requestNotifications, vibrationSupported } from '../runtime/outputs';
 import { bridge, useStore } from '../state/store';
 import { Icon } from './icons';
+import { FileInspector } from './FilePanel';
+import { FILE_KIND_BY_TYPE } from '../core/files';
 import { tr, trFace } from '../i18n';
 
 function NumberField({ p, value, onChange }: { p: Extract<ParamDef, { kind: 'number' }>; value: number; onChange: (v: number) => void }) {
@@ -319,6 +321,7 @@ function NodePanel({ id }: { id: string }) {
       <OutputStatus def={def} />
       {rt && rt.evals > 0 && <p className="runline">{tr("Evaluated")} {rt.evals}×{rt.lastFire >= 0 ? tr(" · last output at ") + fmtNum(rt.lastFire / 1000, 2) + ' s simulated' : tr(" · no output signal")}</p>}
       {cdef && <CompoundPanel node={node} cdef={cdef} />}
+      {FILE_KIND_BY_TYPE.has(node.type) && <Section title={tr("File")}><FileInspector node={node} kind={FILE_KIND_BY_TYPE.get(node.type)!} /></Section>}
       {defs.length > 0 && (
         <Section title={tr("Settings")}>
           {def.type === 'vision' && node.params.source === 'file' && <VisionFile node={node} />}

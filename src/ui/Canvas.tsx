@@ -1,3 +1,4 @@
+import { dropOnWorkspace } from '../runtime/files';
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { checkConnection, connect, disconnect, graphBounds, snap } from '../core/graph';
 import { compoundModuleDef, getDef, nodeSize, portList, portPosition, portSide } from '../core/registry';
@@ -669,12 +670,27 @@ function CanvasImpl({ graph, compounds, prefix = '', ro = false, main = false }:
     }
   };
 
+  // Files dropped on empty workspace: a node of the matching kind appears under the pointer for each one (dropOnWorkspace).
+  const onDragOver = (e: React.DragEvent) => {
+    if (ro || !Array.from(e.dataTransfer?.types ?? []).includes('Files')) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+  const onDrop = (e: React.DragEvent) => {
+    if (ro || !Array.from(e.dataTransfer?.types ?? []).includes('Files')) return;
+    e.preventDefault();
+    const list = Array.from(e.dataTransfer.files);
+    if (!list.length) return;
+    const p = toWorld(e.clientX, e.clientY);
+    void dropOnWorkspace(list, { x: p.x - 72, y: p.y - 66 });
+  };
+
   const nodeIds: string[] = visible ? [...visible] : Object.keys(graph.nodes);
   const selSet = new Set(selection);
 
   return (
     <div ref={root} className={`canvas-root ${ro ? 'ro' : ''}`} tabIndex={0} role="application" aria-label={ro ? tr("Compound inner graph (read only)") : tr("Program workspace. Tab selects modules, arrow keys move them, Delete removes them.")}
-      onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={(e) => endDrag(e, false)} onPointerCancel={(e) => endDrag(e, true)} onPointerLeave={() => { hoverKey.current = null; setHover((h) => (h && h.mode === 'in' ? { ...h, mode: 'out' } : h)); }} onDoubleClick={onDoubleClick} onKeyDown={onKeyDown} onContextMenu={(e) => e.preventDefault()}>
+      onDragOver={onDragOver} onDrop={onDrop} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={(e) => endDrag(e, false)} onPointerCancel={(e) => endDrag(e, true)} onPointerLeave={() => { hoverKey.current = null; setHover((h) => (h && h.mode === 'in' ? { ...h, mode: 'out' } : h)); }} onDoubleClick={onDoubleClick} onKeyDown={onKeyDown} onContextMenu={(e) => e.preventDefault()}>
       <div ref={world} className="world" style={{ transform: `translate3d(${view.current.x}px, ${view.current.y}px, 0) scale(${view.current.k})` }}>
         <svg ref={svg} className="wires" width="1" height="1" aria-hidden="true">
           <path ref={(e) => { els.current.off = e; }} className="w w-off" />

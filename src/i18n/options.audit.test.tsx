@@ -8,6 +8,7 @@ import App from '../App';
 import { useStore } from '../state/store';
 import { MODULES, getDef } from '../core/registry';
 import { play, stop } from '../runtime/session';
+import { FILE_KINDS } from '../core/files';
 
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 (globalThis as any).ResizeObserver = class { observe() {} unobserve() {} disconnect() {} };
@@ -25,6 +26,8 @@ const DATA_FACES: Record<string, RegExp> = {
   string: /^"?hello"?$/i, info: /^hello$/, event: /^go$/, boolean: /^(true|false|yes|no|on|off)$/, equation: /^sin\(x\)$/,
   setlanguage: /^English$/, // a language's own name is always written in that language
 };
+// Files nodes show the file formats they take (.DOCX .DOC): format names are Latin in every language.
+for (const k of FILE_KINDS) DATA_FACES[k.type] = /^[.A-Z0-9\s]+$/;
 const SYMBOLS = /\b(Hz|UTC)\b/g;
 const OK_QTY = /^[=\s\d.eE+\-−]*[A-Za-zμΩ°/·²³]{1,6}$/;
 

@@ -6,5 +6,6 @@ import { nodes } from './hans/nodes';
 import { ui } from './hans/ui';
 import { faces } from './hans/faces';
 import { docsUi } from './hans/docsui';
+import { files } from './hans/files';
 
-export const zhHans: Record<string, string> = { ...nodes, ...content, ...docs, ...extra, ...ui, ...faces, ...docsUi };
+export const zhHans: Record<string, string> = { ...files, ...nodes, ...content, ...docs, ...extra, ...ui, ...faces, ...docsUi };

@@ -9,12 +9,14 @@ import { useSyncExternalStore } from 'react';
 import { useStore } from '../state/store';
 import { Icon } from './icons';
 import { EquationPlot } from './EquationPlot';
+import { FileFace, FilePreview, useFileDrop } from './FilePanel';
+import { FILE_KIND_BY_TYPE } from '../core/files';
 import { getLang, langInfo, normalizeLang, tr, trFace, trPlace } from '../i18n';
 import { fmtClockDate, fmtClockTime, fmtCountdown } from '../i18n/format';
 
 export const FAMILY_VAR: Record<string, string> = {
   sensor: '#ff2a2a', sense: '#6fd3ee', knowledge: '#a259ff', attention: '#f7c52b', fear: '#3ddc97', memory: '#86f0cc', apparatus: '#2fd6c0',
-  emotion: '#ff8a50', behavior: '#f4f4f4', projector: '#2fd9cf', node: '#ffc933', data: '#e84dff', timekeeping: '#ff7ac6', quantity: '#b6e34a', info: '#7b8cff', workspace: '#c9a3ff',
+  emotion: '#ff8a50', behavior: '#f4f4f4', projector: '#2fd9cf', node: '#ffc933', data: '#e84dff', timekeeping: '#ff7ac6', quantity: '#b6e34a', file: '#3aa0ff', info: '#7b8cff', workspace: '#c9a3ff',
 };
 
 const TK_STATE: Record<string, string> = { idle: 'Ready', running: 'Running', paused: 'Paused', done: 'Done', stopped: 'Stopped', limit: 'Limit reached', armed: 'Armed', ringing: 'Ringing', snoozed: 'Snoozed' };
@@ -144,6 +146,8 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
     return typeof d === 'string' && v === d ? tr(v) : v;
   };
 
+  const fileKind = FILE_KIND_BY_TYPE.get(def.type);
+  const drop = useFileDrop(node.id, !fileKind || ro);
   const setParam = (patch: Record<string, unknown>, key?: string) => useStore.getState().setNodeParams(node.id, patch, key);
 
   let body: ReactElement | null = null;
@@ -275,14 +279,14 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
     case 'decision': body = <Art kind="fork" level={(view.best ?? -1) >= 0 ? 1 : 0.2} />; break;
     case 'state': body = <><Art kind="cycle" level={0.7} extra={Math.max(0, Number(out('index')) || 0)} /><div className="state-name clamp1">{view.state ?? ''}</div></>; break;
     case 'compound': body = <Art kind="grid" level={0.4} />; break;
-    default: body = def.family === 'quantity' ? <QuantityFace text={String(view.text ?? def.chip?.(params) ?? '')} sub={tr(String(view.sub ?? ''))} dim={view.text === undefined} /> : null;
+    default: body = fileKind ? <FileFace node={node} kind={fileKind} ro={ro} /> : def.family === 'quantity' ? <QuantityFace text={String(view.text ?? def.chip?.(params) ?? '')} sub={tr(String(view.sub ?? ''))} dim={view.text === undefined} /> : null;
   }
 
   // Base Data chips show the value they last emitted, so a converted Input shows as what it became.
   const chipText = (def.family === 'data' && typeof view.chip === 'string' ? view.chip : def.chip?.(params)) ?? '';
 
   const style = { transform: `translate(${node.x}px, ${node.y}px)`, width: size.w, height: size.h, ['--c' as string]: col } as React.CSSProperties;
-  const classes = ['node', `f-${def.family}`, chip ? 'chip' : '', `sz-${def.size}`, selected ? 'sel' : '', level === 'error' ? 'err' : level === 'warn' ? 'warn' : '', node.disabled ? 'off' : ''].filter(Boolean).join(' ');
+  const classes = ['node', `f-${def.family}`, chip ? 'chip' : '', `sz-${def.size}`, selected ? 'sel' : '', drop.over ? 'drop-over' : '', level === 'error' ? 'err' : level === 'warn' ? 'warn' : '', node.disabled ? 'off' : ''].filter(Boolean).join(' ');
 
   const portEls = (dir: 'in' | 'out') => {
     const list = dir === 'in' ? def.inputs : def.outputs;
@@ -296,7 +300,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
   };
 
   return (
-    <div ref={el} className={classes} data-node={node.id} style={style} aria-label={tr(selected ? '{name} module, selected' : '{name} module', { name: def.name })} title={level !== 'ok' ? msg : undefined}>
+    <div ref={el} className={classes} data-node={node.id} style={style} aria-label={tr(selected ? '{name} module, selected' : '{name} module', { name: def.name })} title={level !== 'ok' ? msg : undefined} {...drop.handlers}>
       {chip ? (
         <div className="chip-row">
           <span className="chip-glyph">{def.glyph}</span>
@@ -352,6 +356,7 @@ export function PreviewNode({ def, scale = 0.78 }: { def: ModuleDef; scale?: num
   else if (def.type === 'timer') body = <div className="tk"><div className="tk-time">05:00.000</div><div className="tk-bar"><i style={{ width: '40%' }} /></div><div className="tk-state">{tr("Running")}</div></div>;
   else if (def.type === 'alarm') body = <div className="tk"><div className="tk-time long">07:30:00.000</div><div className="tk-state">{tr("Armed")}</div><div className="tk-sub">in 08:12:00.250</div></div>;
   else if (def.type === 'stopwatch') body = <div className="tk"><div className="tk-time">01:23.400</div><div className="tk-state">{tr("Running")}</div></div>;
+  else if (FILE_KIND_BY_TYPE.has(def.type)) body = <FilePreview kind={FILE_KIND_BY_TYPE.get(def.type)!} />;
   else if (def.family === 'quantity') body = <QuantityFace text={def.chip?.(defaultParams(def)) ?? ''} sub="" />;
   else if (def.type === 'vital') body = <svg className="art" viewBox="0 0 100 40"><circle cx="50" cy="20" r="8" fill="currentColor" /></svg>;
   return (

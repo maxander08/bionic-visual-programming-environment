@@ -711,3 +711,98 @@ Object.assign(GUIDE, {
     options: { as: { auto: 'Numbers, true/false and text, each read as it looks.', number: 'Every item must be a number.', text: 'Every item stays text.' } },
   },
 } satisfies Record<string, NodeGuide>);
+
+/* ───── Files: one guide per kind of file ───── */
+const FILE_GUIDE: Record<string, Partial<NodeGuide> & { when: string }> = {
+  'file-document': {
+    when: 'A Word-style document is part of your program and you want its text, name or size.',
+    down: ['text', 'projector', 'file-text'], alias: 'word docx doc letter report',
+    tips: ['.DOCX is a zip of XML, so its plain text can be pulled out right in the browser. Headings, bold, pictures and table layout are not kept; paragraphs become lines.'],
+    pitfalls: ['The old .DOC format is binary. It is stored and described, but **Content** stays empty. Save it as .DOCX to read it.'],
+  },
+  'file-text': {
+    when: 'You want the words of a .MD, .TXT or .RTF file as data in your program.',
+    down: ['text', 'projector', 'string', 'sense'], alias: 'markdown notes plain text read',
+    tips: ['**Lines** counts the lines read, which is handy for a quick look at a log or a list.'],
+    pitfalls: ['Only the first 1 000 000 characters are read; the node shows a warning when a file is longer.', '.RTF is sent as its raw markup (the `{\\rtf1 …}` commands), not as formatted text.'],
+  },
+  'file-pdf': {
+    when: 'A PDF is part of your program and you want to know its name, size or type.',
+    down: ['text', 'projector', 'threshold'], alias: 'pdf acrobat portable document',
+    pitfalls: ['The text inside a PDF is not extracted. The node knows the file’s name, extension and size only.'],
+  },
+  'file-audio': {
+    when: 'You have a recording and want to know how long it is, or to pass its details on.',
+    down: ['timer', 'projector', 'meter'], alias: 'sound music song recording length',
+    pitfalls: ['The audio is not played here. Use the [[n:audio]] speaker for a tone.', 'If the browser cannot read a format, **Duration** stays empty; the inspector explains.'],
+  },
+  'file-video': {
+    when: 'You have a video clip and want its length, picture size or a still frame on the workspace.',
+    down: ['timer', 'projector', 'meter'], alias: 'movie film clip length resolution',
+    tips: ['The node shows a still frame from near the start of the clip when the browser can decode it.'],
+    pitfalls: ['The video is not played. MKV and AVI are not decoded by most browsers, so their length and size stay empty; the file is still stored.'],
+  },
+  'file-image': {
+    when: 'You want a picture file to feed an analysis, a display, or a size check.',
+    steps: ['Add **Image** from the **Files** section and drop a picture on it.', 'Connect **Image** to [[n:image|Image Display]], [[n:projector]], [[n:sense]] or [[n:knowledge]].', 'Use **Width** and **Height** for the picture’s real pixel size.'],
+    down: ['image', 'projector', 'sense', 'knowledge'], alias: 'picture photo jpg png gif svg webp tiff',
+    tips: ['The picture on **Image** is scaled to at most 256 px on its long side, so analysis stays fast. **Width** and **Height** still report the original size.', 'Animated GIFs give their first frame.'],
+    pitfalls: ['TIFF is decoded only by some browsers. When yours cannot, the file is kept but **Image** stays empty and the node warns.'],
+  },
+  'file-spreadsheet': {
+    when: 'You have a table file and want its text (CSV, SQL) or details (XLSX, XLS, ACCDB).',
+    down: ['array', 'text', 'projector'], alias: 'excel csv sql table database rows',
+    tips: ['.CSV and .SQL are plain text, so **Content** holds the whole file and **Lines** counts its lines.'],
+    pitfalls: ['Workbooks and databases (.XLSX, .XLS, .ACCDB) are stored and described only; their cells are not read.'],
+  },
+  'file-presentation': {
+    when: 'You have a .PPTX deck and want its slide count or the words on the slides.',
+    down: ['text', 'projector'], alias: 'powerpoint slides deck',
+    pitfalls: ['Only text on slides is read, not pictures, charts or speaker notes.'],
+  },
+  'file-executable': {
+    when: 'A program or script file is part of what your program lists or checks.',
+    down: ['text', 'projector'], alias: 'exe msi app bat sh program installer script',
+    pitfalls: ['Nothing is ever run. The node only describes the file.', 'Browsers may warn about a download of an executable; here the file is only read into the page.'],
+  },
+  'file-web': {
+    when: 'You want the source of an .HTML, .CSS, .JS or .PHP file as text.',
+    down: ['text', 'projector'], alias: 'html css javascript php website source code',
+    pitfalls: ['The source is never run, rendered or fetched. A script stays inert text.'],
+  },
+  'file-compressed': {
+    when: 'You have an archive and want to know how many files are inside, or its size.',
+    down: ['text', 'projector', 'threshold'], alias: 'zip rar 7z tar gz archive',
+    tips: ['For .ZIP files **Entries** counts the files inside (folders are not counted). Nothing is unpacked.'],
+    pitfalls: ['.RAR, .7Z, .TAR and .GZ are stored and described but not looked into.'],
+  },
+  'file-misc': {
+    when: 'You have a file that none of the other Files nodes takes.',
+    down: ['text', 'projector', 'compare'], alias: 'other any unknown anything',
+    tips: ['If you drop a file on empty workspace, the matching Files node is created for you, Miscellaneous included.'],
+    pitfalls: ['A PDF, picture or any other listed type is turned away with a hint about the right node.'],
+  },
+};
+for (const [type, g] of Object.entries(FILE_GUIDE)) {
+  const name = type === 'file-misc' ? 'Miscellaneous' : type.slice(5);
+  GUIDE[type] = {
+    steps: [
+      `Add **${name === 'pdf' ? 'PDF' : name[0].toUpperCase() + name.slice(1)}** from the **Files** section of the library.`,
+      'Drag a file from your computer onto the node, or click the node to choose one. The inspector has the same two controls.',
+      'Connect **File** (the file as a small record), **Name**, **Extension** or **Size** to anything that reads them, and the kind-specific pins to what you want to feed.',
+    ],
+    ...g,
+    tips: [
+      'You can also drop files on empty workspace: a node of the right kind appears under the pointer for each file.',
+      'Only the file’s name, size and an id are saved with the program. The file itself stays in this browser, so a program you share or export comes back with empty-looking nodes that ask for the file again.',
+      ...(g.tips ?? []),
+    ],
+    pitfalls: [
+      'A node holds one file. Dropping another replaces it (Undo brings the first one back).',
+      'A file that belongs to a different Files node is turned away with a message that names the right one.',
+      ...(g.pitfalls ?? []),
+    ],
+    up: [],
+    settings: {},
+  };
+}

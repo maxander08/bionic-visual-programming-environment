@@ -147,10 +147,11 @@ export type Family =
   | 'data'
   | 'timekeeping'
   | 'quantity'
+  | 'file'
   | 'info'
   | 'workspace';
 
-export type Category = 'Sensor' | 'Nucleus' | 'Behavior' | 'Node' | 'Base Data' | 'Timekeeping' | 'Quantities' | 'Info' | 'Workspace Settings';
+export type Category = 'Sensor' | 'Nucleus' | 'Behavior' | 'Node' | 'Base Data' | 'Timekeeping' | 'Quantities' | 'Files' | 'Info' | 'Workspace Settings';
 
 export interface ModuleDoc {
   summary: string;
