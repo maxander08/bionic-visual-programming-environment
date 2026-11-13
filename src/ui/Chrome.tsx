@@ -115,7 +115,7 @@ export function Toolbar() {
       <div className="tb-group run-group" role="group" aria-label={tr("Execution")}>
         {run === 'running'
           ? <IconBtn icon="pause" label={tr("Pause (Space)")} onClick={pause} on tone="live" text={tr("Pause")} />
-          : <IconBtn icon="play" label={run === 'paused' ? tr("Resume (Space)") : tr("Run (Space)")} onClick={play} tone="go" text={run === 'paused' ? tr("Resume") : 'Run'} />}
+          : <IconBtn icon="play" label={run === 'paused' ? tr("Resume (Space)") : tr("Run (Space)")} onClick={play} tone="go" text={run === 'paused' ? tr("Resume") : tr("Run")} />}
         <IconBtn icon="step" label={tr("Step one tick (.)")} onClick={stepOnce} disabled={run === 'running'} />
         <IconBtn icon="stop" label={tr("Stop and reset (Esc)")} onClick={stop} disabled={run === 'stopped'} />
       </div>

@@ -9,7 +9,8 @@ export function DocLink({ route, anchor, children, className }: { route: Route; 
 }
 
 /** Inline markup: **bold**, `code` and [[links]]. Newlines inside text are kept. */
-export function Rich({ x }: { x: string }) {
+export function Rich({ x: en }: { x: string }) {
+  const x = tr(en); // prose with a dictionary entry follows the interface language
   return (
     <>
       {parseInline(x).map((p, i) => {
@@ -24,8 +25,10 @@ export function Rich({ x }: { x: string }) {
 
 export const TYPE_COLOR: Record<string, string> = { num: '#6fd3ee', bool: '#3ddc97', text: '#f7c52b', image: '#ff8a50', data: '#c08bff', any: '#a8a8a8' };
 
+import { tr, trFace } from '../../i18n';
+
 export function TypeChip({ type }: { type: string }) {
-  return <span className="dx-type" style={{ ['--tc' as string]: TYPE_COLOR[type] ?? '#aaa' }}>{type}</span>;
+  return <span className="dx-type" style={{ ['--tc' as string]: TYPE_COLOR[type] ?? '#aaa' }}>{trFace(type)}</span>;
 }
 
 const CALLOUT_ICON: Record<string, string> = { note: 'alert', tip: 'check', warn: 'alert' };

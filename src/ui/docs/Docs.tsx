@@ -5,6 +5,7 @@ import { Icon } from '../icons';
 import { FAMILY_VAR } from '../NodeView';
 import { ARTICLE_BY_ID } from './content';
 import { RECIPES } from './recipes';
+import { tr } from '../../i18n';
 import { CAT_LABEL, routeFromKey, routeTitle } from './meta';
 import { KIND_ORDER, search, snippet, tokenize, type Hit, type Kind } from './search';
 import { ArticlePage, FinderPage, Home, NodePage, NodesIndex, PackagesPage, RecipePage, RecipesPage, SettingsIndex, Star } from './pages';
@@ -63,13 +64,13 @@ function Results({ q, kind, setKind, active, setActive, hits, counts, open }: {
   const list = hits.slice(0, 60);
   useEffect(() => { document.querySelector('.dx-result.active')?.scrollIntoView({ block: 'nearest' }); }, [active]);
   return (
-    <section aria-label="Search results">
+    <section aria-label={tr("Search results")}>
       <header className="dx-head">
         <div className="dx-eyebrow">Search</div>
         <h1 className="dx-h1">Results for “{q}”</h1>
         <p className="dx-small" aria-live="polite">{total} match{total === 1 ? '' : 'es'}{kind !== 'All' ? ` in ${kind.toLowerCase()}` : ''}. Use ↑ ↓ and Enter, or click.</p>
       </header>
-      <div className="dx-chips" role="group" aria-label="Filter results by type">
+      <div className="dx-chips" role="group" aria-label={tr("Filter results by type")}>
         <button type="button" className={`dx-chip ${kind === 'All' ? 'on' : ''}`} aria-pressed={kind === 'All'} onClick={() => setKind('All')}>All<small>{total}</small></button>
         {KIND_ORDER.filter((k) => counts.get(k)).map((k) => <button key={k} type="button" className={`dx-chip ${kind === k ? 'on' : ''}`} aria-pressed={kind === k} onClick={() => setKind(k)}>{k === 'Fix' ? 'Fixes' : k + 's'}<small>{counts.get(k)}</small></button>)}
       </div>
@@ -84,7 +85,7 @@ function Results({ q, kind, setKind, active, setActive, hits, counts, open }: {
           </div>
         </div>
       ) : (
-        <ul className="dx-results" role="listbox" aria-label="Results">
+        <ul className="dx-results" role="listbox" aria-label={tr("Results")}>
           {list.map((h, i) => (
             <li key={h.entry.id} role="option" aria-selected={i === active}>
               <button type="button" className={`dx-result ${i === active ? 'active' : ''}`} onMouseMove={() => i !== active && setActive(i)} onClick={() => open(h)}>
@@ -104,14 +105,14 @@ function Results({ q, kind, setKind, active, setActive, hits, counts, open }: {
 
 function NavItem({ r, label, ckey, go }: { r: Route; label?: string; ckey: string; go: (r: Route) => void }) {
   const on = routeKey(r) === ckey;
-  return <button type="button" className={`dx-nav-item ${on ? 'on' : ''}`} aria-current={on ? 'page' : undefined} onClick={() => go(r)}>{label ?? routeTitle(r)}</button>;
+  return <button type="button" className={`dx-nav-item ${on ? 'on' : ''}`} aria-current={on ? 'page' : undefined} onClick={() => go(r)}>{tr(label ?? routeTitle(r))}</button>;
 }
 
 function NavGroup({ title, open, onToggle, count, children }: { title: string; open: boolean; onToggle: () => void; count?: number; children: ReactNode }) {
   return (
     <div className="dx-group">
       <button type="button" className="dx-group-head" aria-expanded={open} onClick={onToggle}>
-        <Icon name="chevron" size={11} /><span>{title}</span>{count != null && <small>{count}</small>}
+        <Icon name="chevron" size={11} /><span>{tr(title)}</span>{count != null && <small>{count}</small>}
       </button>
       {open && <div className="dx-group-body">{children}</div>}
     </div>
@@ -282,25 +283,25 @@ export function Docs({ onClose }: { onClose: () => void }) {
   return (
     <NavCtx.Provider value={nav}>
       <div className="dx-overlay" onPointerDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-        <div ref={shell} className="dx-shell" role="dialog" aria-modal="true" aria-label="Documentation" tabIndex={-1}>
+        <div ref={shell} className="dx-shell" role="dialog" aria-modal="true" aria-label={tr("Documentation")} tabIndex={-1}>
           <header className="dx-top">
-            <button type="button" className="dx-icon dx-menu-btn" aria-label="Toggle navigation" aria-expanded={menu} onClick={() => setMenu(!menu)}><Icon name="menu" size={16} /></button>
-            <button type="button" className="dx-brand" onClick={() => go({ k: 'home' })} aria-label="Documentation home"><Icon name="docs" size={16} /><span>Docs</span></button>
+            <button type="button" className="dx-icon dx-menu-btn" aria-label={tr("Toggle navigation")} aria-expanded={menu} onClick={() => setMenu(!menu)}><Icon name="menu" size={16} /></button>
+            <button type="button" className="dx-brand" onClick={() => go({ k: 'home' })} aria-label={tr("Documentation home")}><Icon name="docs" size={16} /><span>{tr('Docs')}</span></button>
             <div className="dx-hist">
-              <button type="button" className="dx-icon flip" aria-label="Back (Alt+Left)" title="Back (Alt+←)" disabled={hist.pos === 0} onClick={back}><Icon name="chevron" size={15} /></button>
-              <button type="button" className="dx-icon" aria-label="Forward (Alt+Right)" title="Forward (Alt+→)" disabled={hist.pos >= hist.stack.length - 1} onClick={fwd}><Icon name="chevron" size={15} /></button>
+              <button type="button" className="dx-icon flip" aria-label={tr("Back (Alt+Left)")} title={tr("Back (Alt+←)")} disabled={hist.pos === 0} onClick={back}><Icon name="chevron" size={15} /></button>
+              <button type="button" className="dx-icon" aria-label={tr("Forward (Alt+Right)")} title={tr("Forward (Alt+→)")} disabled={hist.pos >= hist.stack.length - 1} onClick={fwd}><Icon name="chevron" size={15} /></button>
             </div>
             <div className="dx-search" role="search">
               <Icon name="search" size={16} />
-              <input ref={input} type="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onInputKey} placeholder="Search modules, settings, pins, recipes, fixes…" aria-label="Search the documentation" autoComplete="off" spellCheck={false} data-autofocus />
-              {q ? <button type="button" className="dx-clear" aria-label="Clear search" onClick={() => { setQ(''); input.current?.focus(); }}><Icon name="close" size={13} /></button> : <kbd title="Press / to search">/</kbd>}
+              <input ref={input} type="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onInputKey} placeholder={tr("Search modules, settings, pins, recipes, fixes…")} aria-label={tr("Search the documentation")} autoComplete="off" spellCheck={false} data-autofocus />
+              {q ? <button type="button" className="dx-clear" aria-label={tr("Clear search")} onClick={() => { setQ(''); input.current?.focus(); }}><Icon name="close" size={13} /></button> : <kbd title={tr("Press / to search")}>/</kbd>}
             </div>
-            <button type="button" className="dx-icon" aria-label="Close documentation" onClick={onClose}><Icon name="close" size={16} /></button>
+            <button type="button" className="dx-icon" aria-label={tr("Close documentation")} onClick={onClose}><Icon name="close" size={16} /></button>
           </header>
 
           <div className="dx-body">
             {menu && <div className="dx-scrim" onClick={() => setMenu(false)} />}
-            <nav className={`dx-side ${menu ? 'open' : ''}`} aria-label="Documentation sections">
+            <nav className={`dx-side ${menu ? 'open' : ''}`} aria-label={tr("Documentation sections")}>
               {item({ k: 'home' }, 'Overview')}
               {bookmarkRoutes.length > 0 && group('Bookmarks', 'Bookmarks', bookmarkRoutes.map((r) => (
                 <button key={routeKey(r)} type="button" className={`dx-nav-item ${routeKey(r) === ckey ? 'on' : ''}`} onClick={() => go(r)}><Star on size={11} /> {routeTitle(r)}</button>
@@ -320,8 +321,8 @@ export function Docs({ onClose }: { onClose: () => void }) {
             <main ref={main} className="dx-main" tabIndex={-1} aria-live="polite">
               <div className="dx-content">
                 {!q.trim() && crumbs.length > 1 && (
-                  <nav className="dx-crumbs" aria-label="Breadcrumb">
-                    {crumbs.map((c, i) => <Fragment key={i}>{i > 0 && <span aria-hidden="true">/</span>}{i === 0 ? <button type="button" onClick={() => go({ k: 'home' })}>{c}</button> : <span aria-current={i === crumbs.length - 1 ? 'page' : undefined}>{c}</span>}</Fragment>)}
+                  <nav className="dx-crumbs" aria-label={tr("Breadcrumb")}>
+                    {crumbs.map((c, i) => <Fragment key={i}>{i > 0 && <span aria-hidden="true">/</span>}{i === 0 ? <button type="button" onClick={() => go({ k: 'home' })}>{tr(c)}</button> : <span aria-current={i === crumbs.length - 1 ? 'page' : undefined}>{tr(c)}</span>}</Fragment>)}
                   </nav>
                 )}
                 {q.trim() ? <Results q={q} kind={kind} setKind={setKind} active={active} setActive={setActive} hits={hits} counts={counts} open={openHit} /> : page}
@@ -329,7 +330,7 @@ export function Docs({ onClose }: { onClose: () => void }) {
             </main>
 
             {!q.trim() && toc.length > 1 && (
-              <aside className="dx-toc" aria-label="On this page">
+              <aside className="dx-toc" aria-label={tr("On this page")}>
                 <h2>On this page</h2>
                 <ul>
                   {toc.map((t) => <li key={t.id}><button type="button" className={spy === t.id ? 'on' : ''} onClick={() => document.getElementById(t.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>{t.text}</button></li>)}

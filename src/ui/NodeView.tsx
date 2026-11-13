@@ -9,7 +9,8 @@ import { useSyncExternalStore } from 'react';
 import { useStore } from '../state/store';
 import { Icon } from './icons';
 import { EquationPlot } from './EquationPlot';
-import { getLang, langInfo, normalizeLang, tr } from '../i18n';
+import { getLang, langInfo, normalizeLang, tr, trFace, trPlace } from '../i18n';
+import { fmtClockDate, fmtClockTime, fmtCountdown } from '../i18n/format';
 
 export const FAMILY_VAR: Record<string, string> = {
   sensor: '#ff2a2a', sense: '#6fd3ee', knowledge: '#a259ff', attention: '#f7c52b', fear: '#3ddc97', memory: '#86f0cc', apparatus: '#2fd6c0',
@@ -137,6 +138,12 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
   const live = sensorKey(def.type, params) && sensor?.state === 'live';
   const dot = def.type === 'vision' || def.type === 'hearing' ? <span className={`dot ${live ? 'live' : ''}`} aria-hidden="true" /> : null;
 
+  // An untouched default (“Note to self”) is not the user's text yet, so it follows the interface language.
+  const shownDefault = (key: string, v: string) => {
+    const d = (def.params.find((q) => q.key === key) as { default?: unknown } | undefined)?.default;
+    return typeof d === 'string' && v === d ? tr(v) : v;
+  };
+
   const setParam = (patch: Record<string, unknown>, key?: string) => useStore.getState().setNodeParams(node.id, patch, key);
 
   let body: ReactElement | null = null;
@@ -185,7 +192,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
       );
       break;
     }
-    case 'device': body = <div className="dim-text clamp1">{String(out('name') ?? '')}</div>; break;
+    case 'device': body = <div className="dim-text clamp1">{trFace(String(out('name') ?? ''))}</div>; break;
     case 'keys': body = <div className="dim-text clamp1">{String(out('key') ?? '')}</div>; break;
     case 'text': body = <div className="text-body clamp4">{view.text ?? ''}</div>; break;
     case 'image': body = view.image ? <ImageCanvas img={view.image} /> : <div className="empty" />; break;
@@ -228,9 +235,9 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
       break;
     case 'clock': body = (
       <div className={`clock ${view.day === false ? 'night' : ''}`}>
-        <div className={`clock-time ${String(view.time ?? '').length > 12 ? 'long' : ''}`}>{view.time ?? '--:--'}</div>
-        <div className="clock-city clamp1">{view.city ?? String(params.city ?? '').split(',')[0]}</div>
-        <div className="clock-date clamp1">{view.date ? `${view.date}` : ''}</div>
+        <div className={`clock-time ${String(view.time ?? '').length > 12 ? 'long' : ''}`}>{view.time !== undefined ? fmtClockTime(String(view.time)) : '--:--'}</div>
+        <div className="clock-city clamp1">{trPlace(String(view.city ?? String(params.city ?? '').split(',')[0]))}</div>
+        <div className="clock-date clamp1">{view.date ? fmtClockDate(String(view.date)) : ''}</div>
         <div className="clock-zone clamp1">{view.offset ?? ''}</div>
       </div>
     ); break;
@@ -243,10 +250,10 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
     ); break;
     case 'alarm': body = (
       <div className={`tk ${view.state ?? ''}`}>
-        <div className={`tk-time ${String(view.time ?? '').length > 9 ? 'long' : ''}`}>{view.time ?? '--:--:--.---'}</div>
+        <div className={`tk-time ${String(view.time ?? '').length > 9 ? 'long' : ''}`}>{view.time !== undefined ? fmtClockTime(String(view.time)) : '--:--:--.---'}</div>
         <div className="tk-state">{tr(TK_STATE[view.state ?? 'armed'])}</div>
-        <div className="tk-sub clamp1">{view.countdown ? `in ${view.countdown}` : ' '}</div>
-        <div className="tk-sub clamp1">{view.place ?? String(params.city ?? '').split(',')[0]}</div>
+        <div className="tk-sub clamp1">{view.countdown ? fmtCountdown(String(view.countdown)) : ' '}</div>
+        <div className="tk-sub clamp1">{trPlace(String(view.place ?? String(params.city ?? '').split(',')[0]))}</div>
       </div>
     ); break;
     case 'stopwatch': body = (
@@ -256,7 +263,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
         <div className="tk-sub clamp1">{Number(view.laps) > 0 ? tr('Lap {n} · {t}', { n: String(view.laps), t: String(view.lap) }) : ' '}</div>
       </div>
     ); break;
-    case 'comment': body = <div className="text-body note clamp3">{String(params.text ?? '')}</div>; break;
+    case 'comment': body = <div className="text-body note clamp3">{shownDefault('text', String(params.text ?? ''))}</div>; break;
     case 'sense': body = <Art kind="radial" level={view.level ?? 0.15} />; break;
     case 'knowledge': body = <Art kind="triangle" level={out('score') !== undefined ? Number(out('score')) : 0.3} />; break;
     case 'imagination': body = <Art kind="lens" level={out('confidence') !== undefined ? Number(out('confidence')) : 0.3} />; break;
@@ -268,7 +275,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
     case 'decision': body = <Art kind="fork" level={(view.best ?? -1) >= 0 ? 1 : 0.2} />; break;
     case 'state': body = <><Art kind="cycle" level={0.7} extra={Math.max(0, Number(out('index')) || 0)} /><div className="state-name clamp1">{view.state ?? ''}</div></>; break;
     case 'compound': body = <Art kind="grid" level={0.4} />; break;
-    default: body = def.family === 'quantity' ? <QuantityFace text={String(view.text ?? def.chip?.(params) ?? '')} sub={String(view.sub ?? '')} dim={view.text === undefined} /> : null;
+    default: body = def.family === 'quantity' ? <QuantityFace text={String(view.text ?? def.chip?.(params) ?? '')} sub={tr(String(view.sub ?? ''))} dim={view.text === undefined} /> : null;
   }
 
   // Base Data chips show the value they last emitted, so a converted Input shows as what it became.

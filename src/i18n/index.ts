@@ -119,3 +119,24 @@ export const hasTr = (en: string): boolean => active === 'en' || en in DICTS[act
 
 /** Plural-free count helper: Chinese has no plural forms, English does. */
 export const plural = (n: number, one: string, many: string): string => (active === 'en' ? (n === 1 ? one : many) : tr(many));
+
+/**
+ * Translate a short “face” string (a chip, a title, a glyph abbreviation): `negate`, `SEQ`, `sine 1 Hz`, `3 steps`.
+ * An exact dictionary hit wins; otherwise every word is looked up on its own (dictionary keys `face:<word>`, lower
+ * case) and words without an entry (units, numbers, symbols, user text) are left as they are.
+ * Use it only on text built from the app's own vocabulary, never on text the user typed.
+ */
+export function trFace(s: string): string {
+  if (active === 'en' || !s) return s;
+  const d = DICTS[active];
+  const hit = d[s];
+  if (hit !== undefined) return hit;
+  return s.replace(/[A-Za-z][A-Za-z'’-]*\??/g, (w) => d['face:' + w.toLowerCase()] ?? d[w] ?? w);
+}
+
+/** Translate a World Clock / Alarm place: a city from the built-in list (`city:` keys), “This device”, or anything else unchanged. */
+export function trPlace(name: string): string {
+  if (active === 'en' || !name) return name;
+  const d = DICTS[active];
+  return d['city:' + name] ?? d[name] ?? name;
+}

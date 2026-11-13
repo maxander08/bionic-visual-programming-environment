@@ -27,6 +27,8 @@ interface ParamBase {
   hidden?: boolean;
   /** Set to false for parameters that must not get a setting pin (e.g. ones that change the pin set itself). */
   pin?: false;
+  /** Forces the setting pin onto this edge instead of the automatic placement (top first for chips, left first otherwise). */
+  pinSide?: Side;
 }
 export type ParamDef =
   | (ParamBase & { kind: 'number'; min: number; max: number; step: number; default: number; unit?: string })

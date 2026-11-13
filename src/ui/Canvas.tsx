@@ -40,14 +40,12 @@ const segDist = (p: Pt, a: Pt, b: Pt) => {
   return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
 };
 
-const compoundCache = new WeakMap<CompoundDef, ModuleDef>();
+// `getDef` / `compoundModuleDef` return definitions in the *current* interface language (each keeps its own per-language
+// cache), so nothing here may cache a definition without also keying it on the language.
 function defFor(n: NodeInst, compounds: Record<string, CompoundDef>): ModuleDef | undefined {
   if (n.type === 'compound') {
     const cd = compounds[String(n.params.def)];
-    if (!cd) return undefined;
-    let d = compoundCache.get(cd);
-    if (!d) compoundCache.set(cd, (d = compoundModuleDef(cd)));
-    return d;
+    return cd ? compoundModuleDef(cd) : undefined;
   }
   return getDef(n.type, undefined, n.params);
 }
@@ -61,7 +59,7 @@ type Drag =
 interface Props { graph: Graph; compounds: Record<string, CompoundDef>; prefix?: string; ro?: boolean; main?: boolean }
 
 function CanvasImpl({ graph, compounds, prefix = '', ro = false, main = false }: Props) {
-  useStore((s) => s.settings.language); // re-render with translated module definitions when the language changes
+  const lang = useStore((s) => s.settings.language); // re-render with translated module definitions when the language changes
   const root = useRef<HTMLDivElement>(null);
   const world = useRef<HTMLDivElement>(null);
   const svg = useRef<SVGSVGElement>(null);
@@ -101,7 +99,10 @@ function CanvasImpl({ graph, compounds, prefix = '', ro = false, main = false }:
       if (def) { const s = nodeSize(def); m.set(n.id, { def, w: s.w, h: s.h }); }
     }
     return m;
-  }, [graph.nodes, compounds]);
+    // `lang` is a real dependency: the definitions (titles, port labels, setting labels) are language-specific, so the
+    // layout must be rebuilt when the language changes, not only when the graph does.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graph.nodes, compounds, lang]);
 
   // latest values for imperative handlers
   const live = useRef({ graph, layout, selection, selEdge, settings, compounds });

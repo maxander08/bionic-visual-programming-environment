@@ -102,6 +102,19 @@ describe('setting pins', () => {
     expect(e.out('m', 'out')).toBe(9); // square(-3), not abs(-3)
   });
 
+  it('Adder, Subtractor, Multiplier and Divisor keep B on the top edge and their setting pin on the left edge', () => {
+    for (const [type, pin] of [['add', 'p:offset'], ['sub', 'p:offset'], ['mul', 'p:factor'], ['div', 'p:divisor']] as const) {
+      const def = getDef(type)!;
+      const side = (id: string) => def.inputs.find((q) => q.id === id)!.side;
+      expect(side('a'), `${type} A`).toBe('top');
+      expect(side('b'), `${type} B`).toBe('top');
+      expect(side(pin), `${type} ${pin}`).toBe('left');
+      expect(nodeSize(def)).toEqual({ w: SIZES.chip.w, h: SIZES.chip.h });
+      const node = { id: 'n', type, x: 0, y: 0, params: {} } as any;
+      expect(portPosition(node, def, 'a', 'in')!.x).toBeLessThan(portPosition(node, def, 'b', 'in')!.x);
+    }
+  });
+
   it('disconnecting a pin restores the inspector value', () => {
     const { e, g } = build({ nodes: [['c', 'constant', { value: '5' }], ['a', 'add', { offset: 1 }], ['k', 'constant', { value: '2' }]], wires: [['k', 'out', 'a', 'a'], ['c', 'out', 'a', 'p:offset']] });
     e.runFor(100);

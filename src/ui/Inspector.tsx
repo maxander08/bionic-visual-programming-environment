@@ -10,7 +10,7 @@ import { getSensorState, sensorVersion, subscribeSensors } from '../runtime/sens
 import { audio, notificationState, requestNotifications, vibrationSupported } from '../runtime/outputs';
 import { bridge, useStore } from '../state/store';
 import { Icon } from './icons';
-import { tr } from '../i18n';
+import { tr, trFace } from '../i18n';
 
 function NumberField({ p, value, onChange }: { p: Extract<ParamDef, { kind: 'number' }>; value: number; onChange: (v: number) => void }) {
   const [text, setText] = useState(String(value));
@@ -92,6 +92,7 @@ function Section({ title, children, open = true, right }: { title: string; child
 function PortTable({ node, def }: { node: NodeInst; def: ModuleDef }) {
   const graph = useStore((s) => s.project.graph);
   const compounds = useStore((s) => s.project.compounds);
+  const lang = useStore((s) => s.settings.language); // port labels come from language-specific definitions
   const rt = engine.nodes.get(node.id);
   const options = useMemo(() => {
     const o: { id: string; node: string; port: string; label: string; type: string }[] = [];
@@ -101,7 +102,7 @@ function PortTable({ node, def }: { node: NodeInst; def: ModuleDef }) {
       d?.outputs.forEach((p) => o.push({ id: `${n.id}|${p.id}`, node: n.id, port: p.id, type: p.type, label: `${nodeTitle(d, n.params)} (${n.id}) → ${p.label}` }));
     }
     return o;
-  }, [graph.nodes, compounds, node.id]);
+  }, [graph.nodes, compounds, node.id, lang]);
   const st = useStore.getState();
   return (
     <div className="ports">
@@ -112,7 +113,7 @@ function PortTable({ node, def }: { node: NodeInst; def: ModuleDef }) {
         const sel = edge ? `${edge.from}|${edge.fromPort}` : '';
         return (
           <div className="port-row" key={`i${p.id}`}>
-            <div className="ph"><span className="pdir">{tr("IN")}</span><b>{p.label}</b><span className="ptype">{p.type}{p.optional ? ' · optional' : ''}</span></div>
+            <div className="ph"><span className="pdir">{tr("IN")}</span><b>{p.label}</b><span className="ptype">{trFace(p.type)}{p.optional ? ' · ' + tr('optional') : ''}</span></div>
             <div className="pval">{sig ? <>{describe(sig.v)}<i> {tr("strength")} {sig.s.toFixed(2)}</i></> : <span className="muted">{edge ? tr('no signal yet') : p.optional ? tr("not connected (optional)") : tr("not connected (required)")}</span>}</div>
             <select aria-label={tr('Source for input {label}', { label: p.label })} value={sel} onChange={(e) => {
               if (!e.target.value) { if (edge) st.removeEdge(edge.id); return; }
@@ -127,7 +128,7 @@ function PortTable({ node, def }: { node: NodeInst; def: ModuleDef }) {
               <option value="">{tr("— not connected —")}</option>
               {options.map((o) => {
                 const chk = checkConnection(graph, o.node, o.port, node.id, p.id, compounds);
-                return <option key={o.id} value={o.id} disabled={!chk.ok}>{o.label}{chk.ok ? '' : tr(' — incompatible ({from} → {to})', { from: o.type, to: p.type })}</option>;
+                return <option key={o.id} value={o.id} disabled={!chk.ok}>{o.label}{chk.ok ? '' : tr(' — incompatible ({from} → {to})', { from: trFace(o.type), to: trFace(p.type) })}</option>;
               })}
             </select>
             <p className="doc">{p.doc}</p>
@@ -138,7 +139,7 @@ function PortTable({ node, def }: { node: NodeInst; def: ModuleDef }) {
         const sig = rt?.outputs[p.id];
         return (
           <div className="port-row" key={`o${p.id}`}>
-            <div className="ph"><span className="pdir out">{tr("OUT")}</span><b>{p.label}</b><span className="ptype">{p.type}</span></div>
+            <div className="ph"><span className="pdir out">{tr("OUT")}</span><b>{p.label}</b><span className="ptype">{trFace(p.type)}</span></div>
             <div className="pval">{sig ? <>{describe(sig.v)}<i> {tr("strength")} {sig.s.toFixed(2)}</i></> : <span className="muted">{tr("no signal")}</span>}</div>
             <p className="doc">{p.doc}</p>
           </div>
@@ -256,7 +257,7 @@ function CompoundPanel({ node, cdef }: { node: NodeInst; cdef: CompoundDef }) {
           <span className={`pdir ${p.dir === 'out' ? 'out' : ''}`}>{p.dir === 'in' ? 'IN' : 'OUT'}</span>
           <input type="text" aria-label={tr(p.dir === 'in' ? 'Label of input {id}' : 'Label of output {id}', { id: p.id })} value={p.label} maxLength={40}
             onChange={(e) => st.updateCompound(cdef.id, (c) => ({ ...c, [p.dir === 'in' ? 'inputs' : 'outputs']: (p.dir === 'in' ? c.inputs : c.outputs).map((q) => (q.id === p.id ? { ...q, label: e.target.value } : q)) }))} />
-          <span className="ptype">{p.type}</span>
+          <span className="ptype">{trFace(p.type)}</span>
         </div>
       ))}
       <h4 className="mini">{tr("Exposed settings")}</h4>
@@ -303,7 +304,7 @@ function NodePanel({ id }: { id: string }) {
     <>
       <header className="ihead">
         <div className="ititle"><span className={`swatch f-${def.family}`} /><h2 title={def.name}>{nodeTitle(def, node.params)}</h2></div>
-        <div className="imeta"><span className="tag">{def.category}</span><code title={tr("Module id")}>{node.id}</code></div>
+        <div className="imeta"><span className="tag">{tr(def.category)}</span><code title={tr("Module id")}>{node.id}</code></div>
         <div className="btn-row">
           <button className="btn sm" onClick={() => bridge.focus?.([id])}><Icon name="focus" size={13} />{tr("Focus")}</button>
           <button className="btn sm" onClick={() => st.duplicateSelection()}><Icon name="copy" size={13} />{tr("Duplicate")}</button>
@@ -351,7 +352,7 @@ function EdgePanel({ id }: { id: string }) {
       <header className="ihead">
         <div className="ititle"><span className="swatch wire" /><h2>{tr("Connection")}</h2></div>
         <p className="route"><b>{da?.name}</b> {po?.label} <span>→</span> <b>{db?.name}</b> {pi?.label}</p>
-        <p className="muted">{po?.type} → {pi?.type}{po && pi && po.type !== pi.type && po.type !== 'any' && pi.type !== 'any' ? tr(" (values are converted)") : ''}</p>
+        <p className="muted">{po && trFace(po.type)} → {pi && trFace(pi.type)}{po && pi && po.type !== pi.type && po.type !== 'any' && pi.type !== 'any' ? tr(" (values are converted)") : ''}</p>
         <div className="btn-row"><button className="btn sm danger" onClick={() => st.removeEdge(id)}><Icon name="trash" size={13} />{tr("Disconnect")}</button></div>
       </header>
       <Section title={tr("Signal processing")}>

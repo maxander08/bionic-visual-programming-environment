@@ -14,6 +14,7 @@ import { CAT_LABEL, routeKind, routeTitle } from './meta';
 import { slug } from './markup';
 import { paramSummary } from './search';
 import { Blocks, Callout, DocLink, Rich, TypeChip } from './Rich';
+import { tr } from '../../i18n';
 import { NavCtx, routeKey, type Article, type Route } from './types';
 
 /* ───────────────────────── shared bits ───────────────────────── */
@@ -237,7 +238,7 @@ export function NodePage({ type }: { type: string }) {
 
   return (
     <article>
-      <PageHead eyebrow={`${m.category} · ${m.caption}`} title={m.name} swatch={col} lead={m.doc.summary} route={{ k: 'node', type }}>
+      <PageHead eyebrow={`${tr(m.category)} · ${m.caption}`} title={m.name} swatch={col} lead={m.doc.summary} route={{ k: 'node', type }}>
         <div className="dx-actions">
           <button type="button" className="dx-btn primary" onClick={() => addToWorkspace(type, nav.close)}><Icon name="plus" size={14} />Add to workspace</button>
           {mine.length > 0 && <button type="button" className="dx-btn" onClick={showSel}><Icon name="focus" size={14} />Show in my program ({mine.length})</button>}
@@ -278,9 +279,9 @@ export function NodePage({ type }: { type: string }) {
                 return (
                   <tr key={dir + p.id} id={`dx-pin-${p.id}`}>
                     <th scope="row">{p.label}<small className="dx-dim"> {side}</small></th>
-                    <td>{dir === 'in' ? 'Input' : 'Output'}</td>
+                    <td>{dir === 'in' ? tr('Input') : tr('Output')}</td>
                     <td><TypeChip type={p.type} /></td>
-                    <td>{dir === 'out' ? '—' : p.optional ? 'Optional' : <b>Required</b>}</td>
+                    <td>{dir === 'out' ? '—' : p.optional ? tr('Optional') : <b>{tr('Required')}</b>}</td>
                     <td>{p.doc}</td>
                   </tr>
                 );

@@ -2,11 +2,15 @@
 // dictionary keys); the editor asks `localizeDef` for a translated copy. Only display text is changed: ids, keys, option
 // values, ranges and run functions are shared with the original, so saved programs and the engine are unaffected.
 import type { Lang } from '../i18n';
-import { getLang, tr } from '../i18n';
+import { getLang, tr, trFace } from '../i18n';
 import type { ModuleDef, ParamDef, PortDef } from './types';
 
 const defCache = new Map<Lang, WeakMap<ModuleDef, ModuleDef>>();
 const paramCache = new Map<Lang, WeakMap<ParamDef, ParamDef>>();
+
+// Modules whose chip is built from the app's own vocabulary (option names, fixed words, units), so every word of it can be
+// translated. The chips of Constant, String, Character, Array, Send Event… show what the user typed and stay as typed.
+const VOCAB_CHIPS = new Set(['pulse', 'invert', 'math', 'register', 'relay', 'inductor', 'threshold', 'compare', 'combine', 'delay', 'counter', 'sequence', 'branch', 'plastic', 'hyponerve', 'hypernerve', 'firing', 'envelope', 'nap', 'wave']);
 
 const port = (p: PortDef): PortDef => ({ ...p, label: tr(p.label), doc: tr(p.doc) });
 
@@ -40,8 +44,9 @@ export function localizeDef(def: ModuleDef): ModuleDef {
       caption: tr(def.caption),
       // Keep the English words searchable so “threshold” still finds the module in Chinese mode.
       keywords: `${def.keywords ?? ''} ${def.name} ${def.caption}`.trim(),
-      title: title ? (p) => tr(title(p)) : undefined,
-      chip: chip ? (p) => tr(chip(p)) : undefined,
+      glyph: def.size === 'chip' ? trFace(def.glyph) : def.glyph,
+      title: title ? (p) => trFace(title(p)) : undefined,
+      chip: chip ? (VOCAB_CHIPS.has(def.type) ? (p) => trFace(chip(p)) : (p) => tr(chip(p))) : undefined,
       inputs: def.inputs.map(port),
       outputs: def.outputs.map(port),
       params: def.params.map(localizeParam),
