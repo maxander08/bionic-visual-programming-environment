@@ -234,12 +234,31 @@ export function findRecipe(q: string) {
   return best?.r ?? null;
 }
 
-/** One compact line per module, for the optional language model. */
+/**
+ * One compact line per module, for the optional language model: exact pin ids with their types (“?” = optional, so it
+ * never blocks), and every setting with its key, range or choices, and default. The 30-odd Quantities modules share one
+ * shape and are listed in a single block.
+ */
 export function catalogueForModel(): string {
-  return MODULES.map((m) => {
-    const ins = m.inputs.map((p) => p.id).join(',');
-    const outs = m.outputs.map((p) => p.id).join(',');
-    const ps = settingsOf(m).filter((p) => p.kind !== 'action').map((p) => `${p.key}${p.kind === 'select' ? `{${p.options.map((o) => o.value).join('|')}}` : p.kind === 'number' ? `[${fmtNum(p.min)}..${fmtNum(p.max)}]` : p.kind === 'bool' ? '(bool)' : '(text)'}`).join(',');
-    return `${m.type} | ${m.name} | ${m.category} | ${m.doc.summary} | in: ${ins || '-'} | out: ${outs || '-'} | settings: ${ps || '-'}`;
-  }).join('\n');
+  const pin = (p: { id: string; type: string; optional?: boolean }) => `${p.id}:${p.type}${p.optional ? '?' : ''}`;
+  const setting = (p: ParamDef) => {
+    if (p.kind === 'action') return p.key;
+    if (p.kind === 'select') return `${p.key}{${p.options.map((o) => o.value).join('|')}}=${p.default}`;
+    if (p.kind === 'number') return `${p.key}[${fmtNum(p.min)}..${fmtNum(p.max)}${p.unit ? ' ' + p.unit : ''}]=${fmtNum(p.default)}`;
+    if (p.kind === 'bool') return `${p.key}(bool)=${p.default}`;
+    return `${p.key}(text)=${JSON.stringify(p.default)}`;
+  };
+  const lines: string[] = [];
+  const qty: string[] = [];
+  for (const m of MODULES) {
+    const ps = settingsOf(m).filter((p) => p.kind !== 'action');
+    if (m.type.startsWith('qty-')) {
+      const unit = ps.find((p) => p.key === 'unit');
+      qty.push(`${m.type} (${m.name}; units ${unit && unit.kind === 'select' ? unit.options.map((o) => o.value).join('|') : '-'})`);
+      continue;
+    }
+    lines.push(`${m.type} | ${m.name} | ${m.category} | ${m.doc.summary} | in: ${m.inputs.filter((p) => !p.param).map(pin).join(', ') || '-'} | out: ${m.outputs.map(pin).join(', ') || '-'} | settings: ${ps.map(setting).join(', ') || '-'}`);
+  }
+  if (qty.length) lines.push(`QUANTITIES — each of these modules has in: in:any? | out: quantity, amount, unit, base | settings: amount[number]=0, prefix{none|auto|k|M|G|m|μ|n…SI prefixes}=none, unit{…}: ${qty.join('; ')}`);
+  return lines.join('\n');
 }

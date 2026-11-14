@@ -16,6 +16,8 @@ import {
   coerceParam, describeModule, describePins, docSearch, findCategory, findModules, findParam, findRecipe, modulesIn, norm, settingsOf, singular,
   describeParam, type ModuleMention,
 } from './knowledge';
+import { createProgram, reportText, verifyProgram } from './programs';
+import { planProgram } from './planner';
 import {
   countText, diagnosticsText, fmtValue, nodeText, overviewText, runStateText, takeSnapshot, timersText, TIMING_TYPES, type NodeInfo, type Snapshot,
 } from './workspace';
@@ -307,6 +309,36 @@ function settingIntent(raw: string, q: string, snap: Snapshot, mentions: ModuleM
 
 const COMBO_WORDS = /\b(connected|wired|linked|hooked up|joined|together|show(s|ing)? (it|the \w+)|display(s|ing)? (it|the \w+)|feeding|feeds|into|that (shows|displays|feeds)|and display it|and show it|with (a |an )?(display|projector|screen)|on (a |an |the )?(projector|screen|display|meter))\b/;
 
+/** “make a 5 minute countdown with a light”, “graph y = x^2”, “a traffic light”: whole programs, built wired, checked and run. */
+function planIntent(raw: string, q: string, mentions: ModuleMention[]): Reply | null {
+  if (mentions.length >= 2 && COMBO_WORDS.test(q)) return null; // “add a timer and a projector, connected” is a plain wiring request
+  const plan = planProgram(raw, q);
+  if (!plan) return null;
+  const r = createProgram(plan.spec, { replace: plan.replace, run: true });
+  if (!r.ok) return { text: `I planned that but couldn't build it: ${r.message}` };
+  const bad = r.report && !r.report.ok;
+  const seen = r.report?.observed.length ? ` Checked with a dry run: ${r.report.observed.slice(0, 2).join('; ')}.` : '';
+  return {
+    text: `${plan.summary} ${bad ? `My check found something to fix: ${reportText(r.report!)}` : `It's running now.${seen}`}`,
+    actions: [r.message],
+    chips: plan.chips ?? ['Run', 'Undo that'],
+  };
+}
+
+/** “check my program”, “does it work?”, “why is nothing showing”: wiring checks plus a dry run. */
+function checkIntent(q: string, snap: Snapshot): Reply | null {
+  if (!/\b(check|verify|validate|test|debug|diagnose|does (it|this|that) work|is (it|this) (working|wired|right|correct)|will (it|this) work|why (is|isn t|doesn t|does|are|aren t)\b.*\b(nothing|working|blank|empty|idle|showing|happening))\b/.test(q)) return null;
+  if (/\b(how (do|to|can)|what is|explain)\b/.test(q)) return null;
+  if (!snap.nodeCount) return { text: 'The workspace is empty, so there is nothing to check yet. Tell me what to build, for example “make a 2 minute countdown”.' };
+  const r = verifyProgram();
+  return {
+    text: r.ok
+      ? `I checked ${snap.nodeCount} modules and ${snap.edgeCount} wires and ran a 3 second dry run. **No problems found.**${r.observed.length ? ` ${r.observed.slice(0, 3).join('; ')}.` : ''}${r.notes.length ? ` Worth a look: ${r.notes.slice(0, 3).join(' ')}` : ''}`
+      : `I checked it and found ${r.problems.length} problem${r.problems.length === 1 ? '' : 's'}:\n${r.problems.slice(0, 6).map((p) => `- ${p}`).join('\n')}${r.observed.length ? `\nDry run: ${r.observed.slice(0, 3).join('; ')}.` : ''}`,
+    chips: r.ok ? ['Overview', snap.run === 'running' ? 'Pause' : 'Run'] : ['Connect them', 'Overview'],
+  };
+}
+
 function createIntent(raw: string, q: string, mentions: ModuleMention[]): Reply | null {
   const verb = q.match(/^(create|make|place|put|drop|spawn|insert|build|setup|give me|i need|i want|i d like|i would like|new|get me|bring|summon|generate|throw|load)\b/);
   const noun = q.match(/^(a|an|some|another|one|two|three|\d+)\s/);
@@ -339,7 +371,7 @@ function createIntent(raw: string, q: string, mentions: ModuleMention[]): Reply 
       const nodes = hits.filter((h) => h.entry.kind === 'Node').slice(0, 4);
       return { text: `I'm not sure which module you mean by “${body}”. Closest matches: ${nodes.map((h) => `**${h.entry.title}**`).join(', ') || hits.map((h) => h.entry.title).join(', ')}. Tell me which one, e.g. “add a ${(nodes[0]?.entry.title ?? 'timer').toLowerCase()}”.`, chips: nodes.slice(0, 3).map((h) => `Add a ${h.entry.title}`) };
     }
-    return { text: `I'm not sure which module to add. Try a name from the library, like “add a timer”, “create 2 projectors” or “add a switch and a light, connected”.`, chips: ['Add a timer', 'List the sensors', 'What modules are there?'] };
+    return { text: `I'm not sure what to build from that. I can add modules (“add a timer”, “create 2 projectors”), or build whole working programs: “make a 5 minute countdown with a light”, “world clock for Tokyo and London”, “graph y = x^2”, “a traffic light”, “roll a die”, “alarm at 7:30”, “celsius to fahrenheit”. For anything more open-ended, connect a language model in my settings and I can design any program for you.`, chips: ['Add a timer', 'List the sensors', 'What modules are there?'] };
   }
 
   const toks = q.split(' ');
@@ -348,8 +380,14 @@ function createIntent(raw: string, q: string, mentions: ModuleMention[]): Reply 
     let count = toCount(before) ?? (before && ['of', 'more', 'extra', 'new'].includes(before) ? toCount(before2) : null) ?? 1;
     if (before && /^\d+x$/.test(before)) count = Number(before.slice(0, -1));
     const segStart = toks.slice(0, m.end).join(' ').length;
-    const nextStart = made[i + 1] ? toks.slice(0, made[i + 1].start).join(' ').length : q.length;
-    const seg = q.slice(segStart, nextStart).replace(/\b(and|then|plus|with a|with an|with)\s*$/g, '');
+    let nextEndIdx = made[i + 1] ? made[i + 1].start : toks.length;
+    if (made[i + 1]) {
+      const nb = toks[nextEndIdx - 1];
+      if (nb && (toCount(nb) !== null || /^\d+x$/.test(nb))) nextEndIdx--;
+      else if (nb && ['of', 'more', 'extra', 'new'].includes(nb) && toCount(toks[nextEndIdx - 2]) !== null) nextEndIdx -= 2;
+    }
+    const nextStart = nextEndIdx < toks.length ? toks.slice(0, Math.max(m.end, nextEndIdx)).join(' ').length : q.length;
+    const seg = q.slice(segStart, nextStart).replace(/\b(and|then|plus|add|create|with a|with an|with)\s*$/g, '');
     return { def: m.def, count, params: parseSettings(m.def, seg, raw) };
   });
 
@@ -722,7 +760,9 @@ export function respond(input: string, pending?: Pending | null): Reply {
     () => connectIntent(raw, q, snap, mentions),
     () => settingIntent(raw, q, snap, mentions),
     () => (/^(how|what is the best way|where) (do|can|should|would|to)\b/.test(q) && !/\b(do i have|are there)\b/.test(q) ? siteIntent(q, snap, mentions) : null),
+    () => planIntent(raw, q, mentions),
     () => createIntent(raw, q, mentions),
+    () => checkIntent(q, snap),
     () => countIntent(q, snap, mentions),
     () => clockIntent(q),
     () => faqIntent(q),

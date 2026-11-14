@@ -1,9 +1,13 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useStore } from '../state/store';
+import { engine } from '../runtime/session';
 import { addModules, buildBlock, connectNodes, control, setNodeDisabled } from './actions';
 import { respond } from './brain';
-import { askModel, DEFAULT_LLM } from './llm';
+import { askModel, DEFAULT_LLM, runTool } from './llm';
+import { durationOf, timeOfDayOf } from './planner';
+import { layoutLayers } from './programs';
+import { cleanForSpeech, loadVoices, speechLang, spokenSummary, voicesFor } from './voice';
 import { takeSnapshot } from './workspace';
 
 beforeEach(() => {
@@ -127,5 +131,148 @@ describe('Gosling: workspace & LLM resilience', () => {
   it('validates endpoint URL and model name before calling fetch', async () => {
     await expect(askModel({ ...DEFAULT_LLM, enabled: true, baseUrl: 'javascript:alert(1)', apiKey: 'k' }, [])).rejects.toThrow(/Invalid endpoint URL/i);
     await expect(askModel({ ...DEFAULT_LLM, enabled: true, model: '   ', apiKey: 'k' }, [])).rejects.toThrow(/Model name is empty/i);
+  });
+
+  it('tolerates non-string pin hints in LLM tool calls without crashing', () => {
+    const log: string[] = [];
+    const out = JSON.parse(runTool('create_program', {
+      nodes: [{ ref: 't', type: 'timer' }, { ref: 'p', type: 'projector' }],
+      wires: [{ from: 't', to: 'p', from_pin: 123, to_pin: {} }],
+      run: false,
+    }, log));
+    expect(out.ok).toBe(true);
+    expect(layoutLayers([], [])).toEqual({});
+  });
+});
+
+describe('Gosling: planner, replace-reset, and voice regressions', () => {
+  it('parses word and fractional durations without confusing ordinal “a second”', () => {
+    expect(durationOf('every half second')).toBe(0.5);
+    expect(durationOf('for half a minute')).toBe(30);
+    expect(durationOf('for an hour')).toBe(3600);
+    expect(durationOf('2 and a half minutes')).toBe(150);
+    expect(durationOf('five minutes')).toBe(300);
+    expect(durationOf('Add a second curve')).toBeNull();
+    expect(timeOfDayOf('at 13 pm')).toBeNull();
+  });
+
+  it('builds audio beeps on countdowns, preserves alarm city after time, and handles 0 Hz safely', () => {
+    respond('make a 10 second countdown that beeps when it is done');
+    const types = Object.values(useStore.getState().project.graph.nodes).map((n) => n.type).sort();
+    expect(types).toEqual(['audio', 'projector', 'timer']);
+
+    useStore.getState().newBlank();
+    respond('make an alarm at 7 am in Tokyo');
+    const alarm = Object.values(useStore.getState().project.graph.nodes).find((n) => n.type === 'alarm')!;
+    expect(alarm.params).toMatchObject({ time: '07:00', city: 'Tokyo, Japan' });
+
+    useStore.getState().newBlank();
+    const blink0 = respond('make a blinking light at 0 hz');
+    const pulse = Object.values(useStore.getState().project.graph.nodes).find((n) => n.type === 'pulse')!;
+    expect(Number.isFinite(pulse.params.period as number)).toBe(true);
+    expect(blink0.text).not.toContain('Infinity');
+
+    useStore.getState().newBlank();
+    respond('make a red blinking light every half second');
+    expect(Object.values(useStore.getState().project.graph.nodes).find((n) => n.type === 'pulse')!.params.period).toBe(500);
+  });
+
+  it('handles celsius-only conversion, subtract-from order, sequence-through, sound %, and multi-module adds', () => {
+    respond('make a program to convert 100 celsius');
+    expect(Object.values(useStore.getState().project.graph.nodes).map((n) => n.type).sort()).toEqual(['add', 'constant', 'mul', 'projector']);
+
+    useStore.getState().newBlank();
+    respond('make a program that subtracts 3 from 10');
+    const consts = Object.values(useStore.getState().project.graph.nodes).filter((n) => n.type === 'constant');
+    expect(consts.map((c) => c.params.value)).toEqual(['10', '3']);
+
+    useStore.getState().newBlank();
+    respond('make a program of colors that cycles through red, green, and blue every 2 seconds');
+    expect(Object.values(useStore.getState().project.graph.nodes).find((n) => n.type === 'sequence')!.params.values).toBe('red, green, blue');
+
+    useStore.getState().newBlank();
+    respond('make a light that turns on when sound is above 60%');
+    expect(Object.values(useStore.getState().project.graph.nodes).find((n) => n.type === 'threshold')!.params.threshold).toBeCloseTo(0.6, 6);
+
+    useStore.getState().newBlank();
+    respond('add 2 constants and add 3 projectors');
+    const nodes = Object.values(useStore.getState().project.graph.nodes);
+    expect(nodes.filter((n) => n.type === 'constant')).toHaveLength(2);
+    expect(nodes.filter((n) => n.type === 'projector')).toHaveLength(3);
+    expect(nodes.filter((n) => n.type === 'constant')[0].params.value).not.toBe('3');
+  });
+
+  it('resets stale engine state when replacing a running program', () => {
+    respond('make a 10 second countdown');
+    engine.run(300); // 15s -> timer-1 finishes
+    expect(engine.nodes.get('timer-1')?.outputs.done?.v).toBe(true);
+    respond('make a new program with a 20 second countdown from scratch');
+    expect(engine.nodes.get('timer-1')?.outputs.done?.v).not.toBe(true);
+    expect(engine.nodes.get('timer-1')?.params.duration).toBe(20);
+  });
+
+  it('every planner follow-up suggestion chip executes cleanly offline', () => {
+    const prompts = [
+      'graph y = x^2',
+      'build a traffic light',
+      'make an alarm at 7:30',
+      'make a stopwatch',
+      'make a 90 second countdown',
+      'create a world clock for Tokyo',
+      'convert 25 celsius to fahrenheit',
+      'make a calculator',
+      'roll a die',
+      'make a counter',
+      'make a blinker',
+      'make a sine wave',
+      'play a 440 Hz tone',
+      'make a loud light',
+      'build a startle reflex',
+      'create a program that cycles through red, green and blue',
+      'make a program that shows "Hello"',
+    ];
+    for (const p of prompts) {
+      useStore.getState().newBlank();
+      const first = respond(p);
+      expect(first.chips?.length, p).toBeGreaterThan(0);
+      for (const chip of first.chips!) {
+        const next = respond(chip);
+        expect(next.text, `${p} -> ${chip}`).not.toMatch(/couldn't match|not sure (which module|what to build)/i);
+      }
+    }
+  });
+
+  it('cleans speech text, splits CJK summaries, maps speech languages, and recovers loadVoices', async () => {
+    expect(cleanForSpeech('Check `timer-1` → **25°C** at 440 Hz.')).toBe('Check timer 1 to 25 degrees Celsius at 440 hertz.');
+    expect(speechLang('zh-Hans')).toBe('zh-CN');
+    expect(speechLang('zh-Hant')).toBe('zh-TW');
+    const longZh = '这是一个测试句子。'.repeat(60);
+    const sum = spokenSummary(longZh, { max: 80 });
+    expect(sum.length).toBeLessThan(140);
+    expect(sum).toContain('。');
+
+    const fakeVoices = [
+      { name: 'Alice', lang: 'en-US', localService: true, voiceURI: 'v-en', default: false },
+      { name: 'Xiaoxiao Neural', lang: 'zh-CN', localService: false, voiceURI: 'v-zh', default: false },
+    ] as SpeechSynthesisVoice[];
+    expect(voicesFor(fakeVoices, 'zh-CN').map((v) => v.voiceURI)).toEqual(['v-zh']);
+
+    let available: SpeechSynthesisVoice[] = [];
+    const origSynth = (window as any).speechSynthesis;
+    const origUtt = (window as any).SpeechSynthesisUtterance;
+    (window as any).SpeechSynthesisUtterance = class {};
+    (window as any).speechSynthesis = {
+      getVoices: () => available,
+      addEventListener: (_e: string, cb: () => void) => setTimeout(cb, 5),
+      removeEventListener: () => {},
+    };
+    try {
+      expect(await loadVoices()).toEqual([]);
+      available = fakeVoices;
+      expect(await loadVoices()).toHaveLength(2);
+    } finally {
+      (window as any).speechSynthesis = origSynth;
+      (window as any).SpeechSynthesisUtterance = origUtt;
+    }
   });
 });

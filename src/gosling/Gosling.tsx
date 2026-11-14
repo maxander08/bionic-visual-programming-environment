@@ -3,6 +3,8 @@ import { tr } from '../i18n';
 import { bridge, useStore } from '../state/store';
 import { Icon } from '../ui/icons';
 import { useGosling, type Msg } from './store';
+import { loadVoices, speechLang, synthesisSupported, voicesFor } from './voice';
+import { speakMessage, useGoslingVoice, voiceErrorText, type VoicePhase } from './useVoice';
 import './gosling.css';
 
 /** Gosling's face: a round gosling chick in the site's teal frame. */
@@ -34,6 +36,46 @@ export function GoslingButton() {
       <GoslingMark size={18} />
       <span className="tb-text g-tb-text">Gosling</span>
     </button>
+  );
+}
+
+// ---- voice icons -----------------------------------------------------------------------------------------------
+
+function VIcon({ name, size = 16 }: { name: 'mic' | 'speaker' | 'speaker-off' | 'voice' | 'keyboard' | 'replay'; size?: number }) {
+  const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true };
+  switch (name) {
+    case 'mic': return <svg {...common}><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6" /></svg>;
+    case 'speaker': return <svg {...common}><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5zM15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" /></svg>;
+    case 'speaker-off': return <svg {...common}><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5zM16 9.5l5 5M21 9.5l-5 5" /></svg>;
+    case 'voice': return <svg {...common}><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2" /></svg>;
+    case 'keyboard': return <svg {...common}><rect x="3" y="6" width="18" height="12" rx="2" /><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10" /></svg>;
+    default: return <svg {...common}><path d="M5 10v4h3l4 4V6L8 10zM15.5 9.5a3.5 3.5 0 0 1 0 5" /></svg>;
+  }
+}
+
+const PHASE_LABEL: Record<VoicePhase, string> = {
+  off: '', listening: 'Listening…', thinking: 'Thinking…', speaking: 'Speaking… tap to interrupt', paused: 'Paused. Tap to talk',
+};
+
+/** Voice mode: a big orb you can tap, with live words under it. */
+function VoiceDock({ phase, interim, muted, onTap, onMute, onEnd }: { phase: VoicePhase; interim: string; muted: boolean; onTap(): void; onMute(): void; onEnd(): void }) {
+  const label = tr(PHASE_LABEL[phase] || 'Listening…');
+  return (
+    <div className="g-voice" data-phase={phase}>
+      <div className="g-voice-text" aria-live="polite">{phase === 'listening' && interim ? interim : <span className="dim">{label}</span>}</div>
+      <div className="g-voice-row">
+        <button type="button" className={`g-ic g-vbtn${muted ? ' on' : ''}`} onClick={onMute} aria-pressed={muted} aria-label={muted ? tr('Turn Gosling’s voice on') : tr('Mute Gosling’s voice')} title={muted ? tr('Gosling’s voice is off') : tr('Mute Gosling’s voice')}>
+          <VIcon name={muted ? 'speaker-off' : 'speaker'} size={17} />
+        </button>
+        <button type="button" className="g-orb" onClick={onTap} aria-label={label}>
+          <span className="g-ring" /><span className="g-ring r2" /><span className="g-ring r3" />
+          <span className="g-orb-core"><GoslingMark size={46} /></span>
+          <span className="g-bars" aria-hidden="true"><i /><i /><i /><i /><i /></span>
+        </button>
+        <button type="button" className="g-ic g-vbtn" onClick={onEnd} aria-label={tr('Back to typing')} title={tr('Back to typing')}><VIcon name="keyboard" size={17} /></button>
+      </div>
+      <div className="g-voice-hint">{tr('Just talk. I answer out loud. Tap the orb to stop me or to finish speaking.')}</div>
+    </div>
   );
 }
 
@@ -81,7 +123,7 @@ function Rich({ text }: { text: string }) {
   );
 }
 
-function Bubble({ m }: { m: Msg }) {
+function Bubble({ m, onSay }: { m: Msg; onSay(text: string): void }) {
   const openDocs = (route: unknown) => useStore.getState().openDialog('docs', route);
   if (m.role === 'user') return <div className="g-row user"><div className="g-bubble user"><p>{m.text}</p></div></div>;
   return (
@@ -99,8 +141,50 @@ function Bubble({ m }: { m: Msg }) {
             {m.docs.map((d, i) => <button key={i} type="button" className="g-link" onClick={() => openDocs(d.route)}><Icon name="docs" size={12} />{d.label}</button>)}
           </div>
         ) : null}
-        {m.via === 'model' && <span className="g-via">{tr('via language model')}</span>}
+        <div className="g-foot-row">
+          {m.via === 'model' && <span className="g-via">{tr('via language model')}</span>}
+          {synthesisSupported() && m.text.trim() && <button type="button" className="g-say" onClick={() => onSay(m.text)} aria-label={tr('Read this aloud')} title={tr('Read this aloud')}><VIcon name="replay" size={13} /></button>}
+        </div>
       </div>
+    </div>
+  );
+}
+
+function VoiceSettings() {
+  const language = useStore((s) => s.settings.language);
+  const voice = useGosling((s) => s.voice);
+  const setVoice = useGosling((s) => s.setVoice);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  useEffect(() => {
+    let alive = true;
+    void loadVoices().then((v) => { if (alive) setVoices(v); });
+    return () => { alive = false; };
+  }, []);
+  const tag = speechLang(language);
+  const mine = useMemo(() => voicesFor(voices, tag), [voices, tag]);
+  const selectedURI = mine.some((v) => v.voiceURI === voice.voiceURI) ? voice.voiceURI : '';
+  return (
+    <div className="g-voice-set">
+      <h3>{tr('Voice')}</h3>
+      <p>{tr('Talk to Gosling with the microphone button, or tap the waveform for hands-free Voice mode: I listen, answer out loud, and listen again.')}</p>
+      {synthesisSupported() ? (
+        <>
+          <label className="g-check"><input type="checkbox" checked={voice.readAloud} onChange={(e) => setVoice({ readAloud: e.target.checked })} /> {tr('Read every reply aloud')}</label>
+          <div className="g-fields">
+            <label>{tr('Voice')}
+              <select value={selectedURI} onChange={(e) => setVoice({ voiceURI: e.target.value })}>
+                <option value="">{tr('Best available for this language')}</option>
+                {mine.map((v) => <option key={v.voiceURI} value={v.voiceURI}>{v.name} ({v.lang})</option>)}
+              </select>
+            </label>
+            <label>{tr('Speed')} · {voice.rate.toFixed(2)}×
+              <input type="range" min={0.7} max={1.5} step={0.05} value={voice.rate} onChange={(e) => setVoice({ rate: Number(e.target.value) })} />
+            </label>
+          </div>
+          <div className="g-set-actions"><button type="button" className="g-btn" onClick={() => speakMessage(tr('Hi, I’m Gosling. This is how I sound.'))}>{tr('Preview voice')}</button></div>
+        </>
+      ) : <p className="g-fine">{tr('This browser can’t speak, so replies stay on screen.')}</p>}
+      <p className="g-fine">{tr('Speech recognition is done by your browser. Chrome and Edge send the audio to their speech service to turn it into text; Nicque itself sends nothing anywhere.')}</p>
     </div>
   );
 }
@@ -123,6 +207,7 @@ function SettingsPane() {
         <label>{tr('API key')}<input type="password" value={llm.apiKey} onChange={(e) => setLlm({ apiKey: e.target.value })} spellCheck={false} autoComplete="off" placeholder="sk-…" /></label>
         <p className="g-fine">{tr('The key is stored only in this browser’s local storage and is sent only to the endpoint above. If the model can’t be reached, Gosling falls back to its built-in brain.')}</p>
       </div>
+      <VoiceSettings />
       <div className="g-set-actions">
         <button type="button" className="g-btn" onClick={() => back(false)}>{tr('Done')}</button>
         <button type="button" className="g-btn ghost" onClick={() => { clear(); back(false); }}>{tr('Clear conversation')}</button>
@@ -151,6 +236,12 @@ export function Gosling() {
   const scroller = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
   const panel = useRef<HTMLDivElement>(null);
+  const textRef = useRef('');
+  textRef.current = text;
+  const voiceMode = useGosling((s) => s.voiceMode);
+  const voice = useGosling((s) => s.voice);
+  const setVoice = useGosling((s) => s.setVoice);
+  const v = useGoslingVoice({ getText: () => textRef.current, setText });
 
   useEffect(() => { if (open && !msgs.length) setOpen(true); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
   useLayoutEffect(() => { const el = scroller.current; if (el) el.scrollTop = el.scrollHeight; }, [msgs, busy, open, settingsOpen]);
@@ -170,7 +261,7 @@ export function Gosling() {
   const last = msgs[msgs.length - 1];
   const chips = !busy && last?.role === 'gosling' ? last.chips : undefined;
 
-  const submit = (t = text) => { if (!t.trim() || busy) return; setText(''); void send(t); };
+  const submit = (t = text) => { if (!t.trim() || busy) return; v.abortDictation(); setText(''); void send(t); };
 
   const startDrag = (e: React.PointerEvent) => {
     if ((e.target as HTMLElement).closest('button')) return;
@@ -205,6 +296,8 @@ export function Gosling() {
           <b>Gosling</b>
           <span><i className={`g-dot ${run}`} />{tr('{n} modules · {e} wires · {state}', { n: nodeCount, e: edgeCount, state: tr(run) })}</span>
         </div>
+        {v.canListen && <button type="button" className={`g-ic${voiceMode ? ' on' : ''}`} aria-pressed={voiceMode} aria-label={voiceMode ? tr('End Voice mode') : tr('Start Voice mode')} title={voiceMode ? tr('End Voice mode') : tr('Voice mode: talk hands-free')} onClick={() => (voiceMode ? v.endVoiceMode() : v.startVoiceMode())}><VIcon name="voice" size={16} /></button>}
+        {v.canSpeak && !voiceMode && <button type="button" className={`g-ic${voice.readAloud ? ' on' : ''}`} aria-pressed={voice.readAloud} aria-label={tr('Read replies aloud')} title={voice.readAloud ? tr('Replies are read aloud') : tr('Read replies aloud')} onClick={() => setVoice({ readAloud: !voice.readAloud })}><VIcon name={voice.readAloud ? 'speaker' : 'speaker-off'} size={16} /></button>}
         <button type="button" className={`g-ic${settingsOpen ? ' on' : ''}`} aria-label={tr('Gosling settings')} title={tr('How Gosling thinks')} onClick={() => setSettingsOpen(!settingsOpen)}><Icon name="gear" size={15} /></button>
         <button type="button" className="g-ic" aria-label={tr('Close Gosling')} title={tr('Close (Esc)')} onClick={() => setOpen(false)}><Icon name="close" size={15} /></button>
       </header>
@@ -212,22 +305,35 @@ export function Gosling() {
       {settingsOpen ? <div className="g-body" ref={scroller}><SettingsPane /></div> : (
         <>
           <div className="g-body" ref={scroller} aria-live="polite">
-            {msgs.map((m) => <Bubble key={m.id} m={m} />)}
+            {msgs.map((m) => <Bubble key={m.id} m={m} onSay={v.sayMessage} />)}
             {busy && <div className="g-row"><GoslingMark size={22} /><div className="g-bubble"><span className="g-typing" aria-label={tr('Gosling is thinking')}><i /><i /><i /></span></div></div>}
           </div>
+          {v.error && (
+            <div className="g-err" role="alert">
+              <span>{voiceErrorText(v.error)}</span>
+              <button type="button" className="g-ic" aria-label={tr('Dismiss')} onClick={v.clearError}><Icon name="close" size={12} /></button>
+            </div>
+          )}
+          {voiceMode ? (
+            <VoiceDock phase={v.phase} interim={v.interim} muted={voice.muteInVoiceMode} onTap={v.tapOrb} onMute={() => setVoice({ muteInVoiceMode: !voice.muteInVoiceMode })} onEnd={v.endVoiceMode} />
+          ) : (
+            <>
           {chips?.length ? (
             <div className="g-chips" aria-label={tr('Suggestions')}>
               {chips.map((c) => <button key={c} type="button" className="g-chip" onClick={() => submit(c)}>{c}</button>)}
             </div>
           ) : null}
           <form className="g-input" onSubmit={(e) => { e.preventDefault(); submit(); }}>
-            <textarea ref={input} rows={1} value={text} aria-label={tr('Message Gosling')} placeholder={live ? tr('Ask anything, or tell me what to build…') : tr('Ask about your workspace, or say “add a timer”…')}
+              {v.canListen && <button type="button" className={`g-mic${v.dictating ? ' live' : ''}`} onClick={v.toggleDictation} aria-pressed={v.dictating} aria-label={v.dictating ? tr('Stop dictating') : tr('Dictate with your voice')} title={v.dictating ? tr('Stop dictating') : tr('Dictate with your voice')}><VIcon name="mic" size={16} /></button>}
+            <textarea ref={input} rows={1} value={text} aria-label={tr('Message Gosling')} placeholder={v.dictating ? tr('Listening… speak now') : live ? tr('Ask anything, or tell me what to build…') : tr('Ask about your workspace, or say “add a timer”…')}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } if (e.key === 'Escape') setOpen(false); }} />
             {busy
               ? <button type="button" className="g-send" onClick={cancel} aria-label={tr('Stop')} title={tr('Stop')}><Icon name="stop" size={14} /></button>
               : <button type="submit" className="g-send" disabled={!text.trim()} aria-label={tr('Send')}><Icon name="chevron" size={16} /></button>}
           </form>
+            </>
+          )}
           <div className="g-foot">{live ? tr('Language model: {model}', { model: llm.model }) : tr('Built-in brain · runs in your browser')}</div>
         </>
       )}

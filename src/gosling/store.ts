@@ -17,7 +17,29 @@ export interface Msg {
 }
 
 const KEY = 'nicque-gosling-v1';
-interface Saved { msgs: Msg[]; llm: LlmConfig; open: boolean }
+export interface VoicePrefs {
+  /** Read every reply aloud, even when typing. */
+  readAloud: boolean;
+  /** In voice mode, listen only: show replies but don't speak them. */
+  muteInVoiceMode: boolean;
+  rate: number;
+  /** voiceURI of the chosen voice; empty = the best one for the language. */
+  voiceURI: string;
+}
+export const DEFAULT_VOICE: VoicePrefs = { readAloud: false, muteInVoiceMode: false, rate: 1.02, voiceURI: '' };
+
+interface Saved { msgs: Msg[]; llm: LlmConfig; open: boolean; voice: VoicePrefs }
+
+const clampRate = (r: unknown) => (typeof r === 'number' && Number.isFinite(r) ? Math.min(1.5, Math.max(0.7, r)) : DEFAULT_VOICE.rate);
+const cleanVoice = (v: unknown): VoicePrefs => {
+  const o = v && typeof v === 'object' ? (v as Partial<VoicePrefs>) : {};
+  return {
+    readAloud: !!o.readAloud,
+    muteInVoiceMode: !!o.muteInVoiceMode,
+    rate: clampRate(o.rate),
+    voiceURI: typeof o.voiceURI === 'string' ? o.voiceURI : '',
+  };
+};
 
 function load(): Saved {
   try {
@@ -26,11 +48,12 @@ function load(): Saved {
       msgs: Array.isArray(v.msgs) ? v.msgs.slice(-60) : [],
       llm: { ...DEFAULT_LLM, ...(v.llm ?? {}) },
       open: !!v.open,
+      voice: cleanVoice(v.voice),
     };
-  } catch { return { msgs: [], llm: DEFAULT_LLM, open: false }; }
+  } catch { return { msgs: [], llm: DEFAULT_LLM, open: false, voice: DEFAULT_VOICE }; }
 }
 function save(s: Saved) {
-  try { localStorage.setItem(KEY, JSON.stringify({ msgs: s.msgs.slice(-60), llm: s.llm, open: s.open })); } catch { /* storage unavailable */ }
+  try { localStorage.setItem(KEY, JSON.stringify({ msgs: s.msgs.slice(-60), llm: s.llm, open: s.open, voice: s.voice })); } catch { /* storage unavailable */ }
 }
 
 let nextId = 1;
@@ -41,6 +64,10 @@ interface State extends Saved {
   busy: boolean;
   pending: Pending | null;
   settingsOpen: boolean;
+  /** Hands-free conversation: Gosling listens, answers aloud, listens again. Never persisted. */
+  voiceMode: boolean;
+  setVoiceMode(on: boolean): void;
+  setVoice(p: Partial<VoicePrefs>): void;
   setOpen(o: boolean): void;
   toggle(): void;
   setSettingsOpen(o: boolean): void;
@@ -53,7 +80,7 @@ interface State extends Saved {
 let abort: AbortController | null = null;
 
 export const useGosling = create<State>((set, get) => {
-  const persist = () => { const s = get(); save({ msgs: s.msgs, llm: s.llm, open: s.open }); };
+  const persist = () => { const s = get(); save({ msgs: s.msgs, llm: s.llm, open: s.open, voice: s.voice }); };
   const push = (m: Omit<Msg, 'id'>) => { set({ msgs: [...get().msgs, { ...m, id: nextId++ }].slice(-80) }); persist(); };
   const fromReply = (r: Reply, via: Msg['via'] = 'local'): Omit<Msg, 'id'> => ({ role: 'gosling', text: r.text, actions: r.actions, chips: r.chips, docs: r.docs, via });
 
@@ -62,8 +89,11 @@ export const useGosling = create<State>((set, get) => {
     busy: false,
     pending: null,
     settingsOpen: false,
+    voiceMode: false,
+    setVoiceMode(on) { set({ voiceMode: on }); },
+    setVoice(p) { set({ voice: cleanVoice({ ...get().voice, ...p }) }); persist(); },
     setOpen(o) {
-      set({ open: o });
+      set(o ? { open: o } : { open: o, voiceMode: false });
       if (o && !get().msgs.length) {
         const s = takeSnapshot();
         push({ role: 'gosling', via: 'local', text: `Hi, I'm **Gosling**, your copilot in Nicque. I can see your workspace live${s.nodeCount ? `: right now there ${s.nodeCount === 1 ? 'is 1 module' : `are ${s.nodeCount} modules`} on “${s.program.name}” and the program is ${s.run}` : ' and it is empty at the moment'}. Ask me anything, or tell me what to build.`, chips: s.nodeCount ? ['Overview', 'What timers are running?', 'Any problems?', 'What can you do?'] : ['Add a timer and a projector, connected', 'What can you do?', 'Build the loud light recipe'] });
@@ -71,7 +101,7 @@ export const useGosling = create<State>((set, get) => {
       persist();
     },
     toggle() { get().setOpen(!get().open); },
-    setSettingsOpen(o) { set({ settingsOpen: o }); },
+    setSettingsOpen(o) { set(o ? { settingsOpen: true, voiceMode: false } : { settingsOpen: false }); },
     setLlm(p) { set({ llm: { ...get().llm, ...p } }); persist(); },
     cancel() { abort?.abort(); abort = null; set({ busy: false }); },
     clear() { abort?.abort(); abort = null; set({ msgs: [], pending: null, busy: false }); persist(); get().setOpen(true); },
