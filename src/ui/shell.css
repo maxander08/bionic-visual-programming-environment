@@ -307,3 +307,45 @@
 .pw-empty { flex: 1 1 auto; display: grid; place-items: center; color: var(--dim); text-align: center; border: 1px dashed var(--hair2, #2a2a2a); border-radius: 12px; padding: 24px; }
 .pw-col .callout { margin: 0; flex: none; }
 .pval .view-btn { margin-left: 6px; vertical-align: middle; }
+
+/* ---- Projector: font preview and hex dump ---- */
+.fs { flex: 1 1 auto; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 14px; padding: 2px 2px 16px; }
+.fs-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; flex: none; }
+.fs-ctl { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--dim); }
+.fs-ctl select, .fs-ctl input.hex-jump { height: 28px; padding: 0 8px; background: #0a0a0a; color: var(--ink, #f2f2f2); border: 1px solid var(--hair2, #2a2a2a); border-radius: 7px; font: inherit; }
+.fs-ctl input.hex-jump { width: 92px; font-family: var(--code); }
+.fs-ctl input[type='range'] { width: 160px; accent-color: var(--acc); }
+.fs-num { min-width: 52px; }
+.fs-facts { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 22px; flex: none; }
+.fs-facts > div { display: flex; gap: 6px; font-size: 12px; min-width: 0; }
+.fs-facts dt { color: var(--dim); }
+.fs-facts dd { margin: 0; max-width: 34ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fs-sec { display: flex; flex-direction: column; gap: 8px; flex: none; }
+.fs-h { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+.fs-type { width: 100%; min-height: 150px; resize: vertical; padding: 16px 18px; line-height: 1.25; background: #000; color: #f4f4f4; border: 1px solid var(--hair2, #2a2a2a); border-radius: 12px; overflow: auto; font-weight: normal; }
+.fs-type:focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }
+.fs.light .fs-type, .fs.light .fs-ladder, .fs.light .fs-grid { background: #fafafa; color: #111; border-color: #d4d4d4; }
+.fs.light .fs-cell { color: #111; border-color: #dcdcdc; }
+.fs.light .fs-cell:hover, .fs.light .fs-cell.on { background: #e8e8e8; }
+.fs-ladder { display: flex; flex-direction: column; gap: 6px; padding: 12px 16px; background: #000; border: 1px solid var(--hair2, #2a2a2a); border-radius: 12px; overflow-x: auto; }
+.fs-row { display: flex; align-items: baseline; gap: 14px; white-space: nowrap; }
+.fs-px { flex: none; width: 28px; text-align: right; font: 11px var(--code); color: #888; }
+.fs-line { line-height: 1.25; }
+.fs-tabs { display: flex; flex-wrap: wrap; gap: 4px; }
+.fs-tabs button { height: 28px; padding: 0 11px; border-radius: 14px; font-size: 12px; color: var(--ink3, #aaa); background: #0d0d0d; border: 1px solid var(--hair2, #2a2a2a); }
+.fs-tabs button:hover { color: var(--ink, #fff); }
+.fs-tabs button.on { color: #000; background: var(--acc); border-color: var(--acc); }
+.fs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 4px; padding: 10px; background: #000; border: 1px solid var(--hair2, #2a2a2a); border-radius: 12px; max-height: 340px; overflow: auto; }
+.fs-cell { height: 46px; font-size: 24px; line-height: 1; color: #f2f2f2; background: transparent; border: 1px solid #1f1f1f; border-radius: 8px; cursor: pointer; }
+.fs-cell:hover { background: #151515; }
+.fs-cell.on { background: #1d1d1d; border-color: var(--acc); }
+.fs-cell:focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }
+.fs-pick { display: flex; align-items: center; gap: 14px; }
+.fs-big { font-size: 64px; line-height: 1; min-width: 64px; text-align: center; }
+.hex-table { border-collapse: collapse; font: 12.5px/1.55 var(--code); width: max-content; }
+.hex-table th, .hex-table td { padding: 0 12px; text-align: left; white-space: pre; font-weight: 400; }
+.hex-table th { color: #6f6f6f; position: sticky; left: 0; background: #050505; }
+.hex-table .hx { color: #e8e8e8; }
+.hex-table .ha { color: var(--acc); border-left: 1px solid #1f1f1f; }
+.hex-table tr:hover td, .hex-table tr:hover th { background: #101010; }
+.pw-scroll.hex:focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }

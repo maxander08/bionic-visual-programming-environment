@@ -6,7 +6,7 @@
 // signal in the inspector (the argument is { value, title }).
 import { useEffect, useMemo, useState } from 'react';
 import { FILE_KIND_BY_ID, fmtBytes, fmtDuration, type FileDescriptor, type FileInfo } from '../core/files';
-import { MIME_BY_EXT, listZip, parseDelimited } from '../core/formats';
+import { MIME_BY_EXT, parseDelimited } from '../core/formats';
 import { projectView } from '../core/modules/behavior';
 import type { Plot } from '../core/equation';
 import type { ImageSig } from '../core/types';
@@ -18,6 +18,8 @@ import { EquationPlot } from './EquationPlot';
 import { ImageCanvas } from './NodeView';
 import { Icon } from './icons';
 import { Modal } from './Modal';
+import { FontStage } from './FontStage';
+import { EntriesStage, HexStage, LISTABLE_ARCHIVES, useArchiveListing, useSheetRows, useSniffedText } from './FileViews';
 import { saveBlob } from './saveBlob';
 
 type View = Record<string, any>;
@@ -68,13 +70,13 @@ function TextStage({ text, cut, name, label }: { text: string; cut?: boolean; na
   );
 }
 
-function CsvTable({ text }: { text: string }) {
-  const rows = useMemo(() => parseDelimited(text), [text]);
+function GridTable({ rows, note }: { rows: string[][]; note?: string }) {
   const shown = rows.slice(0, 1000);
   const w = Math.min(60, Math.max(0, ...shown.map((r) => r.length)));
   return (
     <div className="pw-col">
       <div className="pw-bar"><span className="pw-meta">{tr('{r} rows · {c} columns', { r: rows.length.toLocaleString('en-US'), c: w })}</span></div>
+      {note && <p className="callout info"><Icon name="alert" size={14} />{tr(note)}</p>}
       {rows.length > shown.length && <p className="callout info"><Icon name="alert" size={14} />{tr('Only the first 1 000 rows are shown. The Text tab has all of them.')}</p>}
       <div className="pw-scroll">
         <table className="pw-table"><tbody>{shown.map((r, y) => <tr key={y}>{Array.from({ length: w }, (_, x) => (y === 0 ? <th key={x}>{r[x] ?? ''}</th> : <td key={x}>{r[x] ?? ''}</td>))}</tr>)}</tbody></table>
@@ -83,21 +85,12 @@ function CsvTable({ text }: { text: string }) {
   );
 }
 
-// ---- files ---------------------------------------------------------------------------------------------------------------------
-
-function useZipNames(file: FileDescriptor, enabled: boolean) {
-  const [names, setNames] = useState<string[] | null>(null);
-  useEffect(() => {
-    if (!enabled) return;
-    let alive = true;
-    void getBlob(file.id).then(async (b) => {
-      if (!b || !alive) return;
-      try { const l = listZip(new Uint8Array(await b.arrayBuffer())); if (alive) setNames(l ? l.split('\n') : []); } catch { if (alive) setNames([]); }
-    });
-    return () => { alive = false; };
-  }, [file.id, enabled]);
-  return names;
+function CsvTable({ text }: { text: string }) {
+  const rows = useMemo(() => parseDelimited(text), [text]);
+  return <GridTable rows={rows} />;
 }
+
+// ---- files ---------------------------------------------------------------------------------------------------------------------
 
 function facts(file: FileDescriptor, info: FileInfo | undefined): [string, string][] {
   const rows: [string, string][] = [[tr('Name'), file.name], [tr('Category'), tr(FILE_KIND_BY_ID.get(file.type)?.name ?? file.type)], [tr('Extension'), file.ext ? '.' + file.ext.toUpperCase() : '—'], [tr('Size'), fmtBytes(file.size)]];
@@ -108,6 +101,11 @@ function facts(file: FileDescriptor, info: FileInfo | undefined): [string, strin
   if (info?.lines !== undefined) rows.push([tr('Lines'), String(info.lines)]);
   if (info?.slides !== undefined) rows.push([tr('Slides'), String(info.slides)]);
   if (info?.entries !== undefined) rows.push([tr('Entries'), String(info.entries)]);
+  if (info?.family) rows.push([tr('Family'), info.family]);
+  if (info?.style) rows.push([tr('Style'), info.style]);
+  if (info?.glyphs !== undefined) rows.push([tr('Glyphs'), info.glyphs.toLocaleString('en-US')]);
+  if (info?.fontFormat) rows.push([tr('Format'), tr(info.fontFormat)]);
+  if (info?.fontVersion) rows.push([tr('Version'), info.fontVersion]);
   return rows;
 }
 
@@ -122,51 +120,70 @@ function FileCard({ file, info, note }: { file: FileDescriptor; info?: FileInfo;
   );
 }
 
-type Mode = 'view' | 'text' | 'source' | 'preview' | 'table' | 'entries' | 'details';
-const MODE_LABEL: Record<Mode, string> = { view: 'View', text: 'Text', source: 'Source code', preview: 'Preview', table: 'Table', entries: 'Contents', details: 'Details' };
+type Mode = 'view' | 'text' | 'source' | 'preview' | 'table' | 'entries' | 'hex' | 'details';
+const MODE_LABEL: Record<Mode, string> = { view: 'View', text: 'Text', source: 'Source code', preview: 'Preview', table: 'Table', entries: 'Contents', hex: 'Hex', details: 'Details' };
+
+/** Kinds the browser shows or plays by itself from the stored bytes. */
+const NATIVE_VIEW = new Set(['image', 'pdf', 'audio', 'video']);
 
 function FileStage({ v }: { v: View }) {
   const file = v.file as FileDescriptor;
   const info = v.info as FileInfo | undefined;
-  const text = v.text as string | undefined;
+  const present = !!v.present;
   const blob = useBlob(file);
-  const isZip = file.type === 'compressed' && file.ext === 'zip';
-  const names = useZipNames(file, isZip);
+  const bytes = present ? blob.blob : undefined;
+
+  // Anything the node did not read as text may still be text (a .JSON in Miscellaneous, a .SH in Executable, an .SVG).
+  const readsAsText = v.text !== undefined;
+  const sniffOn = present && blob.done && !readsAsText && file.type !== 'font' && file.type !== 'audio' && file.type !== 'video' && file.type !== 'pdf';
+  const sniffed = useSniffedText(bytes, sniffOn);
+  const text: string | undefined = readsAsText ? (v.text as string) : sniffed ? sniffed.text : undefined;
+  const textCut = readsAsText ? (!!v.cut || !!v.textCut) : !!sniffed?.cut;
+
+  const isXlsx = file.type === 'spreadsheet' && file.ext === 'xlsx';
+  const sheet = useSheetRows(bytes, isXlsx);
+  const listable = (file.type === 'compressed' || file.type === 'misc') && LISTABLE_ARCHIVES.has(file.ext);
+  const listing = useArchiveListing(bytes, file.ext, file.name, listable);
+  const [playFailed, setPlayFailed] = useState<string | null>(null);
+  useEffect(() => setPlayFailed(null), [file.id]);
 
   const modes: Mode[] = [];
-  if (!v.present) modes.push('details');
-  else {
-    if (file.type === 'image' || file.type === 'pdf' || file.type === 'audio' || file.type === 'video') modes.push('view');
-    if (text !== undefined) modes.push(file.type === 'web' ? 'source' : 'text');
+  if (present) {
+    if (NATIVE_VIEW.has(file.type) || file.type === 'font') modes.push('view');
+    if (text !== undefined) modes.push(file.type === 'web' || file.type === 'executable' ? 'source' : 'text');
     if (file.type === 'web' && file.ext === 'html' && text !== undefined) modes.push('preview');
-    if (file.type === 'spreadsheet' && file.ext === 'csv' && text !== undefined) modes.push('table');
-    if (isZip) modes.push('entries');
-    modes.push('details');
+    if ((file.type === 'spreadsheet' && file.ext === 'csv' && text !== undefined) || (isXlsx && sheet)) modes.push('table');
+    if (listable && listing !== null && (listing === undefined || listing.lines.length || listing.note || file.ext === 'zip' || file.ext === 'tar')) modes.push('entries');
+    if (bytes) modes.push('hex');
   }
+  modes.push('details');
   const [picked, setMode] = useState<Mode | null>(null);
+  useEffect(() => setMode(null), [file.id]);
   const mode = picked && modes.includes(picked) ? picked : modes[0];
   const meta = [file.ext ? file.ext.toUpperCase() : '', fmtBytes(file.size), info?.width && info.height ? `${info.width} × ${info.height}` : '', info?.duration !== undefined ? fmtDuration(info.duration) : ''].filter(Boolean).join(' · ');
 
+  const cantPlay = <FileCard file={file} info={info} note={playFailed ?? 'The file’s bytes are not available, so it cannot be shown here.'} />;
+  // While the bytes are still being looked at, the best tab is not known yet; wait rather than flash a different one.
+  const pending = present && (!blob.done || (sniffOn && !!bytes && sniffed === undefined) || (isXlsx && !!bytes && sheet === undefined) || (listable && !!bytes && listing === undefined));
   let body;
-  switch (mode) {
+  switch (pending && !picked ? 'pending' : mode) {
+    case 'pending': body = <p className="muted pad12">{tr('Reading…')}</p>; break;
     case 'view':
       if (!blob.done) body = <p className="muted pad12">{tr('Reading…')}</p>;
-      else if (!blob.url) body = file.type === 'image' && v.image ? <div className="pw-img"><ImageCanvas img={v.image as ImageSig} /></div> : <FileCard file={file} info={info} note="The file’s bytes are not available, so it cannot be played here." />;
-      else if (file.type === 'image') body = <div className="pw-img"><img src={blob.url} alt={file.name} /></div>;
+      else if (!blob.url || !blob.blob) body = file.type === 'image' && v.image ? <div className="pw-img"><ImageCanvas img={v.image as ImageSig} /></div> : cantPlay;
+      else if (playFailed) body = cantPlay;
+      else if (file.type === 'font') body = <FontStage file={file} info={info} blob={blob.blob} />;
+      else if (file.type === 'image') body = <div className="pw-img"><img src={blob.url} alt={file.name} onError={() => v.image ? undefined : setPlayFailed('This browser could not draw this picture. The Hex and Details tabs still show what is in it.')} /></div>;
       else if (file.type === 'pdf') body = <iframe className="pw-frame" src={blob.url} title={file.name} />;
-      else if (file.type === 'audio') body = <div className="pw-media"><span className="pw-badge">{'.' + file.ext.toUpperCase()}</span><audio controls src={blob.url} aria-label={file.name} /></div>;
-      else body = <video className="pw-video" controls src={blob.url} aria-label={file.name} />;
+      else if (file.type === 'audio') body = <div className="pw-media"><span className="pw-badge">{'.' + file.ext.toUpperCase()}</span><audio controls src={blob.url} aria-label={file.name} onError={() => setPlayFailed('This browser cannot play this audio format. Download the file to play it elsewhere, or use the Hex tab to look inside.')} /></div>;
+      else body = <video className="pw-video" controls src={blob.url} aria-label={file.name} onError={() => setPlayFailed('This browser cannot play this video format. Download the file to play it elsewhere, or use the Hex tab to look inside.')} />;
       break;
-    case 'text': case 'source': body = <TextStage text={text ?? ''} cut={!!v.cut || !!v.textCut} name={file.name} label={mode === 'source' ? tr('Source code') : undefined} />; break;
+    case 'text': case 'source': body = <TextStage text={text ?? ''} cut={textCut} name={file.name} label={mode === 'source' ? tr('Source code') : undefined} />; break;
     case 'preview': body = <iframe className="pw-frame light" sandbox="" srcDoc={text} title={file.name} />; break;
-    case 'table': body = <CsvTable text={text ?? ''} />; break;
-    case 'entries': body = (
-      <div className="pw-col">
-        <div className="pw-bar"><span className="pw-meta">{tr('{n} files inside', { n: String(info?.entries ?? names?.length ?? 0) })}</span></div>
-        <pre className="pw-pre" tabIndex={0}>{names === null ? tr('Reading…') : names.length ? names.join('\n') : tr('(empty)')}</pre>
-      </div>
-    ); break;
-    default: body = <FileCard file={file} info={info} note={v.present ? undefined : 'This file is not in this browser any more. Programs that were shared or imported do not carry their files: drop it on its Files node again.'} />;
+    case 'table': body = isXlsx && sheet ? <GridTable rows={sheet} note="Only the first sheet of the workbook is shown." /> : <CsvTable text={text ?? ''} />; break;
+    case 'entries': body = <EntriesStage listing={listing} expected={file.ext === 'zip' ? info?.entries : undefined} />; break;
+    case 'hex': body = bytes ? <HexStage blob={bytes} /> : null; break;
+    default: body = <FileCard file={file} info={info} note={present ? undefined : 'This file is not in this browser any more. Programs that were shared or imported do not carry their files: drop it on its Files node again.'} />;
   }
 
   return (

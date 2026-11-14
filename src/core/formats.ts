@@ -27,6 +27,7 @@ export function safeName(s: string, fallback = 'converted'): string {
 export const MIME_BY_EXT: Record<string, string> = {
   png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', bmp: 'image/bmp', svg: 'image/svg+xml',
   pdf: 'application/pdf', wav: 'audio/wav', zip: 'application/zip', html: 'text/html', txt: 'text/plain', md: 'text/markdown', rtf: 'application/rtf', csv: 'text/csv',
+  ttf: 'font/ttf', otf: 'font/otf', woff2: 'font/woff2',
   docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 };

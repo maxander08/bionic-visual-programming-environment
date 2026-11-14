@@ -130,6 +130,19 @@ const SPECS: Record<FileKindId, Spec> = {
     errors: ['A damaged .ZIP gives a warning and no Entries.'],
     examples: ['Compressed Entries → Threshold: react to a bulky bundle.'],
   },
+  font: {
+    bottom: [
+      out('family', 'Family', 'text', 'The font family name stored inside the file, for example “Inter”. For a .WOFF2 file whose names this browser cannot unpack, the name is taken from the file name.', 'bottom'),
+      out('image', 'Specimen', 'image', 'A picture of the font: its name set in the font itself, with a line of letters and digits under it. Connect it to an Image Display or a Projector.', 'bottom'),
+      out('glyphs', 'Glyphs', 'num', 'Number of glyphs (drawn shapes) in the font, when the file says.', 'bottom'),
+    ],
+    right: [out('style', 'Style', 'text', 'The style inside the family: Regular, Bold Italic…', 'right')],
+    keywords: 'font typeface type ttf otf woff2 truetype opentype glyph letters typography family bold italic',
+    summary: 'Holds a font file: .TTF, .OTF or .WOFF2.',
+    runtime: 'Drag a font onto the node, or click the node to choose one. The browser installs the font for this page only (nothing is uploaded or added to your computer), the family, style and glyph count are read from the file, and a specimen picture is drawn with the font itself. Connect File to a Projector for a full preview: a live specimen you can type into, every size from tiny to huge, a grid of all the characters it can draw, and the file’s details.',
+    errors: ['A file with a font extension that is not really a font, or that the browser refuses (damaged, wrong format), gives a warning and no Specimen.'],
+    examples: ['Font File → Projector: type your own text and see it in the font.', 'Font Specimen → Image Display: show the specimen picture on the workspace.', 'Font Family → Text Display: read the font’s real name.'],
+  },
   misc: {
     keywords: 'other any unknown anything else file binary data',
     summary: 'Holds any file that none of the other Files nodes takes.',
@@ -164,7 +177,8 @@ function runFor(kind: FileKind, outIds: string[]) {
       case 'document': case 'text': case 'spreadsheet': case 'presentation': case 'web': c.emit('content', info.text); break;
       case 'image': case 'video': c.emit('width', info.width); c.emit('height', info.height); break;
     }
-    if (kind.id === 'image') c.emit('image', info.image);
+    if (kind.id === 'image' || kind.id === 'font') c.emit('image', info.image);
+    if (kind.id === 'font') { c.emit('family', info.family); c.emit('style', info.style); c.emit('glyphs', info.glyphs); }
     if (kind.id === 'audio' || kind.id === 'video') c.emit('duration', info.duration);
     if (kind.id === 'text' || kind.id === 'spreadsheet') c.emit('lines', info.lines);
     if (kind.id === 'presentation') c.emit('slides', info.slides);

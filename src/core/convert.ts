@@ -22,6 +22,7 @@ export const ROUTES: Record<FileKindId, Partial<Record<FileKindId, string[]>>> =
   executable: { compressed: R('zip') },
   web: { text: R('txt', 'md'), document: R('docx'), pdf: R('pdf'), compressed: R('zip') },
   compressed: { text: R('txt') },
+  font: { compressed: R('zip') },
   misc: { compressed: R('zip') },
 };
 

@@ -4,7 +4,7 @@
 import type { ImageSig } from './types';
 
 export type FileKindId =
-  | 'document' | 'text' | 'pdf' | 'audio' | 'video' | 'image' | 'spreadsheet' | 'presentation' | 'executable' | 'web' | 'compressed' | 'misc';
+  | 'document' | 'text' | 'pdf' | 'audio' | 'video' | 'image' | 'spreadsheet' | 'presentation' | 'executable' | 'web' | 'compressed' | 'font' | 'misc';
 
 export interface FileKind {
   id: FileKindId;
@@ -30,6 +30,7 @@ export const FILE_KINDS: FileKind[] = [
   { id: 'executable', type: 'file-executable', name: 'Executable', caption: 'Executable File', glyph: 'EXE', exts: ['exe', 'msi', 'app', 'bat', 'sh'] },
   { id: 'web', type: 'file-web', name: 'Web', caption: 'Web File', glyph: 'WEB', exts: ['html', 'css', 'js', 'php'] },
   { id: 'compressed', type: 'file-compressed', name: 'Compressed', caption: 'Compressed File', glyph: 'ZIP', exts: ['zip', 'rar', '7z', 'tar', 'gz'] },
+  { id: 'font', type: 'file-font', name: 'Font', caption: 'Font File', glyph: 'FNT', exts: ['ttf', 'otf', 'woff2'] },
   { id: 'misc', type: 'file-misc', name: 'Miscellaneous', caption: 'Miscellaneous File', glyph: '···', exts: [] },
 ];
 
@@ -104,6 +105,14 @@ export interface FileInfo {
   /** Files inside an archive. */
   entries?: number;
   slides?: number;
+  /** Fonts: the family and style names inside the file, the number of glyphs, the outline flavour and a version string. */
+  family?: string;
+  style?: string;
+  glyphs?: number;
+  fontFormat?: string;
+  fontVersion?: string;
+  /** Fonts: the name the font is registered under in this page (see runtime/fonts.ts), so previews can draw with it. */
+  cssFamily?: string;
   /** An explanation shown in the inspector (not a problem): “text cannot be read from the old .DOC format”. */
   note?: string;
   /** A real problem the node reports as a warning. */

@@ -5,13 +5,13 @@ import { CATEGORIES, MODULES, getDef } from './registry';
 import { FILE_KINDS, accepts, acceptAttr, classify, extOf, fmtBytes, fmtDuration, setFileInfo, type FileInfo } from './files';
 import type { Graph, Params } from './types';
 
-const NAMES = ['Document', 'Text', 'PDF', 'Audio', 'Video', 'Image', 'Spreadsheet', 'Presentation', 'Executable', 'Web', 'Compressed', 'Miscellaneous'];
+const NAMES = ['Document', 'Text', 'PDF', 'Audio', 'Video', 'Image', 'Spreadsheet', 'Presentation', 'Executable', 'Web', 'Compressed', 'Font', 'Miscellaneous'];
 
 const SPEC: Record<string, string[]> = {
   Document: ['docx', 'doc'], Text: ['md', 'txt', 'rtf'], PDF: ['pdf'], Audio: ['mp3', 'wav', 'm4a', 'flac', 'aac', 'ogg'],
   Video: ['mp4', 'mov', 'mkv', 'webm', 'avi'], Image: ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'tiff'],
   Spreadsheet: ['xlsx', 'xls', 'csv', 'sql', 'accdb'], Presentation: ['pptx'], Executable: ['exe', 'msi', 'app', 'bat', 'sh'],
-  Web: ['html', 'css', 'js', 'php'], Compressed: ['zip', 'rar', '7z', 'tar', 'gz'],
+  Web: ['html', 'css', 'js', 'php'], Compressed: ['zip', 'rar', '7z', 'tar', 'gz'], Font: ['ttf', 'otf', 'woff2'],
 };
 
 function run(nodes: [string, string, Params?][], wires: [string, string, string, string][] = []) {
@@ -25,11 +25,11 @@ function run(nodes: [string, string, Params?][], wires: [string, string, string,
 }
 const out = (e: Engine, id: string, port: string) => e.nodes.get(id)!.outputs[port]?.v;
 
-describe('Files: the twelve nodes', () => {
+describe('Files: the thirteen nodes', () => {
   it('exist in a Files category, in the requested order, one node each', () => {
     const list = MODULES.filter((m) => m.category === 'Files');
     expect(list.map((m) => m.name)).toEqual(NAMES);
-    expect(new Set(list.map((m) => m.type)).size).toBe(12);
+    expect(new Set(list.map((m) => m.type)).size).toBe(13);
     expect(CATEGORIES).toContain('Files');
     for (const m of list) expect(m.family).toBe('file');
   });
@@ -50,7 +50,7 @@ describe('Files: the twelve nodes', () => {
   });
 
   it('refuse a file that belongs to another node', () => {
-    const doc = FILE_KINDS[0], misc = FILE_KINDS[11];
+    const doc = FILE_KINDS[0], misc = FILE_KINDS[12];
     expect(accepts(doc, 'a.docx')).toBe(true);
     expect(accepts(doc, 'a.pdf')).toBe(false);
     expect(accepts(misc, 'a.pdf')).toBe(false);

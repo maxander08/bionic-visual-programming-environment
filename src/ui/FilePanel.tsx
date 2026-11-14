@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { ImageSig, NodeInst } from '../core/types';
 import { acceptAttr, extList, fileState, filesVersion, fmtBytes, fmtDuration, getFileInfo, subscribeFiles, type FileKind } from '../core/files';
-import { clearFile, loadFile } from '../runtime/files';
+import { clearFile, connectToProjector, loadFile, openFilePreview } from '../runtime/files';
 import { useStore } from '../state/store';
 import { Icon } from './icons';
 import { tr } from '../i18n';
@@ -147,6 +147,11 @@ export function FileInspector({ node, kind }: { node: NodeInst; kind: FileKind }
       if (info.lines !== undefined) rows.push([tr('Lines'), String(info.lines)]);
       if (info.slides !== undefined) rows.push([tr('Slides'), String(info.slides)]);
       if (info.entries !== undefined) rows.push([tr('Entries'), String(info.entries)]);
+      if (info.family) rows.push([tr('Family'), info.family]);
+      if (info.style) rows.push([tr('Style'), info.style]);
+      if (info.glyphs !== undefined) rows.push([tr('Glyphs'), info.glyphs.toLocaleString('en-US')]);
+      if (info.fontFormat) rows.push([tr('Format'), tr(info.fontFormat)]);
+      if (info.fontVersion) rows.push([tr('Version'), info.fontVersion]);
     }
   }
   return (
@@ -165,6 +170,13 @@ export function FileInspector({ node, kind }: { node: NodeInst; kind: FileKind }
         {id && <button type="button" className="btn sm danger" onClick={() => clearFile(node.id)}>{tr('Remove file')}</button>}
       </div>
       {picker.el}
+      {id && (
+        <div className="btn-row">
+          <button type="button" className="btn sm primary" disabled={!info} onClick={() => openFilePreview(node.id)}><Icon name="expand" size={13} />{tr('Preview')}</button>
+          <button type="button" className="btn sm" onClick={() => connectToProjector(node.id)}>{tr('Connect to a Projector')}</button>
+        </div>
+      )}
+      {id && <p className="doc">{tr('Preview opens the file in the Projector window: whatever its kind, it is shown by its content. Connect to a Projector adds one to the workspace and wires this node’s File output to it.')}</p>}
       {missing && <p className="status-line warn">{tr('This file is not in this browser. Programs that were shared or imported do not carry their files: drop it on the node again.')}</p>}
       {id && !info && !missing && <p className="status-line info">{tr('Reading…')}</p>}
       {info?.warn && <p className="status-line warn">{tr(info.warn)}</p>}

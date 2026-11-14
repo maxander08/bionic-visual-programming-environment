@@ -68,9 +68,9 @@ export const behaviors: ModuleDef[] = [
     run(c) { c.view(projectView(c.get('in'), c.str('format'))); },
     doc: {
       summary: 'The general-purpose display for anything: numbers, text, images, equations, lists and whole files.',
-      runtime: 'Chooses a layout from the value type: large number, text, picture, graph, or a file shown by its content (the words of a text, Word, web or CSV file, a picture, the first lines of a presentation). The node itself shows a short preview; the expand button in its corner opens a full-size window that shows everything: all of a long text, scrolling and selectable, a picture at full size, a PDF page by page, audio and video with player controls, and a Download button for files. The inspector has the same expand button next to every signal, so any value can be read in full.',
+      runtime: 'Chooses a layout from the value type: large number, text, picture, graph, or a file shown by its content (the words of a text, Word, web or CSV file, a picture, the first lines of a presentation). The node itself shows a short preview; the expand button in its corner opens a full-size window that shows everything: all of a long text, scrolling and selectable, a picture at full size, a PDF page by page, audio and video with player controls, a font as a live specimen you can type into with a grid of its characters, a spreadsheet as a table, an archive as a list of what is inside, and for every file a hex dump of its bytes and a Download button. The inspector has the same expand button next to every signal, so any value can be read in full.',
       errors: ['A file that is no longer in this browser (a shared program does not carry its files) shows its name and a note instead of its content.'],
-      examples: ['Text file Content → Projector: read a file on the workspace, and open the window for the whole of it.', 'Files node File → Projector: view the file itself, whatever its kind.', 'File Converter File → Projector: see what the conversion made.'],
+      examples: ['Text file Content → Projector: read a file on the workspace, and open the window for the whole of it.', 'Files node File → Projector: view the file itself, whatever its kind: a font becomes a specimen, a workbook a table, a program a hex dump.', 'File Converter File → Projector: see what the conversion made.'],
     },
   },
   {

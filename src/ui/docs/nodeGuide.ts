@@ -901,8 +901,19 @@ const FILE_GUIDE: Record<string, Partial<NodeGuide> & { when: string }> = {
   'file-compressed': {
     when: 'You have an archive and want to know how many files are inside, or its size.',
     down: ['text', 'projector', 'threshold'], alias: 'zip rar 7z tar gz archive',
-    tips: ['For .ZIP files **Entries** counts the files inside (folders are not counted). Nothing is unpacked.'],
-    pitfalls: ['.RAR, .7Z, .TAR and .GZ are stored and described but not looked into.'],
+    tips: ['For .ZIP files **Entries** counts the files inside (folders are not counted). Nothing is unpacked.', 'Connect **File** to a [[n:projector]] to browse the contents of .ZIP, .TAR, .GZ and .TGZ archives.'],
+    pitfalls: ['.RAR and .7Z are stored and described but not looked into.'],
+  },
+  'file-font': {
+    when: 'You have a font file (.TTF, .OTF or .WOFF2) and want to see it, read its name, or show a picture of it.',
+    down: ['projector', 'text', 'image'], alias: 'font typeface ttf otf woff2 truetype opentype glyph typography family bold italic specimen',
+    tips: [
+      'Connect **File** to a [[n:projector]] for the full preview: type your own text in the font, see it from 10 px to 200 px, and browse every character it can draw. The inspector’s **Preview** button opens the same window without wiring anything.',
+      '**Specimen** is a picture of the font drawn with the font itself. Send it to an [[n:image]] to see it on the workspace.',
+      '**Family**, **Style** and **Glyphs** come from the tables inside the file. For .WOFF2 files they need a browser that can unpack Brotli; otherwise the family is taken from the file name.',
+      'The font is installed for this page only, under a private name. It is never uploaded and never added to your computer.',
+    ],
+    pitfalls: ['Only .TTF, .OTF and .WOFF2 are taken. An older .WOFF or an .EOT goes to Miscellaneous (where the Projector shows it as bytes).', 'A file with a font extension that is not a font, or that the browser refuses, raises a warning and has no Specimen.'],
   },
   'file-misc': {
     when: 'You have a file that none of the other Files nodes takes.',

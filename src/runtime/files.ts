@@ -7,12 +7,13 @@
 import { strFromU8, unzipSync } from 'fflate';
 import type { ImageSig } from '../core/types';
 import {
-  FILE_KIND_BY_TYPE, MAX_FILE_BYTES, MAX_TEXT_CHARS, accepts, classify, extList, extOf, fmtBytes, getFileInfo, setFileInfo, setFileState, fileState, onFileForgotten,
+  FILE_KIND_BY_TYPE, MAX_FILE_BYTES, descriptorOf, MAX_TEXT_CHARS, accepts, classify, extList, extOf, fmtBytes, getFileInfo, setFileInfo, setFileState, fileState, onFileForgotten,
   type FileInfo, type FileKind,
 } from '../core/files';
 import { useStore } from '../state/store';
 import { tr } from '../i18n';
 import { engine } from './session';
+import { drawSpecimen, readFont, releaseFont } from './fonts';
 
 // ---- persistence -------------------------------------------------------------------------------------------------
 
@@ -72,7 +73,7 @@ export async function getBlob(id: string): Promise<Blob | undefined> {
   if (rec) blobs.set(id, rec.blob);
   return rec?.blob;
 }
-onFileForgotten((id) => void blobs.delete(id));
+onFileForgotten((id) => { blobs.delete(id); releaseFont(id); });
 
 // ---- reading -----------------------------------------------------------------------------------------------------
 
@@ -208,6 +209,19 @@ export async function analyse(id: string, file: File): Promise<FileInfo> {
       const m = await probeMedia(file, kind.id === 'video');
       info.duration = m.duration; info.width = m.width; info.height = m.height; info.image = m.frame;
       if (m.duration === undefined) info.note = 'This browser could not read the file’s header (its format is not supported here). The file is stored, but there is no length or size.';
+    } else if (kind.id === 'font') {
+      const r = await readFont(id, file);
+      const m = r.meta;
+      info.family = r.family.slice(0, 80);
+      if (m) {
+        info.style = m.style?.slice(0, 60); info.glyphs = m.glyphs; info.fontVersion = m.version?.replace(/^version\s*/i, '').slice(0, 80);
+        info.fontFormat = `${m.container} · ${m.outlines === 'CFF' ? 'CFF (PostScript) outlines' : m.outlines === 'TrueType' ? 'TrueType outlines' : 'unknown outlines'}`;
+      }
+      if (r.css) { info.cssFamily = r.css; info.image = drawSpecimen(r.css, info.family) ?? undefined; }
+      if (!m && !r.css) info.warn = 'This file is not a font this browser can read. It may be damaged or have the wrong extension, so there is no Specimen.';
+      else if (!r.css) info.warn = 'This browser refused to load the font (it may be damaged or use an unsupported variant), so there is no Specimen or live preview.';
+      else if (m && !m.complete) info.note = 'WOFF2 fonts are compressed. This browser cannot unpack the names inside, so the family comes from the file name and the glyph count is unknown. The font itself works.';
+      else if (!m) info.note = 'The font works, but its names could not be read, so the family comes from the file name.';
     } else if (kind.id === 'spreadsheet') info.note = 'Workbooks and databases are stored but their cells are not read. Use .CSV for readable content.';
     else if (kind.id === 'executable') info.note = 'Executables are only described. They are never run.';
     else if (kind.id === 'pdf') info.note = 'The text inside a PDF is not extracted.';
@@ -272,6 +286,50 @@ export async function dropOnWorkspace(files: File[], at: { x: number; y: number 
     i++;
     if (id) await loadFile(id, f);
   }
+}
+
+// ---- previewing: every Files node can be shown in a Projector ------------------------------------------------------------------------
+
+/** The Projector (if any) already wired to this node's File output. */
+function wiredProjector(nodeId: string): string | null {
+  const g = useStore.getState().project.graph;
+  for (const e of Object.values(g.edges)) if (e.from === nodeId && e.fromPort === 'file' && g.nodes[e.to]?.type === 'projector') return e.to;
+  return null;
+}
+
+/** Open the Projector's full-size window on the file in a node, without needing a Projector on the workspace. */
+export function openFilePreview(nodeId: string): boolean {
+  const st = useStore.getState();
+  const node = st.project.graph.nodes[nodeId];
+  const kind = node && FILE_KIND_BY_TYPE.get(node.type);
+  const id = node && String(node.params.fileId ?? '');
+  const info = id ? getFileInfo(id) : undefined;
+  if (!node || !kind || !info) { st.toast(tr('Put a file in the node first.'), 'info'); return false; }
+  st.openDialog('projector', { value: descriptorOf(kind, info), title: `${tr(kind.name)} · ${info.name}` });
+  return true;
+}
+
+/**
+ * Wire the node's File output to a Projector, so the file is previewed on the workspace and in the full-size window whatever its
+ * kind: the Projector chooses how to show it (a picture, a player, the text, a table, a font specimen, a hex dump…). An existing
+ * Projector already connected to the node is reused; otherwise one is placed on the first free spot below the node.
+ */
+export function connectToProjector(nodeId: string): string | null {
+  const st = useStore.getState();
+  const g = st.project.graph;
+  const node = g.nodes[nodeId];
+  if (!node || !FILE_KIND_BY_TYPE.has(node.type)) return null;
+  const have = wiredProjector(nodeId);
+  if (have) { st.select([have]); st.toast(tr('This file is already connected to a Projector.'), 'info'); return have; }
+  const taken = Object.values(g.nodes);
+  const free = (x: number, y: number) => !taken.some((n) => Math.abs(n.x - x) < 150 && Math.abs(n.y - y) < 150);
+  let x = node.x, y = node.y + 168;
+  for (let i = 0; i < 12 && !free(x, y); i++) { x += 168; if (i === 5) { x = node.x; y += 168; } }
+  const pid = st.addNodeAt('projector', x, y);
+  if (!pid) return null;
+  useStore.getState().connectPorts(nodeId, 'file', pid, 'in');
+  useStore.getState().select([pid]);
+  return pid;
 }
 
 // ---- coming back after a reload -----------------------------------------------------------------------------------

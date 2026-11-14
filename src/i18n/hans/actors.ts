@@ -163,11 +163,11 @@ export const actors: Record<string, string> = {
 
   /* the Projector's documentation */
   'The general-purpose display for anything: numbers, text, images, equations, lists and whole files.': '通用显示器，可显示任何内容：数字、文本、图像、方程、列表和整个文件。',
-  'Chooses a layout from the value type: large number, text, picture, graph, or a file shown by its content (the words of a text, Word, web or CSV file, a picture, the first lines of a presentation). The node itself shows a short preview; the expand button in its corner opens a full-size window that shows everything: all of a long text, scrolling and selectable, a picture at full size, a PDF page by page, audio and video with player controls, and a Download button for files. The inspector has the same expand button next to every signal, so any value can be read in full.':
-    '根据值的类型选择版面：大号数字、文本、图片、图表，或按内容显示的文件（文本、Word、网页或 CSV 文件的文字、图片、演示文稿的前几行）。节点本身只显示简短预览；角上的展开按钮会打开全尺寸窗口，显示全部内容：完整的长文本（可滚动、可选取）、全尺寸图片、逐页的 PDF、带播放控件的音频和视频，以及文件的下载按钮。检查器里每个信号旁都有同样的展开按钮，因此任何值都可以完整阅读。',
+  'Chooses a layout from the value type: large number, text, picture, graph, or a file shown by its content (the words of a text, Word, web or CSV file, a picture, the first lines of a presentation). The node itself shows a short preview; the expand button in its corner opens a full-size window that shows everything: all of a long text, scrolling and selectable, a picture at full size, a PDF page by page, audio and video with player controls, a font as a live specimen you can type into with a grid of its characters, a spreadsheet as a table, an archive as a list of what is inside, and for every file a hex dump of its bytes and a Download button. The inspector has the same expand button next to every signal, so any value can be read in full.':
+    '根据值的类型选择版面：大号数字、文本、图片、图表，或按内容显示的文件（文本、Word、网页或 CSV 文件的文字、图片、演示文稿的前几行）。节点本身只显示简短预览；角上的展开按钮会打开全尺寸窗口，显示全部内容：完整的长文本（可滚动、可选取）、全尺寸图片、逐页的 PDF、带播放控件的音频和视频、可输入文字并附带字符网格的字体实时样张、表格形式的电子表格、列出内部条目的压缩包，以及每个文件的十六进制字节转储和下载按钮。检查器里每个信号旁都有同样的展开按钮，因此任何值都可以完整阅读。',
   'A file that is no longer in this browser (a shared program does not carry its files) shows its name and a note instead of its content.': '已不在此浏览器里的文件（分享的程序不会带上文件）会显示名称和说明，而不是内容。',
   'Text file Content → Projector: read a file on the workspace, and open the window for the whole of it.': '文本文件的“内容” → 投影器：在工作区里阅读文件，并打开窗口查看全文。',
-  'Files node File → Projector: view the file itself, whatever its kind.': '文件节点的“文件” → 投影器：查看文件本身，无论它是什么类别。',
+  'Files node File → Projector: view the file itself, whatever its kind: a font becomes a specimen, a workbook a table, a program a hex dump.': '文件节点的“文件” → 投影器：查看文件本身，无论它是什么类别：字体显示为样张，工作簿显示为表格，程序显示为十六进制转储。',
   'File Converter File → Projector: see what the conversion made.': '文件转换器的“文件” → 投影器：查看转换的成果。',
 
   /* examples */
