@@ -274,7 +274,8 @@ fieldset.driven { margin: 0; padding: 0; border: 0; min-width: 0; opacity: 0.5; 
 .text-body .ph { color: #8a7430; font-weight: 400; }
 .proj-text { color: #2fd9cf; font-size: 17px; line-height: 1.2; width: 100%; font-weight: 400; align-self: flex-start; margin-top: 4px; }
 .big { color: #2fd9cf; font-size: 30px; font-weight: 400; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.1; } .big.n2 { font-size: 22px; } .big.n3 { font-size: 15px; }
-.expand { position: absolute; right: -4px; bottom: -4px; width: 22px; height: 22px; display: grid; place-items: center; background: none; border: 0; color: #fff9; border-radius: 5px; } .expand:hover { color: #fff; background: #ffffff18; }
+/* Sits fully inside .node-body (which clips with overflow:hidden), so its hover/backdrop shape is never cut off. */
+.expand { position: absolute; right: 0; bottom: 0; width: 22px; height: 22px; display: grid; place-items: center; background: none; border: 0; color: #fff9; border-radius: 5px; z-index: 1; } .expand:hover { color: #fff; background: #ffffff18; }
 .imgcv { width: 100%; height: 100%; object-fit: contain; border-radius: 6px; display: block; }
 .empty { width: 100%; height: 100%; }
 .meter-wrap { position: relative; width: 100%; height: 100%; } .meter-wrap .art { height: 100%; }
