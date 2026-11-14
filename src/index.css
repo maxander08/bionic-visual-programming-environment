@@ -376,7 +376,7 @@ fieldset.driven { margin: 0; padding: 0; border: 0; min-width: 0; opacity: 0.5; 
 
 /* ───── Files: one node per kind of file. The face is a drop target (and a button) until it holds a file. ───── */
 .file-input { display: none; }
-.file-face { width: 100%; height: 100%; min-width: 0; padding: 4px 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-align: center; color: inherit; font: inherit; background: transparent; border: 1.5px dashed color-mix(in srgb, var(--c) 55%, transparent); border-radius: 8px; cursor: pointer; transition: background var(--dur-micro), border-color var(--dur-micro); }
+.file-face { width: 100%; height: 100%; min-width: 0; padding: 6px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; color: inherit; font: inherit; background: transparent; border: 1.5px dashed color-mix(in srgb, var(--c) 55%, transparent); border-radius: 8px; cursor: pointer; transition: background var(--dur-micro), border-color var(--dur-micro); }
 .file-face:hover:not(:disabled), .file-face:focus-visible { border-color: var(--c); background: color-mix(in srgb, var(--c) 10%, transparent); outline: none; }
 .file-face:disabled { cursor: default; }
 .file-face.full { border-style: solid; border-color: color-mix(in srgb, var(--c) 35%, transparent); }
@@ -384,15 +384,16 @@ fieldset.driven { margin: 0; padding: 0; border: 0; min-width: 0; opacity: 0.5; 
 .file-face.preview { cursor: default; pointer-events: none; }
 .node.drop-over { filter: brightness(1.3); outline: 2px solid var(--c); outline-offset: 3px; }
 .node.drop-over .file-face { border-style: solid; border-color: var(--c); background: color-mix(in srgb, var(--c) 18%, transparent); }
-.ff-icon { width: 22px; height: 22px; opacity: 0.85; flex: none; }
-.ff-hint { font-size: 10.5px; line-height: 1.25; opacity: 0.95; max-width: 100%; }
-.ff-exts { font-size: 9px; line-height: 1.3; letter-spacing: 0.04em; opacity: 0.6; max-width: 100%; word-spacing: 3px; }
+.ff-icon { width: 18px; height: 18px; opacity: 0.85; flex: none; }
+.ff-hint { font-size: 10.5px; line-height: 1.2; opacity: 0.95; max-width: 100%; }
+.ff-exts { font-size: 8.5px; line-height: 1.25; letter-spacing: 0.03em; opacity: 0.6; max-width: 100%; word-spacing: 2px; }
 .ff-badge { flex: none; max-width: 100%; padding: 3px 9px; border: 1.5px solid currentColor; border-radius: 6px; font-size: 15px; line-height: 1.1; font-weight: 700; letter-spacing: 0.03em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ff-badge.bad { color: var(--warn); }
 .ff-thumb { flex: 1 1 0; min-height: 0; width: 100%; display: block; border-radius: 4px; overflow: hidden; background: #000; }
 .ff-name { max-width: 100%; font-size: 10.5px; line-height: 1.2; color: #e8f2ff; }
 .ff-meta { max-width: 100%; font-size: 9.5px; line-height: 1.2; opacity: 0.65; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.node.f-file .node-body { padding: 0; }
+.node.f-file .node-body { padding: 0; top: 30px; bottom: 10px; left: 10px; right: 10px; }
+.node.f-file .node-title { left: 14px; right: 12px; }
 
 /* inspector */
 .file-insp { display: flex; flex-direction: column; gap: 8px; }
