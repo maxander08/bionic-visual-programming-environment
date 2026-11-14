@@ -1892,6 +1892,7 @@ export const zhHant: Record<string, string> = {
  "Message Gosling": "向 Gosling 發訊息",
  "Ask anything, or tell me what to build…": "隨便問，或告訴我你想搭建什麼…",
  "Ask about your workspace, or say “add a timer”…": "詢問工作區狀態，或告訴我你想搭建什麼…",
+ "Ask about the workspace...": "詢問工作區狀態...",
  "Send": "傳送",
  "Language model: {model}": "語言模型：{model}",
  "Built-in brain · runs in your browser": "內建引擎 · 在瀏覽器中本地執行",

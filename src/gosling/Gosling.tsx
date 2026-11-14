@@ -325,7 +325,7 @@ export function Gosling() {
           ) : null}
           <form className="g-input" onSubmit={(e) => { e.preventDefault(); submit(); }}>
               {v.canListen && <button type="button" className={`g-mic${v.dictating ? ' live' : ''}`} onClick={v.toggleDictation} aria-pressed={v.dictating} aria-label={v.dictating ? tr('Stop dictating') : tr('Dictate with your voice')} title={v.dictating ? tr('Stop dictating') : tr('Dictate with your voice')}><VIcon name="mic" size={16} /></button>}
-            <textarea ref={input} rows={1} value={text} aria-label={tr('Message Gosling')} placeholder={v.dictating ? tr('Listening… speak now') : live ? tr('Ask anything, or tell me what to build…') : tr('Ask about your workspace, or say “add a timer”…')}
+            <textarea ref={input} rows={1} value={text} aria-label={tr('Message Gosling')} placeholder={v.dictating ? tr('Listening… speak now') : tr('Ask about the workspace...')}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } if (e.key === 'Escape') setOpen(false); }} />
             {busy

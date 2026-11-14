@@ -152,6 +152,8 @@
 .g-voice[data-phase="paused"] .g-orb-core { opacity: .75; filter: grayscale(.4); }
 
 @media (prefers-reduced-motion: reduce) {
-  .g-ring, .g-bars i, .g-mic.live, .g-orb-core { animation: none !important; }
-  .g-voice[data-phase="listening"] .g-ring { opacity: .5; }
+  html:not(.full-motion) .g-ring, html:not(.full-motion) .g-bars i, html:not(.full-motion) .g-mic.live, html:not(.full-motion) .g-orb-core { animation: none !important; }
+  html:not(.full-motion) .g-voice[data-phase="listening"] .g-ring { opacity: .5; }
 }
+html.rm .g-ring, html.rm .g-bars i, html.rm .g-mic.live, html.rm .g-orb-core { animation: none !important; }
+html.rm .g-voice[data-phase="listening"] .g-ring { opacity: .5; }

@@ -54,7 +54,7 @@ export function UnitConverterPanel({ node }: { node: NodeInst }) {
   return (
     <div className="field">
       {view.text !== undefined
-        ? <p className="status-line ok">{String(view.src)} = <b>{String(view.text)}</b></p>
+        ? <p className="status-line ok"><span>{String(view.src)} = <b>{String(view.text)}</b></span></p>
         : <p className="status-line warn">{tr('Press Run to see the result.')}</p>}
       <div className="btn-row"><button type="button" className="btn sm" onClick={swap}><Icon name="redo" size={13} />{tr('Swap units')}</button></div>
     </div>

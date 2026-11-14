@@ -12,6 +12,7 @@ import { getSensorState, sensorVersion, subscribeSensors } from '../runtime/sens
 import { audio, notificationState, requestNotifications, vibrationSupported } from '../runtime/outputs';
 import { bridge, useStore } from '../state/store';
 import { Icon } from './icons';
+import { FAMILY_VAR } from './NodeView';
 import { FileInspector } from './FilePanel';
 import { ExactValuePanel, FileConverterPanel, ProjectorPanel, UnitConverterPanel } from './ActorPanel';
 import { FILE_KIND_BY_TYPE } from '../core/files';
@@ -327,7 +328,7 @@ function NodePanel({ id }: { id: string }) {
   return (
     <>
       <header className="ihead">
-        <div className="ititle"><span className={`swatch f-${def.family}`} /><h2 title={def.name}>{nodeTitle(def, node.params)}</h2></div>
+        <div className="ititle"><span className={`swatch f-${def.family}`} style={{ ['--c' as string]: FAMILY_VAR[def.family] }} /><h2 title={def.name}>{nodeTitle(def, node.params)}</h2></div>
         <div className="imeta"><span className="tag">{tr(def.category)}</span><code title={tr("Module id")}>{node.id}</code></div>
         <div className="btn-row">
           <button className="btn sm" onClick={() => bridge.focus?.([id])}><Icon name="focus" size={13} />{tr("Focus")}</button>

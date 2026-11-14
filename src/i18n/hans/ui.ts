@@ -424,6 +424,7 @@ export const ui: Record<string, string> = {
   'Message Gosling': '向 Gosling 发消息',
   'Ask anything, or tell me what to build…': '随便问，或告诉我你想搭建什么…',
   'Ask about your workspace, or say “add a timer”…': '询问工作区状态，或告诉我你想搭建什么…',
+  'Ask about the workspace...': '询问工作区状态...',
   'Send': '发送',
   'Language model: {model}': '语言模型：{model}',
   'Built-in brain · runs in your browser': '内置引擎 · 在浏览器中本地运行',
