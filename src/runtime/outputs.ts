@@ -76,7 +76,7 @@ export function processOutputs(engine: Engine, running: boolean) {
         if (running) {
           if (n.type === 'haptic' && vibrationSupported()) navigator.vibrate(v.ms ?? 40);
           if (n.type === 'notify' && notificationState() === 'granted') {
-            try { new Notification(String(v.title ?? 'Neural Studio'), { body: String(v.body ?? '') }); } catch { /* blocked */ }
+            try { new Notification(String(v.title ?? 'Nicque'), { body: String(v.body ?? '') }); } catch { /* blocked */ }
           }
         }
       }

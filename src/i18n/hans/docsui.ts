@@ -4,7 +4,7 @@ export const docsUi: Record<string, string> = {
   'Documentation': '文档',
   'Overview': '概览',
   'Start here': '从这里开始',
-  'Welcome to Neural Studio': '欢迎使用 Neural Studio',
+  'Welcome to Nicque': '欢迎使用 Nicque',
   'Build your first program': '构建你的第一个程序',
   'Interface tour': '界面导览',
   'Find a node by goal': '按目标查找节点',

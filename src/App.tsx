@@ -11,6 +11,8 @@ import { Inspector } from './ui/Inspector';
 import { Minimap, StatusBar, Toolbar } from './ui/Chrome';
 import { Dialogs, Toasts } from './ui/Dialogs';
 import { TitleTips } from './ui/TitleTips';
+import { Gosling } from './gosling/Gosling';
+import { useGosling } from './gosling/store';
 
 function Resizer({ side }: { side: 'left' | 'right' }) {
   const setUi = useStore((s) => s.setUi);
@@ -66,6 +68,7 @@ export default function App() {
     if (mod && e.key.toLowerCase() === 'z') { if (typing) return; e.preventDefault(); e.shiftKey ? st.redo() : st.undo(); return; }
     if (mod && e.key.toLowerCase() === 'y') { if (typing) return; e.preventDefault(); st.redo(); return; }
     if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); saveToBrowser(); return; }
+    if (mod && e.key.toLowerCase() === 'j') { e.preventDefault(); useGosling.getState().toggle(); return; }
     if (typing) return;
     if (mod && e.key.toLowerCase() === 'd') { e.preventDefault(); st.duplicateSelection(); return; }
     if (mod && e.key.toLowerCase() === 'a') { e.preventDefault(); st.select(Object.keys(st.project.graph.nodes)); return; }
@@ -110,6 +113,7 @@ export default function App() {
       <StatusBar />
       <Dialogs />
       <Toasts />
+      <Gosling />
       <TitleTips />
     </div>
   );

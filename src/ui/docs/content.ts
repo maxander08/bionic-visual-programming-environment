@@ -6,12 +6,12 @@ const delaying = MODULES.filter((m) => m.delaying).map((m) => `[[n:${m.type}]]`)
 export const ARTICLES: Article[] = [
   /* ───────────── Start here ───────────── */
   {
-    id: 'welcome', group: 'Start here', title: 'Welcome to Neural Studio',
+    id: 'welcome', group: 'Start here', title: 'Welcome to Nicque',
     summary: 'What the editor is, the mental model, and how to use these docs.',
     keywords: 'introduction overview about basics begin tutorial',
     related: ['first-program', 'interface', 'signals'],
     blocks: [
-      { t: 'p', x: 'Neural Studio is a node-graph editor. You place **modules** on a workspace, connect them with **wires**, press **Run**, and watch signals travel from sensors, through processing, to something you can see or hear. Everything runs in your browser and works offline.' },
+      { t: 'p', x: 'Nicque is a node-graph editor. You place **modules** on a workspace, connect them with **wires**, press **Run**, and watch signals travel from sensors, through processing, to something you can see or hear. Everything runs in your browser and works offline.' },
       { t: 'h', x: 'The mental model' },
       { t: 'flow', items: ['Sensor', 'Nucleus', 'Behavior'] },
       { t: 'ul', items: [

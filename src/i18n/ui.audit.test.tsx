@@ -25,7 +25,7 @@ const host = document.createElement('div');
 document.body.appendChild(host);
 
 // Latin that is right in every language: product name, file formats, SI/technical symbols, key names, code.
-const OK = /^(Neural Studio|JSON|PNG|SVG|QR|URL|HTML|CSV|RGB|HSL|HSV|UTC|Hz|kHz|ms|Ctrl|Cmd|Shift|Alt|Enter|Esc|Del|Tab|Space|AM|PM|OK|ID|API|FPS|PCM|WAV|MP3|GPS|CPU|3D|2D|[A-Z]{1,3}\d?)$/;
+const OK = /^(Nicque|Nic|que|Gosling|JSON|PNG|SVG|QR|URL|HTML|CSV|RGB|HSL|HSV|UTC|Hz|kHz|ms|Ctrl|Cmd|Shift|Alt|Enter|Esc|Del|Tab|Space|AM|PM|OK|ID|API|FPS|PCM|WAV|MP3|GPS|CPU|3D|2D|[A-Z]{1,3}\d?)$/;
 
 function strings(): string[] {
   const out: string[] = [];
@@ -47,7 +47,7 @@ const DATA_VALUES = /^(hello|sin\(x\)|y = sin\(x\)|true \/ false|Tokyo, Japan|As
 // Extensions are Latin in every language, so they are data, not untranslated interface text.
 const FORMAT_LIST = /^(?:\.[A-Z0-9]{1,5})(?: \.[A-Z0-9]{1,5})*$/;
 const ROUTE_LABEL = /^[A-Za-z0-9.·]{1,6}( → [A-Za-z0-9.·]{1,6})?$/;
-const KEYNAMES = /\b(Hz|UTC|kHz|MHz|ms|Enter|Ctrl|Shift|Esc|Space|Alt|Cmd|Tab|Del|Delete|Backspace|zh-Hans|zh-Hant|English|JSON|PNG|SVG|QR|URL|HTML|CSV|RGB|HSL|HSV|Neural Studio|Base64|ID|en|x|y|t)\b/g;
+const KEYNAMES = /\b(Hz|UTC|kHz|MHz|ms|Enter|Ctrl|Shift|Esc|Space|Alt|Cmd|Tab|Del|Delete|Backspace|zh-Hans|zh-Hant|English|JSON|PNG|SVG|QR|URL|HTML|CSV|RGB|HSL|HSV|Nicque|Gosling|OpenAI|Base64|ID|en|x|y|t)\b/g;
 const bad = (s: string) => /[A-Za-z]{3,}/.test(s.replace(/\([a-z]+-\d+\)/g, '').replace(KEYNAMES, '')) && !OK.test(s);
 
 it.each(['zh-Hans', 'zh-Hant'] as const)('%s: the whole interface is translated', async (lang) => {

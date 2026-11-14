@@ -1,4 +1,4 @@
-// Core data model for Neural Studio. Pure data, no browser objects.
+// Core data model for Nicque. Pure data, no browser objects.
 import type { Dec } from './decimal';
 
 export type PortType = 'num' | 'bool' | 'text' | 'image' | 'data' | 'any';
@@ -104,7 +104,7 @@ export interface CompoundDef {
 }
 
 export interface Project {
-  format: 'neural-studio';
+  format: 'nicque';
   version: 1;
   id: string;
   name: string;

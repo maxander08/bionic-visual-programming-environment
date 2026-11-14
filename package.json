@@ -2,7 +2,7 @@
   "name": "bionic-visual-programming-environment",
   "private": true,
   "version": "0.1.0",
-  "description": "Neural Studio — a bionic visual programming environment. Wire sensors, nuclei and behaviors into a live simulation, in the browser.",
+  "description": "Nicque — a visual programming environment. Wire sensors, nuclei and behaviors into a live simulation, in the browser.",
   "license": "MIT",
   "type": "module",
   "homepage": "https://maxander08.github.io/bionic-visual-programming-environment/",

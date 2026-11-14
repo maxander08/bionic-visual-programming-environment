@@ -134,7 +134,8 @@ export function Docs({ onClose }: { onClose: () => void }) {
   const [saved, setSaved] = useState<Saved>(load);
   const [hist, setHist] = useState<{ stack: Entry[]; pos: number }>(() => {
     const n = selection.length === 1 ? nodes[selection[0]] : undefined;
-    const start: Route = n && MODULES.some((m) => m.type === n.type) ? { k: 'node', type: n.type } : { k: 'home' };
+    const given = useStore.getState().ui.arg as Route | undefined; // Gosling can open the docs on a specific page
+    const start: Route = given && typeof given === 'object' && typeof (given as Route).k === 'string' ? given : n && MODULES.some((m) => m.type === n.type) ? { k: 'node', type: n.type } : { k: 'home' };
     return { stack: [{ route: start }], pos: 0 };
   });
   const [q, setQ] = useState('');

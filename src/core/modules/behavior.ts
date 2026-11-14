@@ -129,7 +129,7 @@ export const behaviors: ModuleDef[] = [
   {
     ...base, type: 'notify', name: 'Notify', caption: 'Notification', glyph: 'notify', size: 'small', keywords: 'alert browser notification message',
     inputs: [inp('in', 'Trigger', 'any', 'A truthy arrival sends a notification.')], outputs: [],
-    params: [txt('title', 'Title', 'Neural Studio', 'Notification title.', { maxLength: 80 }), txt('body', 'Body', '', 'Notification text. If empty, the triggering value is used.', { maxLength: 200 }), num('gap', 'Minimum gap', 3000, 100, 600000, 100, 'Notifications closer together than this are dropped.', 'ms')],
+    params: [txt('title', 'Title', 'Nicque', 'Notification title.', { maxLength: 80 }), txt('body', 'Body', '', 'Notification text. If empty, the triggering value is used.', { maxLength: 200 }), num('gap', 'Minimum gap', 3000, 100, 600000, 100, 'Notifications closer together than this are dropped.', 'ms')],
     run(c) {
       if (!(c.changed('in') && toBool(c.get('in')))) return;
       if (c.state.last !== undefined && c.time - c.state.last < c.num('gap')) return c.warn('Notification dropped (minimum gap).');

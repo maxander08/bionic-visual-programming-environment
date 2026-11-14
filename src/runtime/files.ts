@@ -17,23 +17,40 @@ import { drawSpecimen, readFont, releaseFont } from './fonts';
 
 // ---- persistence -------------------------------------------------------------------------------------------------
 
-const DB = 'neural-studio-files';
+const DB = 'nicque-files';
+const LEGACY_DB = 'neural-studio-files';
 const STORE = 'files';
 interface Rec { id: string; blob: Blob; name: string; type: string; modified: number }
 
 let dbp: Promise<IDBDatabase | null> | undefined;
-function db(): Promise<IDBDatabase | null> {
-  dbp ??= new Promise((resolve) => {
+let legacyDbp: Promise<IDBDatabase | null> | undefined;
+function openIdb(name: string, create: boolean): Promise<IDBDatabase | null> {
+  return new Promise((resolve) => {
     try {
       if (typeof indexedDB === 'undefined') return resolve(null);
-      const r = indexedDB.open(DB, 1);
-      r.onupgradeneeded = () => r.result.createObjectStore(STORE, { keyPath: 'id' });
-      r.onsuccess = () => resolve(r.result);
+      const r = indexedDB.open(name, 1);
+      r.onupgradeneeded = () => { if (create && !r.result.objectStoreNames.contains(STORE)) r.result.createObjectStore(STORE, { keyPath: 'id' }); };
+      r.onsuccess = () => {
+        if (!create && !r.result.objectStoreNames.contains(STORE)) { r.result.close(); return resolve(null); }
+        resolve(r.result);
+      };
       r.onerror = () => resolve(null);
       r.onblocked = () => resolve(null);
     } catch { resolve(null); }
   });
-  return dbp;
+}
+function db(): Promise<IDBDatabase | null> { return (dbp ??= openIdb(DB, true)); }
+function legacyDb(): Promise<IDBDatabase | null> {
+  return (legacyDbp ??= (async () => {
+    try {
+      if (typeof indexedDB === 'undefined') return null;
+      if (typeof indexedDB.databases === 'function') {
+        const list = await indexedDB.databases();
+        if (!list.some((x) => x.name === LEGACY_DB)) return null;
+      }
+      return await openIdb(LEGACY_DB, false);
+    } catch { return null; }
+  })());
 }
 async function idbPut(rec: Rec): Promise<boolean> {
   const d = await db();
@@ -47,8 +64,7 @@ async function idbPut(rec: Rec): Promise<boolean> {
     } catch { resolve(false); }
   });
 }
-async function idbGet(id: string): Promise<Rec | undefined> {
-  const d = await db();
+async function idbRead(d: IDBDatabase | null, id: string): Promise<Rec | undefined> {
   if (!d) return undefined;
   return new Promise((resolve) => {
     try {
@@ -57,6 +73,13 @@ async function idbGet(id: string): Promise<Rec | undefined> {
       q.onerror = () => resolve(undefined);
     } catch { resolve(undefined); }
   });
+}
+async function idbGet(id: string): Promise<Rec | undefined> {
+  const hit = await idbRead(await db(), id);
+  if (hit) return hit;
+  const old = await idbRead(await legacyDb(), id);
+  if (old) void idbPut(old); // migrate legacy files transparently
+  return old;
 }
 
 // ---- the bytes in memory -----------------------------------------------------------------------------------------

@@ -10,6 +10,7 @@ import type { CompoundDef, Graph } from '../core/types';
 import { compoundModuleDef } from '../core/registry';
 import { fmtNum } from '../core/util';
 import { tr } from '../i18n';
+import { GoslingButton } from '../gosling/Gosling';
 
 function IconBtn({ icon, label, onClick, disabled, on, danger, text, tone }: { icon: string; label: string; onClick: () => void; disabled?: boolean; on?: boolean; danger?: boolean; text?: string; tone?: string }) {
   return (
@@ -91,6 +92,7 @@ export function Toolbar() {
     <header className="toolbar" role="toolbar" aria-label={tr("Main toolbar")}>
       <div className="tb-group brand">
         <svg className="logo" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="3.5" width="19" height="17" rx="5" fill="none" stroke="#2fd9cf" strokeWidth="1.5" /><circle cx="8.5" cy="12" r="1.7" fill="#ff2a2a" /><path d="M11 12h4.5M15.5 12v4" stroke="#fff" strokeWidth="1.4" fill="none" /></svg>
+        <span className="wordmark" aria-label="Nicque">Nic<i>que</i></span>
         <input className="prog-name" value={draft ?? name} aria-label={tr("Program name")} maxLength={80} spellCheck={false} title={name}
           onChange={(e) => setDraft(e.target.value)} onBlur={() => { if (draft !== null) rename(draft); setDraft(null); }} onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') { setDraft(null); (e.target as HTMLInputElement).blur(); } }} />
       </div>
@@ -129,6 +131,7 @@ export function Toolbar() {
         <IconBtn icon="map" label={tr("Toggle overview map")} on={settings.minimap} onClick={() => st.setSettings({ minimap: !settings.minimap })} />
       </div>
       <div className="tb-group">
+        <GoslingButton />
         <IconBtn icon="docs" label={tr("Documentation for the current selection")} onClick={() => st.openDialog('docs')} text={tr("Docs")} />
         <IconBtn icon="share" label={tr("Share or export")} onClick={() => st.openDialog('share')} text={tr("Share")} />
         <IconBtn icon="panelL" label={tr("Toggle module library")} on={ui.lib} onClick={() => st.setUi({ lib: !ui.lib })} />

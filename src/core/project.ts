@@ -10,7 +10,7 @@ export const MAX_IMPORT_BYTES = 8 * 1024 * 1024;
 
 export function newProject(name = 'Untitled program'): Project {
   const t = Date.now();
-  return { format: 'neural-studio', version: 1, id: uid('p'), name, description: '', author: '', created: t, modified: t, graph: { nodes: {}, edges: {} }, compounds: {} };
+  return { format: 'nicque', version: 1, id: uid('p'), name, description: '', author: '', created: t, modified: t, graph: { nodes: {}, edges: {} }, compounds: {} };
 }
 
 export function cleanName(s: unknown, fallback = 'Untitled program'): string {
@@ -68,9 +68,9 @@ export function sanitizeCompounds(raw: unknown, problems: string[]): Record<stri
 
 export function validateProject(raw: unknown): ParseResult {
   const problems: string[] = [];
-  if (!raw || typeof raw !== 'object') return { error: 'This is not a Neural Studio program (expected a JSON object).', problems };
+  if (!raw || typeof raw !== 'object') return { error: 'This is not a Nicque program (expected a JSON object).', problems };
   const r = raw as any;
-  if (r.format !== 'neural-studio') return { error: 'This file is not a Neural Studio program (missing format marker).', problems };
+  if (r.format !== 'nicque' && r.format !== 'neural-studio') return { error: 'This file is not a Nicque program (missing format marker).', problems };
   if (typeof r.version !== 'number' || r.version > FORMAT_VERSION) return { error: `Unsupported program version ${String(r.version)}. This build understands version ${FORMAT_VERSION}.`, problems };
   if (!r.graph || typeof r.graph !== 'object' || typeof r.graph.nodes !== 'object') return { error: 'The program contains no graph.', problems };
   const compounds = sanitizeCompounds(r.compounds ?? {}, problems);
@@ -80,7 +80,7 @@ export function validateProject(raw: unknown): ParseResult {
   const t = Date.now();
   const view = r.view && Number.isFinite(r.view.x) && Number.isFinite(r.view.y) && Number.isFinite(r.view.k) ? { x: r.view.x, y: r.view.y, k: Math.max(0.1, Math.min(3, r.view.k)) } : undefined;
   const project: Project = {
-    format: 'neural-studio', version: 1, id: typeof r.id === 'string' && /^[\w.-]{1,60}$/.test(r.id) ? r.id : uid('p'), name: cleanName(r.name), description: typeof r.description === 'string' ? r.description.slice(0, 600) : '',
+    format: 'nicque', version: 1, id: typeof r.id === 'string' && /^[\w.-]{1,60}$/.test(r.id) ? r.id : uid('p'), name: cleanName(r.name), description: typeof r.description === 'string' ? r.description.slice(0, 600) : '',
     author: typeof r.author === 'string' ? r.author.slice(0, 60) : '', created: Number.isFinite(r.created) ? r.created : t, modified: Number.isFinite(r.modified) ? r.modified : t, graph, compounds, view,
   };
   return { project, problems };
@@ -148,7 +148,7 @@ export function encodeShare(p: Project): string {
 export function decodeShare(codeRaw: string): ParseResult {
   const code = codeRaw.replace(/\s+/g, '');
   const parts = code.split('.');
-  if (parts.length !== 3 || parts[0] !== PREFIX) return { error: parts[0]?.startsWith('NS') ? `Unsupported share code version “${parts[0]}”.` : 'This does not look like a Neural Studio share code (it should start with “NS1.”).', problems: [] };
+  if (parts.length !== 3 || parts[0] !== PREFIX) return { error: parts[0]?.startsWith('NS') ? `Unsupported share code version “${parts[0]}”.` : 'This does not look like a Nicque share code (it should start with “NS1.”).', problems: [] };
   if (!/^[A-Za-z0-9_-]*$/.test(parts[1]) || !/^[0-9a-f]{8}$/.test(parts[2])) return { error: 'The share code contains invalid characters. It may have been truncated or altered.', problems: [] };
   if (crc32(parts[1]).toString(16).padStart(8, '0') !== parts[2]) return { error: 'Checksum mismatch: the code is corrupted or was edited. Copy it again in full.', problems: [] };
   let json: string;
@@ -172,7 +172,7 @@ export function decodeShare(codeRaw: string): ParseResult {
   try { c = JSON.parse(json); } catch { return { error: 'The share code decoded to unreadable data.', problems: [] }; }
   const t = Date.now();
   const raw = {
-    format: 'neural-studio', version: 1, name: c.n, description: c.d ?? '', author: c.a ?? '', created: t, modified: t,
+    format: 'nicque', version: 1, name: c.n, description: c.d ?? '', author: c.a ?? '', created: t, modified: t,
     graph: unpackGraph(c),
     compounds: Object.fromEntries((Array.isArray(c.C) ? c.C : []).map((x: any) => [x.i, { id: x.i, name: x.n, description: x.d ?? '', graph: unpackGraph(x), inputs: x.In ?? [], outputs: x.Out ?? [], exposed: x.X ?? [] }])),
   };

@@ -328,9 +328,11 @@ describe('projects and sharing', () => {
   });
   it('rejects malformed imports with helpful errors and drops invalid parts', () => {
     expect(parseProjectJSON('not json').error).toMatch(/JSON/);
-    expect(validateProject({ format: 'other' }).error).toMatch(/not a Neural Studio/);
-    expect(validateProject({ format: 'neural-studio', version: 99, graph: { nodes: {}, edges: {} } }).error).toMatch(/Unsupported/);
+    expect(validateProject({ format: 'other' }).error).toMatch(/not a Nicque/);
+    expect(validateProject({ format: 'nicque', version: 99, graph: { nodes: {}, edges: {} } }).error).toMatch(/Unsupported/);
+    // Legacy Neural Studio format imports seamlessly and upgrades to 'nicque'
     const r = validateProject({ format: 'neural-studio', version: 1, name: 'x'.repeat(500), graph: { nodes: { a: { id: 'a', type: 'bogus', x: 0, y: 0, params: {} }, b: { id: 'b', type: 'constant', x: 1e12, y: 'q', params: { value: 3 } } }, edges: { e: { id: 'e', from: 'a', fromPort: 'out', to: 'b', toPort: 'in' } } } });
+    expect(r.project!.format).toBe('nicque');
     expect(r.project!.name.length).toBe(80);
     expect(Object.keys(r.project!.graph.nodes)).toEqual(['b']);
     expect(r.problems.length).toBeGreaterThan(0);

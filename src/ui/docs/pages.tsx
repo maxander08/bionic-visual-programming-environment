@@ -620,7 +620,7 @@ export function Home({ recent, bookmarks, onSearch }: { recent: string[]; bookma
   return (
     <article>
       <header className="dx-hero">
-        <div className="dx-eyebrow">Neural Studio</div>
+        <div className="dx-eyebrow">Nicque</div>
         <h1 className="dx-h1 big">How can we help?</h1>
         <p className="dx-lead">Search every module, setting, pin, recipe and guide. Or pick a place to start.</p>
         <div className="dx-suggest" aria-label="Try searching for">

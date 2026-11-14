@@ -69,7 +69,7 @@ export const fileSlug = (n: string) => n.toLowerCase().replace(/[^a-z0-9]+/g, '-
 
 export function exportJSON() {
   const p = st().project;
-  download(`${fileSlug(p.name)}.neural.json`, serializeProject(p));
+  download(`${fileSlug(p.name)}.nicque.json`, serializeProject(p));
   st().toast(tr("Exported program file."), 'ok');
 }
 

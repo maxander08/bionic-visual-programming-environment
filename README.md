@@ -1,13 +1,14 @@
-# Neural Studio — bionic visual programming environment
+# Nicque — visual programming environment
 
-A node-graph editor for sketching **bionic programs** in the browser: wire sensors, nuclei and
-behaviours into a live simulation, then watch signals propagate. Runs entirely client-side — no
-backend, no accounts, no network calls.
+A node-graph editor for sketching **visual programs** in the browser: wire sensors, nuclei and
+behaviours into a live simulation, then watch signals propagate — with **Gosling**, a built-in
+offline copilot. Runs entirely client-side — no backend, no accounts, no network calls unless you
+optionally connect an OpenAI-compatible language model.
 
 Built with React 19, Vite 7, TypeScript (strict), Tailwind CSS 4 and Zustand, and compiled by
 `vite-plugin-singlefile` into **one self-contained `index.html`**.
 
-![Neural Studio](https://img.shields.io/badge/build-single--file%20HTML-informational) ![tests](https://img.shields.io/badge/tests-54%20passing-brightgreen) ![license](https://img.shields.io/badge/license-MIT-blue)
+![Nicque](https://img.shields.io/badge/build-single--file%20HTML-informational) ![license](https://img.shields.io/badge/license-MIT-blue)
 
 ---
 
