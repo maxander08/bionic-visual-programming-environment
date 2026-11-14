@@ -267,7 +267,7 @@ export const GUIDE: Record<string, NodeGuide> = {
   add: {
     when: 'You need to add two numbers or shift a number by a constant.',
     steps: ['Connect a number to **A**. Optionally connect **B**.', 'Set **Offset** for a constant to add.', 'Result = A + B + Offset.'],
-    tips: ['An unconnected B counts as 0, so with only A and Offset this just shifts A.'],
+    tips: ['An unconnected B counts as 0, so with only A and Offset this just shifts A.', 'The sum is exact: every digit of every number is kept. 3 + 0.14159265 is 3.14159265, and 0.1 + 0.2 is 0.3. Nothing is rounded.'],
     pitfalls: ['If A has no signal the module stays idle even when B has one.'],
     up: ['wave', 'sense'], alias: 'plus sum addition offset shift',
   },
@@ -276,7 +276,7 @@ export const GUIDE: Record<string, NodeGuide> = {
     steps: ['Connect a number to **A**.', 'Set **Factor**, or connect a number to **B** to use that instead.', 'Result = A × (B or Factor).'],
     tips: ['Connecting B replaces the Factor setting, so you can scale one signal by another (amplitude modulation).'],
     alias: 'multiply times scale gain amplify product',
-    settings: { factor: 'Used only while B is unconnected.' },
+    settings: { factor: 'Used only while B is unconnected. Keeps every digit you type.' },
   },
   sub: {
     when: 'You need the difference between two numbers.',
@@ -287,9 +287,10 @@ export const GUIDE: Record<string, NodeGuide> = {
   div: {
     when: 'You need to divide one number by another, or scale down.',
     steps: ['Connect the dividend to **A**.', 'Set **Divisor**, or connect a number to **B**.', 'Result = A ÷ (B or Divisor).'],
+    tips: ['A quotient that ends (1 ÷ 8 = 0.125) is exact. One that never ends (1 ÷ 3) is worked out to the **Precision** setting, 50 significant digits by default, up to 1000.'],
     pitfalls: ['A divisor of 0 raises an error (×) and emits nothing.'],
     alias: 'divide ratio quotient fraction',
-    settings: { divisor: 'Used only while B is unconnected. Must not be 0.' },
+    settings: { divisor: 'Used only while B is unconnected. Must not be 0.', precision: 'Significant digits of a quotient that never ends. A quotient that ends is exact whatever this says.' },
   },
   invert: {
     when: 'You need the opposite of a boolean or a number.',
@@ -300,6 +301,8 @@ export const GUIDE: Record<string, NodeGuide> = {
   math: {
     when: 'You need a mathematical function: abs, sqrt, sin, min, max, pow and more.',
     steps: ['Connect a number to **A**.', 'Pick a **Function**.', 'For *min*, *max*, *pow* and *mod* also connect **B**.'],
+    tips: ['abs, square, floor, round, ceil, min, max, mod and pow with a whole exponent are exact. sqrt, sin, cos, tanh, exp, log and pow with a fractional exponent are worked out to the **Precision** setting.'],
+    settings: { precision: 'Significant digits of a result that never ends (√2, sin 1). Exact results are never padded or cut.' },
     pitfalls: ['A result that is not finite (for example sqrt of a negative) raises an error and emits nothing.'],
     alias: 'abs sqrt sin cos tanh exp log floor round ceil min max pow mod function',
     options: { fn: { abs: 'Absolute value.', sqrt: 'Square root (A ≥ 0).', square: 'A × A.', sin: 'Sine of A (radians).', cos: 'Cosine of A (radians).', tanh: 'Squashes any number into −1…1.', exp: 'e to the power A.', log: 'Natural logarithm (A > 0).', floor: 'Round down.', round: 'Round to nearest.', ceil: 'Round up.', min: 'The smaller of A and B.', max: 'The larger of A and B.', pow: 'A to the power B.', mod: 'Remainder of A ÷ B.' } },
@@ -582,18 +585,18 @@ Object.assign(GUIDE, {
     steps: [
       'Add **Decimal** and type a **Value** such as 3.14159265358979323846264338327950288.',
       'Connect **Text** to a [[n:projector]] to see every digit, or to a [[n:actor-numfmt]] to round or reformat it.',
-      'Connect **Decimal** to anything that takes a number (it is the nearest double-precision number).',
+      'Connect **Decimal** to an [[n:add]], [[n:mul]], [[n:math]] or any node that takes a number: it carries every digit, so nothing is lost on the way.',
     ],
     tips: [
       'A Decimal never rounds. Every digit you type, including trailing zeros (3.50), comes out on **Text**.',
       'To round to n places or n digits, or to write the number in scientific or engineering notation, use a [[n:actor-numfmt]] from the **Actors** section.',
-      'Wire **Text** (not **Decimal**) into the Number Formatter when the number has more than about 15 digits, so nothing is lost before it is rounded.',
+      'The arithmetic nodes ([[n:add]], [[n:sub]], [[n:mul]], [[n:div]], [[n:math]]) work on all the digits, so 3 + 0.14159265358979323846 is exactly 3.14159265358979323846.',
       'Exponents are understood: 6.022e23 comes out as 602200000000000000000000.',
     ],
     pitfalls: [
-      'The **Decimal** pin is a double-precision number, which holds about 15–17 significant digits. The **Text** pin is the one that keeps all of them.',
+      'Only the **Text** pin keeps trailing zeros (3.50): the **Decimal** pin is a number, and 3.50 and 3.5 are the same number.',
       'Input text that is not a number (for example “1,5” with a comma) raises an error.',
-      'A number beyond about 1e308 has no number form: the Decimal pin stays empty with a warning, and Text still has every digit.',
+      'Numbers beyond about 1e308 are fine too, but a node that uses a double (a Meter plot, a Wave) can only follow them as far as a double goes.',
     ],
     up: ['constant', 'random', 'integer', 'wave', 'string'], down: ['actor-numfmt', 'mul', 'add', 'compare', 'projector', 'meter'],
     alias: 'float double real fraction floating point precision places arbitrary exact digits big pi base data type',
@@ -612,7 +615,7 @@ Object.assign(GUIDE, {
     tips: [
       'Case can change the text to capitals, small letters or Capitalize Words, and Trim removes stray spaces. Both have setting pins.',
       'Length counts characters the way a person does: an emoji is one, not two.',
-      'Numbers arrive with every digit they have (0.1 + 0.2 is 0.30000000000000004), and lists arrive as their JSON text. To shorten them, use a [[n:actor-numfmt]].',
+      'Numbers arrive with every digit they have, and lists arrive as their JSON text. To shorten them, use a [[n:actor-numfmt]].',
     ],
     pitfalls: [
       'Text is not a number: “42” only becomes 42 when you send it to a module that takes numbers. Use [[n:integer]] or [[n:decimal]] to convert it.',
@@ -794,7 +797,7 @@ GUIDE['actor-numfmt'] = {
   ],
   tips: [
     'This is the only node that rounds. [[n:decimal]] keeps every digit, so you choose when and how much to round.',
-    'Feed it the **Text** output of a Decimal to round a number with more than 15 digits exactly; the **Decimal** pin is only a double.',
+    'Feed it a **Decimal**, or any number with more than 15 digits: it is rounded exactly, on every digit.',
     '**Digits (n)** means decimal places for *Round to n decimal places* and significant digits for everything else. In the digits and notation formats, 0 keeps every digit.',
     'Engineering notation keeps the exponent a multiple of 3 (12.35e+3), which lines up with the SI prefixes. **Exponent** gives that power for a Quantities prefix.',
     '**Trim trailing zeros** turns 3.100 into 3.1. **Exponent style** switches 1.5e+3 to 1.5 × 10³.',
@@ -802,7 +805,7 @@ GUIDE['actor-numfmt'] = {
   ],
   pitfalls: [
     'Rounding 2.5 to 0 places gives 3 with *Nearest* but 2 with *halves to even*. Pick the rule your field uses.',
-    '**Number** is a double-precision number: a result with more than about 15 digits is the nearest such number. **Formatted** always has every digit.',
+    '**Number** carries the rounded value with every digit. **Formatted** is the same value as text, with the trailing zeros you asked for.',
     'A value that is not a number (“1,5”, “abc”) raises an error; the comma is not a decimal point.',
     'Rounding a number up can add a digit: 9.99 to 2 significant digits is 10, shown as 10.',
   ],

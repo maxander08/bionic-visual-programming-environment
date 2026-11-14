@@ -12,6 +12,7 @@
 import type { Ctx, Diagnostic, FlatEdge, FlatGraph, ModuleDef, Params, PortDef, Signal } from './types';
 import { getDef, isSettingPort, resolveParams } from './registry';
 import { coerceTo, compatibility, hashStr, mulberry32 } from './util';
+import { fromNumber, isDec, parseDec, sameValue, type Dec } from './decimal';
 
 export interface NodeStatus {
   level: 'ok' | 'warn' | 'error';
@@ -91,6 +92,12 @@ class NodeCtx implements Ctx {
   has(port: string) { return this.n.inputs[port] !== undefined; }
   changed(port: string) { return this.n.changed.has(port); }
   num(key: string) { return Number(this.n.live[key]); }
+  dec(key: string): Dec {
+    const v = this.n.live[key];
+    if (isDec(v)) return v;
+    const r = typeof v === 'number' && Number.isFinite(v) ? { ok: true as const, dec: fromNumber(v) } : parseDec(String(v ?? ''));
+    return r.ok ? r.dec : fromNumber(0);
+  }
   str(key: string) { return String(this.n.live[key] ?? ''); }
   bool(key: string) { return !!this.n.live[key]; }
   emit(port: string, value: unknown, strength?: number, event = false) { this.e.emitFrom(this.n, port, value, strength ?? this.strength, event); }
@@ -485,7 +492,7 @@ export class Engine {
       n.outputs[port] = undefined;
     } else {
       if (typeof value === 'number' && !Number.isFinite(value)) { n.status = { level: 'error', message: `Output “${port}” is not a finite number.` }; return; }
-      if (prev && prev.v === value && prev.s === strength && !event) return;
+      if (prev && sameValue(prev.v, value) && prev.s === strength && !event) return;
       n.outputs[port] = { v: value, s: strength, t: this.time };
     }
     n.lastFire = this.time;
@@ -523,7 +530,7 @@ export class Engine {
       if (prev === undefined) return;
       dst.inputs[e.toPort] = undefined;
     } else {
-      if (prev && prev.v === v && prev.s === s && !event) return;
+      if (prev && sameValue(prev.v, v) && prev.s === s && !event) return;
       dst.inputs[e.toPort] = { v, s, t: sig.t };
     }
     dst.lastRecv = this.time;

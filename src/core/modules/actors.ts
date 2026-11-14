@@ -1,6 +1,6 @@
 import type { ModuleDef, ParamDef, Params } from '../types';
 import { toNum, toText } from '../util';
-import { decFromValue, formatDec, formatOptionsOf, toNumber } from '../decimal';
+import { decFromValue, formatDec, formatOptionsOf, packDec, parseDec } from '../decimal';
 import { FILE_KIND_BY_ID, isFileDescriptor, type FileKindId } from '../files';
 import { SOURCE_KINDS, formatLabel, formatsOf, isKindId, requestConversion, routeLabel, targetsOf } from '../convert';
 import { PREFIXES, autoPrefix, fmtQuantity } from '../quantities';
@@ -203,7 +203,7 @@ const numberFormatter: ModuleDef = {
   inputs: [inp('in', 'Number', 'any', 'The number to format. Text keeps every digit it has (for example the Text output of a Decimal), so the rounding is done once, on the full value. A plain number is read by its shortest exact text. It replaces Value while connected.', 'top', true)],
   outputs: [
     out('text', 'Formatted', 'text', 'The number written as text in the chosen format, for example 3.14, 1.235e+3 or 12.35e+3. Every digit asked for is in it, trailing zeros included.', 'bottom'),
-    out('number', 'Number', 'num', 'The rounded value as a number. A number holds about 15–17 significant digits, so a longer result is the nearest such number; use Formatted to keep every digit.', 'bottom'),
+    out('number', 'Number', 'num', 'The rounded value as a number, with every digit of it: the arithmetic nodes carry on from exactly this value.', 'bottom'),
     out('mantissa', 'Mantissa', 'num', 'The digits before the power of ten in scientific form (1.235), or in engineering form (12.35) when that is the chosen notation. Plain modes use the scientific form.', 'right'),
     out('exponent', 'Exponent', 'num', 'The power of ten that goes with Mantissa. In engineering notation it is always a multiple of three.', 'right'),
   ],
@@ -224,12 +224,10 @@ const numberFormatter: ModuleDef = {
       return c.fail(`${viaPin ? `“${toText(src).slice(0, 40)}”` : 'This'} is not a number, so it cannot be formatted.`);
     }
     const f = formatDec(r.dec, formatOptionsOf(c.params));
-    const x = toNumber(f.rounded);
     c.emit('text', f.text);
-    if (Number.isFinite(x) && (x !== 0 || f.rounded.digits === '0')) c.emit('number', x);
-    else { c.emit('number', undefined); c.warn('The result is beyond what a number can hold (about 1e±308). Formatted still has every digit.'); }
-    const m = Number(f.mantissa);
-    c.emit('mantissa', Number.isFinite(m) ? m : undefined);
+    c.emit('number', packDec(f.rounded));
+    const m = parseDec(f.mantissa);
+    c.emit('mantissa', m.ok ? packDec(m.dec) : undefined);
     c.emit('exponent', f.exponent);
     c.view({ text: f.text, mode: c.str('mode'), n: c.num('n') });
   },

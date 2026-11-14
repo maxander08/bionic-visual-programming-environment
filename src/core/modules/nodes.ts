@@ -1,9 +1,20 @@
-import type { ModuleDef } from '../types';
+import type { Ctx, ModuleDef } from '../types';
 import { clamp, fmtNum, toBool, toNum, toText } from '../util';
+import { exactText, packDec, toPlain, type Dec } from '../decimal';
+import * as D from '../decmath';
+import { DEFAULT_PRECISION, MAX_PRECISION, DecError, needDec, toDec } from '../decmath';
 import { FUNCTION_NAMES, compileExpr, splitEquations, type EquationData } from '../equation';
-import { bol, inp, num, out, sel, txt } from './kit';
+import { bol, dnum, inp, num, out, sel, txt } from './kit';
 
-const r4 = (x: number) => Math.round(x * 10000) / 10000;
+// Numbers are exact decimals here: nothing is rounded to a fixed number of places (that is the Number Formatter's job).
+// Results leave as a plain number when a double holds them exactly, and as an exact decimal when it takes more digits (see packDec).
+const out$ = (c: Ctx, port: string, d: Dec) => c.emit(port, packDec(d));
+const sig$ = (c: Ctx, key: string): Dec => needDec(c.get(key), `Input “${key.toUpperCase()}”`);
+/** Run a calculation: a result that has no answer (÷ 0, √ of a negative…) fails the module with a message that says why. */
+const calc = (c: Ctx, f: () => void) => { try { f(); } catch (e) { if (e instanceof DecError) return c.fail(e.message); throw e; } };
+/** A setting written out with all its digits, for node faces. */
+const face = (v: unknown): string => { const d = toDec(v); return d ? toPlain(d) : String(v); };
+const PREC = num('precision', 'Precision', DEFAULT_PRECISION, 1, MAX_PRECISION, 1, 'How many significant digits a result that never ends (1 ÷ 3, √2, sin) is worked out to. A result that ends (1 ÷ 8 = 0.125) is exact and never padded.', 'digits');
 const k = (dt: number, tau: number) => (tau <= 0 ? 1 : 1 - Math.exp(-dt / tau));
 const n = (v: unknown) => toNum(v);
 
@@ -20,10 +31,10 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'constant', name: 'Constant', caption: 'Constant', glyph: 'C', chip: (p) => String(p.value),
     inputs: [], outputs: [OUT_ANY], source: true,
-    params: [sel('kind', 'Kind', 'number', [['number', 'Number'], ['text', 'Text'], ['bool', 'Boolean']], 'Type of the emitted value.'), txt('value', 'Value', '1', 'The value to emit.')],
+    params: [sel('kind', 'Kind', 'number', [['number', 'Number'], ['text', 'Text'], ['bool', 'Boolean']], 'Type of the emitted value.'), txt('value', 'Value', '1', 'The value to emit. A number keeps every digit you type.', { maxLength: 5000 })],
     run(c) {
       const v = c.str('value'), kd = c.str('kind');
-      if (kd === 'number') { const x = Number(v); if (!Number.isFinite(x)) return c.fail(`“${v}” is not a number.`); c.emit('out', x); }
+      if (kd === 'number') { const d = v.trim() === '' ? null : toDec(v); if (!d) return c.fail(`“${v}” is not a number.`); out$(c, 'out', d); }
       else if (kd === 'bool') c.emit('out', v === 'true' || v === '1' || v === 'on');
       else c.emit('out', v);
     },
@@ -37,7 +48,7 @@ export const nodes: ModuleDef[] = [
       const lo = c.num('min'), hi = c.num('max');
       let v = lo + c.rand() * (hi - lo);
       if (c.bool('integer')) v = Math.round(v);
-      c.emit('out', r4(v));
+      c.emit('out', v);
       c.wake(1000 / c.num('rate'));
     },
     doc: { summary: 'A seeded pseudo-random number source.', runtime: 'Draws uniformly between min and max every 1/rate seconds of simulation time. The same seed always yields the same sequence after Stop → Run.' },
@@ -60,38 +71,38 @@ export const nodes: ModuleDef[] = [
     doc: { summary: 'A clock. Emits true pulses at a fixed period.', runtime: 'Pulse k starts at offset + k × period and lasts width ms, but never less than one simulation tick so that downstream modules can see it. Timing is resolved at the tick.' },
   },
   {
-    ...chipBase, type: 'add', name: 'Adder', caption: 'Adder', glyph: '+', chip: (p) => fmtNum(Number(p.offset)),
+    ...chipBase, type: 'add', name: 'Adder', caption: 'Adder', glyph: '+', chip: (p) => face(p.offset),
     inputs: [inp('a', 'A', 'num', 'First addend.'), inp('b', 'B', 'num', 'Second addend; 0 when not connected.', 'top', true)], outputs: [out('out', 'Sum', 'num', 'a + b + offset.')],
-    params: [{ ...num('offset', 'Offset', 0, -1e6, 1e6, 0.1, 'Constant added to the sum.'), pinSide: 'left' }],
-    run(c) { c.emit('out', r4(n(c.get('a')) + (c.has('b') ? n(c.get('b')) : 0) + c.num('offset'))); },
-    doc: { summary: 'Adds numbers.', runtime: 'out = a + b + offset. Missing b counts as 0; a missing a keeps the node idle.' },
+    params: [{ ...dnum('offset', 'Offset', 0, -1e6, 1e6, 0.1, 'Constant added to the sum.'), pinSide: 'left' }],
+    run(c) { calc(c, () => out$(c, 'out', D.add(D.add(sig$(c, 'a'), c.has('b') ? sig$(c, 'b') : D.ZERO), c.dec('offset')))); },
+    doc: { summary: 'Adds numbers.', runtime: 'out = a + b + offset, worked out exactly: every digit of every number is kept (3 + 0.14159265 is 3.14159265, 0.1 + 0.2 is 0.3). Missing b counts as 0; a missing a keeps the node idle.' },
   },
   {
-    ...chipBase, type: 'mul', name: 'Multiplier', caption: 'Multiplier', glyph: '×', chip: (p) => fmtNum(Number(p.factor), 2),
+    ...chipBase, type: 'mul', name: 'Multiplier', caption: 'Multiplier', glyph: '×', chip: (p) => face(p.factor),
     inputs: [inp('a', 'A', 'num', 'Value to scale.'), inp('b', 'B', 'num', 'Replaces the factor when connected.', 'top', true)], outputs: [out('out', 'Product', 'num', 'a × (b or factor).')],
-    params: [{ ...num('factor', 'Factor', 1, -1e6, 1e6, 0.1, 'Used when b is not connected.'), pinSide: 'left' }],
-    run(c) { c.emit('out', r4(n(c.get('a')) * (c.has('b') ? n(c.get('b')) : c.num('factor')))); },
-    doc: { summary: 'Multiplies a signal.', runtime: 'out = a × b, or a × factor when b is not connected.' },
+    params: [{ ...dnum('factor', 'Factor', 1, -1e6, 1e6, 0.1, 'Used when b is not connected.'), pinSide: 'left' }],
+    run(c) { calc(c, () => out$(c, 'out', D.mul(sig$(c, 'a'), c.has('b') ? sig$(c, 'b') : c.dec('factor')))); },
+    doc: { summary: 'Multiplies a signal.', runtime: 'out = a × b, or a × factor when b is not connected. The product is exact: every digit of both numbers is kept.' },
   },
   {
-    ...chipBase, type: 'sub', name: 'Subtractor', caption: 'Subtractor', glyph: '−', chip: (p) => fmtNum(Number(p.offset)),
+    ...chipBase, type: 'sub', name: 'Subtractor', caption: 'Subtractor', glyph: '−', chip: (p) => face(p.offset),
     inputs: [inp('a', 'A', 'num', 'Minuend: the value to subtract from.'), inp('b', 'B', 'num', 'Subtrahend; 0 when not connected.', 'top', true)], outputs: [out('out', 'Difference', 'num', 'a − b − offset.')],
-    params: [{ ...num('offset', 'Offset', 0, -1e6, 1e6, 0.1, 'Constant subtracted from the difference.'), pinSide: 'left' }],
-    run(c) { c.emit('out', r4(n(c.get('a')) - (c.has('b') ? n(c.get('b')) : 0) - c.num('offset'))); },
-    doc: { summary: 'Subtracts numbers.', runtime: 'out = a − b − offset. Missing b counts as 0; a missing a keeps the node idle.' },
+    params: [{ ...dnum('offset', 'Offset', 0, -1e6, 1e6, 0.1, 'Constant subtracted from the difference.'), pinSide: 'left' }],
+    run(c) { calc(c, () => out$(c, 'out', D.sub(D.sub(sig$(c, 'a'), c.has('b') ? sig$(c, 'b') : D.ZERO), c.dec('offset')))); },
+    doc: { summary: 'Subtracts numbers.', runtime: 'out = a − b − offset, worked out exactly: every digit of every number is kept. Missing b counts as 0; a missing a keeps the node idle.' },
   },
   {
-    ...chipBase, type: 'div', name: 'Divisor', caption: 'Divisor', glyph: '÷', chip: (p) => fmtNum(Number(p.divisor), 2),
+    ...chipBase, type: 'div', name: 'Divisor', caption: 'Divisor', glyph: '÷', chip: (p) => face(p.divisor),
     inputs: [inp('a', 'A', 'num', 'Dividend: the value to divide.'), inp('b', 'B', 'num', 'Replaces the divisor when connected.', 'top', true)], outputs: [out('out', 'Quotient', 'num', 'a ÷ (b or divisor).')],
-    params: [{ ...num('divisor', 'Divisor', 1, -1e6, 1e6, 0.1, 'Used when b is not connected.'), pinSide: 'left' }],
+    params: [{ ...dnum('divisor', 'Divisor', 1, -1e6, 1e6, 0.1, 'Used when b is not connected.'), pinSide: 'left' }, PREC],
     run(c) {
-      const a = n(c.get('a')), d = c.has('b') ? n(c.get('b')) : c.num('divisor');
-      if (d === 0) return c.fail(`Division by zero: ${fmtNum(a)} ÷ 0.`);
-      const r = a / d;
-      if (!Number.isFinite(r)) return c.fail(`${fmtNum(a)} ÷ ${fmtNum(d)} is not a finite number.`);
-      c.emit('out', r4(r));
+      calc(c, () => {
+        const a = sig$(c, 'a'), d = c.has('b') ? sig$(c, 'b') : c.dec('divisor');
+        if (D.isZero(d)) return c.fail(`Division by zero: ${exactText(packDec(a))} ÷ 0.`);
+        out$(c, 'out', D.div(a, d, c.num('precision')));
+      });
     },
-    doc: { summary: 'Divides a signal.', runtime: 'out = a ÷ b, or a ÷ divisor when b is not connected.', errors: ['A divisor of 0 raises an error and emits nothing.'] },
+    doc: { summary: 'Divides a signal.', runtime: 'out = a ÷ b, or a ÷ divisor when b is not connected. A quotient that ends (1 ÷ 8 = 0.125) is exact. One that never ends (1 ÷ 3) is worked out to the Precision setting (50 significant digits by default) and rounded once, at the last digit.', errors: ['A divisor of 0 raises an error and emits nothing.'] },
   },
   {
     ...chipBase, type: 'invert', name: 'Inverter', caption: 'Inverter', glyph: '−', chip: (p) => String(p.mode),
@@ -100,24 +111,42 @@ export const nodes: ModuleDef[] = [
     run(c) {
       const v = c.get('in');
       if (typeof v === 'boolean') return c.emit('out', !v);
-      const x = n(v);
-      if (Number.isNaN(x)) return c.warn('Input is not numeric.');
-      c.emit('out', r4(c.str('mode') === 'negate' ? -x : 1 - x));
+      const x = toDec(v);
+      if (!x) return c.warn('Input is not numeric.');
+      out$(c, 'out', c.str('mode') === 'negate' ? D.neg(x) : D.sub(D.ONE, x));
     },
     doc: { summary: 'Inverts a number or boolean.', runtime: 'Boolean → NOT. Number → −x or 1 − x depending on mode.' },
   },
   {
     ...chipBase, type: 'math', name: 'Math', caption: 'Math', glyph: 'M', chip: (p) => String(p.fn),
     inputs: [inp('a', 'A', 'num', 'Operand.'), inp('b', 'B', 'num', 'Second operand for min, max, pow, mod.', 'left', true)], outputs: [out('out', 'Result', 'num', 'Function result.')],
-    params: [sel('fn', 'Function', 'abs', ['abs', 'sqrt', 'square', 'sin', 'cos', 'tanh', 'exp', 'log', 'floor', 'round', 'ceil', 'min', 'max', 'pow', 'mod'].map((x) => [x, x] as [string, string]), 'Function applied to a (and b).')],
+    params: [sel('fn', 'Function', 'abs', ['abs', 'sqrt', 'square', 'sin', 'cos', 'tanh', 'exp', 'log', 'floor', 'round', 'ceil', 'min', 'max', 'pow', 'mod'].map((x) => [x, x] as [string, string]), 'Function applied to a (and b).'), PREC],
     run(c) {
-      const a = n(c.get('a')), b = c.has('b') ? n(c.get('b')) : 0;
-      const f: Record<string, number> = { abs: Math.abs(a), sqrt: Math.sqrt(a), square: a * a, sin: Math.sin(a), cos: Math.cos(a), tanh: Math.tanh(a), exp: Math.exp(a), log: Math.log(a), floor: Math.floor(a), round: Math.round(a), ceil: Math.ceil(a), min: Math.min(a, b), max: Math.max(a, b), pow: Math.pow(a, b), mod: ((a % b) + b) % b };
-      const r = f[c.str('fn')];
-      if (!Number.isFinite(r)) return c.fail(`${c.str('fn')}(${fmtNum(a)}) is not a finite number.`);
-      c.emit('out', r4(r));
+      calc(c, () => {
+        const a = sig$(c, 'a'), b = c.has('b') ? sig$(c, 'b') : D.ZERO, P = c.num('precision'), fn = c.str('fn');
+        let r: Dec;
+        switch (fn) {
+          case 'abs': r = D.abs(a); break;
+          case 'sqrt': r = D.sqrt(a, P); break;
+          case 'square': r = D.mul(a, a); break;
+          case 'sin': r = D.sin(a, P); break;
+          case 'cos': r = D.cos(a, P); break;
+          case 'tanh': r = D.tanh(a, P); break;
+          case 'exp': r = D.exp(a, P); break;
+          case 'log': r = D.ln(a, P); break;
+          case 'floor': r = D.floor(a); break;
+          case 'round': r = D.round(a); break;
+          case 'ceil': r = D.ceil(a); break;
+          case 'min': r = D.min(a, b); break;
+          case 'max': r = D.max(a, b); break;
+          case 'pow': r = D.pow(a, b, P); break;
+          case 'mod': r = D.mod(a, b); break;
+          default: return c.fail(`Unknown function “${fn}”.`);
+        }
+        out$(c, 'out', r);
+      });
     },
-    doc: { summary: 'Applies a mathematical function.', runtime: 'Evaluates the selected function on a (and b).', errors: ['Results that are not finite (e.g. sqrt of a negative) raise an error and emit nothing.'] },
+    doc: { summary: 'Applies a mathematical function.', runtime: 'Evaluates the selected function on a (and b) with exact decimals. abs, square, floor, round, ceil, min, max, mod and a power with a whole exponent are exact; sqrt, sin, cos, tanh, exp, log and a power with a fractional exponent are worked out to the Precision setting (50 significant digits by default). sin and cos take radians.', errors: ['Results that are not finite (e.g. sqrt of a negative) raise an error and emit nothing.'] },
   },
   {
     ...chipBase, type: 'register', name: 'Register', caption: 'Register', glyph: '○', chip: () => 'HOLD', delaying: true,
@@ -149,38 +178,45 @@ export const nodes: ModuleDef[] = [
       s.y ??= 0;
       s.y += (target - s.y) * k(c.dt, c.num('tau'));
       if (Math.abs(target - s.y) < 1e-3) s.y = target;
-      c.emit('out', r4(s.y));
+      c.emit('out', s.y);
       if (s.y !== target) c.wake(c.tickMs);
     },
     doc: { summary: 'Smooths a signal with a first-order low-pass filter.', runtime: 'y ← y + (x − y)(1 − e^(−Δt/τ)) in simulation time. Starts at 0 and settles on the input.' },
   },
   {
-    ...chipBase, type: 'threshold', name: 'Threshold', caption: 'Filter', glyph: '>', chip: (p) => `${p.mode === 'below' ? '<' : '>'} ${fmtNum(Number(p.threshold))}`, delaying: false,
+    ...chipBase, type: 'threshold', name: 'Threshold', caption: 'Filter', glyph: '>', chip: (p) => `${p.mode === 'below' ? '<' : '>'} ${face(p.threshold)}`, delaying: false,
     inputs: [inp('in', 'Input', 'num', 'Value to compare.')], outputs: [out('over', 'Over', 'bool', 'True when the condition holds.'), out('delta', 'Delta', 'num', 'Input minus threshold.', 'right')],
-    params: [num('threshold', 'Threshold', 0.5, -1e6, 1e6, 0.01, 'Comparison level.'), num('hysteresis', 'Hysteresis', 0, 0, 1e6, 0.01, 'Once true, the input must pass the threshold by this much to turn false.'), sel('mode', 'Condition', 'above', [['above', 'Input ≥ threshold'], ['below', 'Input ≤ threshold']], 'Direction of the comparison.')],
+    params: [dnum('threshold', 'Threshold', 0.5, -1e6, 1e6, 0.01, 'Comparison level.'), dnum('hysteresis', 'Hysteresis', 0, 0, 1e6, 0.01, 'Once true, the input must pass the threshold by this much to turn false.'), sel('mode', 'Condition', 'above', [['above', 'Input ≥ threshold'], ['below', 'Input ≤ threshold']], 'Direction of the comparison.')],
     run(c) {
-      const x = n(c.get('in')), t = c.num('threshold'), h = c.num('hysteresis');
-      if (Number.isNaN(x)) return c.warn('Input is not numeric.');
-      const d = c.str('mode') === 'below' ? t - x : x - t;
-      c.state.on = c.state.on ? d >= -h : d >= 0;
-      c.emit('over', c.state.on);
-      c.emit('delta', r4(x - t));
+      calc(c, () => {
+        const x = toDec(c.get('in'));
+        if (!x) return c.warn('Input is not numeric.');
+        const t = c.dec('threshold'), h = c.dec('hysteresis');
+        const d = c.str('mode') === 'below' ? D.sub(t, x) : D.sub(x, t);
+        c.state.on = c.state.on ? D.cmp(d, D.neg(h)) >= 0 : D.cmp(d, D.ZERO) >= 0;
+        c.emit('over', c.state.on);
+        out$(c, 'delta', D.sub(x, t));
+      });
     },
     doc: { summary: 'Compares a value with a threshold, with optional hysteresis.', runtime: 'above: true when x ≥ threshold, stays true until x < threshold − hysteresis. below mirrors it. Also reports x − threshold.', examples: ['threshold 0.5, hysteresis 0.1: 0.55 → true, 0.45 → true, 0.39 → false.'] },
   },
   {
     ...chipBase, type: 'compare', name: 'Compare', caption: 'Comparator', glyph: '=', chip: (p) => String(p.op),
     inputs: [inp('a', 'A', 'any', 'Left operand.'), inp('b', 'B', 'any', 'Right operand; uses the fallback when not connected.', 'left', true)], outputs: [out('out', 'Result', 'bool', 'True when the relation holds.')],
-    params: [sel('op', 'Relation', '>', ['==', '!=', '>', '<', '>=', '<='].map((x) => [x, x] as [string, string]), 'Relation between a and b.'), txt('fallback', 'Fallback b', '0', 'Right operand when b is unconnected.'), num('tolerance', 'Tolerance', 0, 0, 1e6, 0.001, 'Equality slack for numbers.')],
+    params: [sel('op', 'Relation', '>', ['==', '!=', '>', '<', '>=', '<='].map((x) => [x, x] as [string, string]), 'Relation between a and b.'), txt('fallback', 'Fallback b', '0', 'Right operand when b is unconnected.'), dnum('tolerance', 'Tolerance', 0, 0, 1e6, 0.001, 'Equality slack for numbers.')],
     run(c) {
-      const a = c.get('a'), b = c.has('b') ? c.get('b') : c.str('fallback');
-      const na = n(a), nb = n(b), op = c.str('op'), tol = c.num('tolerance');
-      let r: boolean;
-      if (!Number.isNaN(na) && !Number.isNaN(nb)) r = ({ '==': Math.abs(na - nb) <= tol, '!=': Math.abs(na - nb) > tol, '>': na > nb, '<': na < nb, '>=': na >= nb, '<=': na <= nb } as Record<string, boolean>)[op];
-      else { const x = toText(a), y = toText(b); r = ({ '==': x === y, '!=': x !== y, '>': x > y, '<': x < y, '>=': x >= y, '<=': x <= y } as Record<string, boolean>)[op]; }
-      c.emit('out', r);
+      calc(c, () => {
+        const a = c.get('a'), b = c.has('b') ? c.get('b') : c.str('fallback');
+        const da = toDec(a), db = toDec(b), op = c.str('op');
+        let r: boolean;
+        if (da && db) {
+          const k = D.cmp(da, db), near = D.cmp(D.abs(D.sub(da, db)), c.dec('tolerance')) <= 0;
+          r = ({ '==': near, '!=': !near, '>': k > 0, '<': k < 0, '>=': k >= 0, '<=': k <= 0 } as Record<string, boolean>)[op];
+        } else { const x = toText(a), y = toText(b); r = ({ '==': x === y, '!=': x !== y, '>': x > y, '<': x < y, '>=': x >= y, '<=': x <= y } as Record<string, boolean>)[op]; }
+        c.emit('out', r);
+      });
     },
-    doc: { summary: 'Compares two values.', runtime: 'Numbers compare numerically (equality within tolerance). Otherwise values compare as text.' },
+    doc: { summary: 'Compares two values.', runtime: 'Numbers compare numerically, digit for digit (equality within tolerance), so 0.1 + 0.2 equals 0.3 and two numbers that differ only in the 30th digit are still different. Otherwise values compare as text.' },
   },
   {
     ...chipBase, type: 'combine', name: 'Combine', caption: 'Combiner', glyph: '⊕', chip: (p) => String(p.mode),
@@ -192,12 +228,16 @@ export const nodes: ModuleDef[] = [
       const m = c.str('mode');
       if (m === 'join') return c.emit('out', vals.map(toText).join(c.str('sep')));
       if (m === 'list') return c.emit('out', vals);
-      const x = vals.map(n);
-      if (x.some(Number.isNaN)) return c.warn('A numeric mode received a non-numeric input.');
-      const r = m === 'sum' ? x.reduce((p, q) => p + q, 0) : m === 'mean' ? x.reduce((p, q) => p + q, 0) / x.length : m === 'max' ? Math.max(...x) : m === 'min' ? Math.min(...x) : x.reduce((p, q) => p * q, 1);
-      c.emit('out', r4(r));
+      calc(c, () => {
+        const x = vals.map((v) => toDec(v));
+        if (x.some((v) => !v)) return c.warn('A numeric mode received a non-numeric input.');
+        const xs = x as Dec[];
+        const sum = () => xs.reduce((p, q) => D.add(p, q), D.ZERO);
+        const r = m === 'sum' ? sum() : m === 'mean' ? D.div(sum(), D.fromInt(xs.length), DEFAULT_PRECISION) : m === 'max' ? xs.reduce((p, q) => D.max(p, q)) : m === 'min' ? xs.reduce((p, q) => D.min(p, q)) : xs.reduce((p, q) => D.mul(p, q), D.ONE);
+        out$(c, 'out', r);
+      });
     },
-    doc: { summary: 'Merges up to three inputs.', runtime: 'Only connected inputs that have a signal take part. Numeric modes reject non-numeric values with a warning.' },
+    doc: { summary: 'Merges up to three inputs.', runtime: 'Only connected inputs that have a signal take part. Numeric modes are exact (a mean that never ends is worked out to 50 significant digits) and reject non-numeric values with a warning.' },
   },
   {
     ...chipBase, type: 'delay', name: 'Delay', caption: 'Delay', glyph: '⧖', chip: (p) => `${fmtNum(Number(p.ms))} ms`, delaying: true,
@@ -216,22 +256,24 @@ export const nodes: ModuleDef[] = [
     doc: { summary: 'Delays a signal by a fixed time. Legal in feedback loops.', runtime: 'Shift: every input value re-appears exactly “delay” ms later, in order. Settle: only the latest value is emitted once the input stays unchanged for “delay” ms.', errors: ['A delay of 0 passes values through immediately.'] },
   },
   {
-    ...chipBase, type: 'counter', name: 'Counter', caption: 'Counter', glyph: '#', chip: (p) => `+${fmtNum(Number(p.step))}`, delaying: true, source: true,
+    ...chipBase, type: 'counter', name: 'Counter', caption: 'Counter', glyph: '#', chip: (p) => `+${face(p.step)}`, delaying: true, source: true,
     inputs: [inp('inc', 'Increment', 'any', 'Each arriving truthy value adds one step.', 'top', true), inp('dec', 'Decrement', 'any', 'Each arriving truthy value subtracts one step.', 'left', true), inp('reset', 'Reset', 'bool', 'Rising edge returns to the start value.', 'left', true)], outputs: [out('out', 'Count', 'num', 'Current count.')],
-    params: [num('start', 'Start', 0, -1e9, 1e9, 1, 'Initial and reset value.'), num('step', 'Step', 1, -1e6, 1e6, 1, 'Amount added per event.'), num('min', 'Minimum', 0, -1e9, 1e9, 1, 'Lower limit.'), num('max', 'Maximum', 100, -1e9, 1e9, 1, 'Upper limit.'), bol('wrap', 'Wrap around', false, 'Wrap to the opposite limit instead of saturating.')],
+    params: [dnum('start', 'Start', 0, -1e9, 1e9, 1, 'Initial and reset value.'), dnum('step', 'Step', 1, -1e6, 1e6, 1, 'Amount added per event.'), dnum('min', 'Minimum', 0, -1e9, 1e9, 1, 'Lower limit.'), dnum('max', 'Maximum', 100, -1e9, 1e9, 1, 'Upper limit.'), bol('wrap', 'Wrap around', false, 'Wrap to the opposite limit instead of saturating.')],
     run(c) {
-      const s = c.state;
-      s.v ??= c.num('start');
-      const ev = (p: string) => c.has(p) && c.changed(p) && toBool(c.get(p));
-      if (ev('reset')) s.v = c.num('start');
-      if (ev('inc')) s.v += c.num('step');
-      if (ev('dec')) s.v -= c.num('step');
-      const lo = c.num('min'), hi = c.num('max');
-      if (s.v > hi) s.v = c.bool('wrap') ? lo : hi;
-      if (s.v < lo) s.v = c.bool('wrap') ? hi : lo;
-      c.emit('out', s.v);
+      calc(c, () => {
+        const s = c.state;
+        s.v ??= c.dec('start');
+        const ev = (p: string) => c.has(p) && c.changed(p) && toBool(c.get(p));
+        if (ev('reset')) s.v = c.dec('start');
+        if (ev('inc')) s.v = D.add(s.v, c.dec('step'));
+        if (ev('dec')) s.v = D.sub(s.v, c.dec('step'));
+        const lo = c.dec('min'), hi = c.dec('max');
+        if (D.cmp(s.v, hi) > 0) s.v = c.bool('wrap') ? lo : hi;
+        if (D.cmp(s.v, lo) < 0) s.v = c.bool('wrap') ? hi : lo;
+        out$(c, 'out', s.v);
+      });
     },
-    doc: { summary: 'Counts events.', runtime: 'Inc/Dec events are arrivals of a truthy value, so a pulse train counts once per pulse. The count is clamped to [min, max] or wraps.' },
+    doc: { summary: 'Counts events.', runtime: 'Inc/Dec events are arrivals of a truthy value, so a pulse train counts once per pulse. The count is exact (0.1 added ten times is 1) and is clamped to [min, max] or wraps.' },
   },
   {
     ...chipBase, type: 'sequence', name: 'Sequence', caption: 'Sequencer', glyph: 'SEQ', chip: (p) => `${parseList(String(p.values)).length} steps`, delaying: true, source: true,
@@ -264,17 +306,20 @@ export const nodes: ModuleDef[] = [
   },
   // ---- neural processing
   {
-    ...chipBase, type: 'plastic', name: 'Plastic Nerve', caption: 'Plastic Nerve', glyph: '⇄', chip: (p) => `${fmtNum(Number(p.inMin))}…${fmtNum(Number(p.inMax))} → ${fmtNum(Number(p.outMin))}…${fmtNum(Number(p.outMax))}`,
+    ...chipBase, type: 'plastic', name: 'Plastic Nerve', caption: 'Plastic Nerve', glyph: '⇄', chip: (p) => `${face(p.inMin)}…${face(p.inMax)} → ${face(p.outMin)}…${face(p.outMax)}`,
     inputs: [inp('in', 'Input', 'num', 'Value to remap.')], outputs: [out('out', 'Output', 'num', 'Remapped value.')],
-    params: [num('inMin', 'Input min', 0, -1e6, 1e6, 0.1, 'Bottom of the input range.'), num('inMax', 'Input max', 1, -1e6, 1e6, 0.1, 'Top of the input range.'), num('outMin', 'Output min', 0, -1e6, 1e6, 0.1, 'Value produced at input min.'), num('outMax', 'Output max', 100, -1e6, 1e6, 0.1, 'Value produced at input max.'), sel('curve', 'Curve', 'linear', [['linear', 'Linear'], ['ease-in', 'Ease in (t²)'], ['ease-out', 'Ease out'], ['smooth', 'Smoothstep']], 'Shape of the mapping.'), bol('clamp', 'Clamp', true, 'Keep the output inside the output range.')],
+    params: [dnum('inMin', 'Input min', 0, -1e6, 1e6, 0.1, 'Bottom of the input range.'), dnum('inMax', 'Input max', 1, -1e6, 1e6, 0.1, 'Top of the input range.'), dnum('outMin', 'Output min', 0, -1e6, 1e6, 0.1, 'Value produced at input min.'), dnum('outMax', 'Output max', 100, -1e6, 1e6, 0.1, 'Value produced at input max.'), sel('curve', 'Curve', 'linear', [['linear', 'Linear'], ['ease-in', 'Ease in (t²)'], ['ease-out', 'Ease out'], ['smooth', 'Smoothstep']], 'Shape of the mapping.'), bol('clamp', 'Clamp', true, 'Keep the output inside the output range.')],
     run(c) {
-      const x = n(c.get('in')), a = c.num('inMin'), b = c.num('inMax');
-      if (a === b) return c.fail('Input min and max must differ.');
-      let t = (x - a) / (b - a);
-      if (c.bool('clamp')) t = clamp(t, 0, 1);
-      const cv = c.str('curve');
-      const u = cv === 'ease-in' ? t * t : cv === 'ease-out' ? 1 - (1 - t) * (1 - t) : cv === 'smooth' ? t * t * (3 - 2 * t) : t;
-      c.emit('out', r4(c.num('outMin') + u * (c.num('outMax') - c.num('outMin'))));
+      calc(c, () => {
+        const x = sig$(c, 'in'), a = c.dec('inMin'), b = c.dec('inMax');
+        if (D.cmp(a, b) === 0) return c.fail('Input min and max must differ.');
+        let t = D.div(D.sub(x, a), D.sub(b, a), DEFAULT_PRECISION);
+        if (c.bool('clamp')) t = D.max(D.ZERO, D.min(D.ONE, t));
+        const cv = c.str('curve'), one = D.ONE, inv = D.sub(one, t);
+        const u = cv === 'ease-in' ? D.mul(t, t) : cv === 'ease-out' ? D.sub(one, D.mul(inv, inv)) : cv === 'smooth' ? D.mul(D.mul(t, t), D.sub(D.fromInt(3), D.mul(D.fromInt(2), t))) : t;
+        const lo = c.dec('outMin'), hi = c.dec('outMax');
+        out$(c, 'out', D.add(lo, D.mul(u, D.sub(hi, lo))));
+      });
     },
     doc: { summary: 'Remaps values from one range to another, optionally along a curve.', runtime: 't = (x − inMin)/(inMax − inMin), optionally clamped; out = outMin + curve(t) × (outMax − outMin). Ranges may be inverted.', errors: ['Input min equal to input max is an error.'], examples: ['0…1 → 0…100: 0.25 → 25.'] },
   },
@@ -356,7 +401,7 @@ export const nodes: ModuleDef[] = [
         s.level = s.l0 * (1 - t);
         if (t >= 1) { s.phase = 'idle'; s.level = 0; }
       }
-      c.emit('out', r4(s.level));
+      c.emit('out', s.level);
       c.emit('phase', s.phase);
       c.view({ level: s.level, phase: s.phase });
       if (s.phase === 'attack' || s.phase === 'decay' || s.phase === 'release') c.wake(c.tickMs);
@@ -395,7 +440,7 @@ export const nodes: ModuleDef[] = [
       s.ph = (s.ph + (c.dt / 1000) * f) % 1;
       const ph = s.ph, sh = c.str('shape');
       const u = sh === 'sine' ? Math.sin(ph * 2 * Math.PI) : sh === 'square' ? (ph < 0.5 ? 1 : -1) : sh === 'saw' ? 2 * ph - 1 : 1 - 4 * Math.abs(ph - 0.5);
-      c.emit('out', r4(c.num('offset') + a * u));
+      c.emit('out', c.num('offset') + a * u);
       c.wake(c.tickMs);
     },
     doc: { summary: 'A low-frequency oscillator producing a numeric waveform.', runtime: 'Phase advances by f × Δt in simulation time, so the waveform is independent of frame rate. Frequencies above half the tick rate alias.' },
@@ -422,14 +467,14 @@ export const nodes: ModuleDef[] = [
       if (!(c.num('xMax') > c.num('xMin'))) return c.fail('x max must be greater than x min.');
       const fns = compiled.map((r) => (r.ok ? r : undefined)!);
       const usesT = fns.some((f) => f.usesT);
-      const t = usesT ? r4(c.time / 1000) : 0;
+      const t = usesT ? c.time / 1000 : 0;
       const data: EquationData = { kind: 'equation', exprs, xMin: c.num('xMin'), xMax: c.num('xMax'), yMin: c.num('yMin'), yMax: c.num('yMax'), yAuto: c.bool('yAuto'), samples: c.num('samples'), t };
       c.emit('eq', data);
       const x = c.has('x') ? n(c.get('x')) : c.num('x');
       const y = fns[0].fn({ x, t });
-      if (Number.isFinite(y)) c.emit('y', r4(y));
+      if (Number.isFinite(y)) c.emit('y', y);
       else { c.emit('y', undefined); c.warn(`y(${fmtNum(x)}) is not a finite number.`); }
-      c.view({ count: exprs.length, y: Number.isFinite(y) ? r4(y) : undefined });
+      c.view({ count: exprs.length, y: Number.isFinite(y) ? y : undefined });
       if (usesT) c.wake(c.tickMs);
     },
     doc: {

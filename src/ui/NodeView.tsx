@@ -262,7 +262,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
           <EquationPlot plot={view.plot} />
           {!ro && <button className="expand" data-interactive aria-label={tr("Open graph full size")} onClick={() => useStore.getState().openDialog('meter', rid)}><Icon name="expand" /></button>}
         </div>
-      ) : <div className="meter-wrap"><Meter hist={view.hist} auto={params.auto !== false} /><span className="meter-num">{view.last !== undefined ? fmtNum(view.last, 3) : ''}</span></div>;
+      ) : <div className="meter-wrap"><Meter hist={view.hist} auto={params.auto !== false} /><span className="meter-num">{view.lastText !== undefined ? String(view.lastText) : view.last !== undefined ? String(view.last) : ''}</span></div>;
       break;
     case 'equation':
       body = <div className="text-body eq pre clamp2">{String(params.expr ?? '') || <span className="ph">{"y = sin(x)"}</span>}</div>;

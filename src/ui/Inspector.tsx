@@ -4,6 +4,8 @@ import { SETTING_PREFIX, getDef, nodeTitle, paramDefsOf, portList } from '../cor
 import { packageById } from '../core/packages';
 import { checkConnection } from '../core/graph';
 import { describe, fmtNum } from '../core/util';
+import { fromNumber, packDec, toPlain, type Dec } from '../core/decimal';
+import { add, cmp, fromInt, mul, toDec } from '../core/decmath';
 import { findCity, fmtOffset, readClock } from '../core/worldclock';
 import { engine, getDiagnostics, useDiagVersion, useNodeVer } from '../runtime/session';
 import { getSensorState, sensorVersion, subscribeSensors } from '../runtime/sensors';
@@ -15,22 +17,36 @@ import { ExactValuePanel, FileConverterPanel, ProjectorPanel, UnitConverterPanel
 import { FILE_KIND_BY_TYPE } from '../core/files';
 import { tr, trFace } from '../i18n';
 
-function NumberField({ p, value, onChange }: { p: Extract<ParamDef, { kind: 'number' }>; value: number; onChange: (v: number) => void }) {
-  const [text, setText] = useState(String(value));
-  useEffect(() => setText(String(value)), [value]);
+function NumberField({ p, value, onChange }: { p: Extract<ParamDef, { kind: 'number' }>; value: unknown; onChange: (v: number | string) => void }) {
+  const shown = (v: unknown) => (typeof v === 'string' ? v : String(v));
+  const [text, setText] = useState(shown(value));
+  // What is being typed (0.10, 1e3) stays while it still means the value; only a change from outside replaces it.
+  useEffect(() => setText((cur) => { const x = toDec(cur), y = toDec(value); return x && y && cmp(x, y) === 0 ? cur : shown(value); }), [value]);
+  const num = Number(value);
   const range = p.max - p.min;
   const sliderOk = range <= 100000;
+  // A setting that is “exact” keeps every digit typed into it: a number a double holds stays a number, a longer one is kept as its digits.
+  const pack = (d: Dec): number | string => { const k = packDec(d); return typeof k === 'number' ? k : toPlain(k); };
+  const clampDec = (d: Dec): Dec => { const lo = fromNumber(p.min), hi = fromNumber(p.max); return cmp(d, lo) < 0 ? lo : cmp(d, hi) > 0 ? hi : d; };
   const commit = (t: string) => {
     setText(t);
+    if (t.trim() === '') return;
+    if (p.exact) { const d = toDec(t); if (d) onChange(pack(clampDec(d))); return; }
     const n = Number(t);
-    if (t.trim() !== '' && Number.isFinite(n)) onChange(Math.min(p.max, Math.max(p.min, n)));
+    if (Number.isFinite(n)) onChange(Math.min(p.max, Math.max(p.min, n)));
+  };
+  const nudge = (dir: number, big: boolean) => {
+    if (p.exact) {
+      const cur = toDec(value) ?? fromNumber(0);
+      onChange(pack(clampDec(add(cur, mul(fromNumber(p.step), fromInt(dir * (big ? 10 : 1)))))));
+    } else onChange(Math.min(p.max, Math.max(p.min, Math.round((num + dir * p.step * (big ? 10 : 1)) / p.step) * p.step)));
   };
   return (
     <div className="num-field">
-      {sliderOk && <input type="range" min={p.min} max={p.max} step={p.step} value={value} aria-label={p.label} onChange={(e) => onChange(Number(e.target.value))} />}
+      {sliderOk && <input type="range" min={p.min} max={p.max} step={p.step} value={Number.isFinite(num) ? num : p.default} aria-label={p.label} onChange={(e) => onChange(Number(e.target.value))} />}
       <div className="num-box">
-        <input type="text" inputMode="decimal" value={text} aria-label={tr('{label} value', { label: p.label })} onChange={(e) => commit(e.target.value)} onBlur={() => setText(String(value))}
-          onKeyDown={(e) => { if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); const d = (e.key === 'ArrowUp' ? 1 : -1) * p.step * (e.shiftKey ? 10 : 1); onChange(Math.min(p.max, Math.max(p.min, Math.round((value + d) / p.step) * p.step))); } }} />
+        <input type="text" inputMode="decimal" value={text} aria-label={tr('{label} value', { label: p.label })} onChange={(e) => commit(e.target.value)} onBlur={() => setText(shown(value))}
+          onKeyDown={(e) => { if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); nudge(e.key === 'ArrowUp' ? 1 : -1, e.shiftKey); } }} />
         {p.unit && <span className="unit">{p.unit}</span>}
       </div>
     </div>
@@ -46,7 +62,7 @@ function ParamRow({ p, value, onChange, onAction, driven }: { p: ParamDef; value
   const id = `f-${p.key}`;
   let control: ReactElement;
   switch (p.kind) {
-    case 'number': control = <NumberField p={p} value={Number(value)} onChange={onChange} />; break;
+    case 'number': control = <NumberField p={p} value={value} onChange={onChange} />; break;
     case 'select': control = (
       <select id={id} value={String(value)} onChange={(e) => onChange(e.target.value)}>{p.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select>
     ); break;

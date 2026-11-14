@@ -1,5 +1,8 @@
 import type { ModuleDef } from '../types';
 import { clamp, hsvToRgb, isImage, makeImage, toBool, toNum, toText } from '../util';
+import { isDec, jsonText, setScale, toPlain } from '../decimal';
+import * as D from '../decmath';
+import { toDec } from '../decmath';
 import { isEquation, samplePlot } from '../equation';
 import { bol, inp, num, out, sel, txt } from './kit';
 import { getFileInfo, isFileDescriptor } from '../files';
@@ -16,9 +19,15 @@ export function projectView(v: unknown, format = 'auto'): Record<string, unknown
   const cut = (t: string) => (t.length > PROJECT_MAX_CHARS ? { text: t.slice(0, PROJECT_MAX_CHARS), cut: true } : { text: t, cut: false });
   if (v === undefined || v === null) return { kind: 'empty' };
   if (isImage(v)) return { kind: 'image', image: v };
-  if (typeof v === 'number') {
-    const t = format === 'int' ? String(Math.round(v)) : format === 'fixed2' ? v.toFixed(2) : format === 'percent' ? `${(v * 100).toFixed(0)}%` : toText(v);
-    return { kind: 'number', text: t, value: v };
+  if (typeof v === 'number' || isDec(v)) {
+    // Every digit is shown (Automatic); the other formats round on the exact digits, and only because you chose them.
+    const d = typeof v === 'number' && !Number.isFinite(v) ? null : toDec(v);
+    const t = !d ? String(v)
+      : format === 'int' ? toPlain(D.round(d))
+      : format === 'fixed2' ? toPlain(setScale(d, 2))
+      : format === 'percent' ? `${toPlain(setScale(D.mul(d, D.fromInt(100)), 0))}%`
+      : toPlain(d);
+    return { kind: 'number', text: t, value: toNum(v) };
   }
   if (isFileDescriptor(v)) {
     const info = getFileInfo(v.id);
@@ -32,7 +41,7 @@ export function projectView(v: unknown, format = 'auto'): Record<string, unknown
   if (typeof v === 'string') return { kind: 'text', ...cut(v) };
   if (typeof v === 'boolean') return { kind: 'text', text: v ? 'true' : 'false', cut: false };
   let json: string;
-  try { json = JSON.stringify(v, null, 2) ?? String(v); } catch { json = String(v); }
+  try { json = jsonText(v, 2); } catch { json = String(v); }
   return { kind: 'data', ...cut(json) };
 }
 
@@ -80,7 +89,7 @@ export const behaviors: ModuleDef[] = [
       const h: number[] = (c.state.h ??= []);
       h.push(x);
       while (h.length > c.num('window')) h.shift();
-      c.view({ hist: h.slice(), last: x });
+      c.view({ hist: h.slice(), last: x, lastText: toText(v) });
     },
     doc: { summary: 'A live plot of a numeric signal, or the graph of an Equation.', runtime: 'Numeric input: records one sample each time the input changes and draws it over time. Equation input: samples every curve across the equation’s x range and draws them over dimmed gray axes through x = 0 and y = 0. Click the expand icon for a labelled full-size graph.', errors: ['An equation that cannot be parsed raises an error naming the problem.'] },
   },

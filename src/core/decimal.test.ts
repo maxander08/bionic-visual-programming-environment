@@ -4,6 +4,7 @@ import { addNode, connect, emptyGraph, flatten } from './graph';
 import { getDef, paramDefsOf } from './registry';
 import type { Graph, Params } from './types';
 import { TEMPLATES } from './library';
+import { toText } from './util';
 import { formatDec, formatText, parseDec, setScale, toNumber, toPlain, type FormatOptions } from './decimal';
 
 const D = (s: string) => { const r = parseDec(s); if (!r.ok) throw new Error(r.error); return r.dec; };
@@ -149,11 +150,17 @@ describe('Number Formatter actor', () => {
     const e = build([['c', 'constant', { kind: 'text', value: '1,5' }], ['f', 'actor-numfmt']], [['c', 'out', 'f', 'in']]);
     expect(e.nodes.get('f')!.status.level).toBe('error');
   });
-  it('emits Formatted but warns on Number when the result is beyond a double', () => {
+  it('emits Formatted and Number with every digit, even beyond a double', () => {
     const e = build([['f', 'actor-numfmt', { value: '1e400', mode: 'sci', n: 3 }]]);
     expect(e.out('f', 'text')).toBe('1.00e+400');
-    expect(e.out('f', 'number')).toBeUndefined();
-    expect(e.nodes.get('f')!.status.level).toBe('warn');
+    expect(toText(e.out('f', 'number'))).toBe('1' + '0'.repeat(400));
+    expect(e.nodes.get('f')!.status.level).toBe('ok');
+  });
+  it('hands the rounded value on exactly (10 places of π keeps all 10)', () => {
+    const e = build([['f', 'actor-numfmt', { value: '3.14159265358979323846', mode: 'places', n: 15 }]]);
+    expect(toText(e.out('f', 'number'))).toBe('3.141592653589793');
+    const g = build([['f', 'actor-numfmt', { value: '3.14159265358979323846', mode: 'places', n: 18 }]]);
+    expect(toText(g.out('f', 'number'))).toBe('3.141592653589793238');
   });
 });
 

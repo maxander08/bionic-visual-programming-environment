@@ -5,6 +5,7 @@ import { MODULES, PIN_SPACING, defaultParams, getDef, nodeSize, paramDefsOf, por
 import { SIZES, type Graph, type Params } from './types';
 import { GUIDE } from '../ui/docs/nodeGuide';
 import * as bd from './basedata';
+import { toText } from './util';
 
 const TYPES = ['integer', 'decimal', 'string', 'character', 'boolean', 'array'];
 
@@ -126,7 +127,8 @@ describe('Decimal', () => {
   it('never rounds: every typed digit comes out on Text, even beyond a double', () => {
     const e = build([['d', 'decimal', { value: PI }]]);
     expect(e.out('d', 'text')).toBe(PI);
-    expect(e.out('d', 'out')).toBe(Math.PI);
+    // The Decimal pin carries every digit too: it is not squeezed into a double.
+    expect(toText(e.out('d', 'out'))).toBe(PI.replace(/0+$/, '')); // the number has the same value; only Text keeps a trailing zero
   });
   it('keeps trailing zeros and expands exponents', () => {
     expect(build([['d', 'decimal', { value: '3.500' }]]).out('d', 'text')).toBe('3.500');
@@ -159,11 +161,11 @@ describe('Decimal', () => {
     expect(status(e, 'd').level).toBe('error');
     expect(status(build([['d', 'decimal', { value: 'abc' }]]), 'd').level).toBe('error');
   });
-  it('holds a number beyond a double on Text and warns on the Decimal pin', () => {
+  it('holds a number beyond a double on both pins, with no warning', () => {
     const e = build([['d', 'decimal', { value: '1e400' }]]);
-    expect(e.out('d', 'out')).toBeUndefined();
+    expect(toText(e.out('d', 'out'))).toBe('1' + '0'.repeat(400));
     expect(e.out('d', 'text')).toBe('1' + '0'.repeat(400));
-    expect(status(e, 'd').level).toBe('warn');
+    expect(status(e, 'd').level).toBe('ok');
   });
 });
 

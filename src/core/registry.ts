@@ -14,6 +14,8 @@ import { getLang, tr } from '../i18n';
 import { localizeDef } from './localize';
 import { txt } from './modules/kit';
 import { clamp, fmtNum, numText } from './util';
+import { fromNumber, isDec, packDec, toNumber, toPlain, type Dec } from './decimal';
+import { cmp, toDec } from './decmath';
 
 const info: ModuleDef[] = [
   {
@@ -175,7 +177,17 @@ export function resolveParams(def: ModuleDef, raw: Params): Params {
     const v = raw[p.key];
     switch (p.kind) {
       case 'number': {
-        const x = typeof v === 'number' ? v : Number(v);
+        if (p.exact) {
+          // Every digit is kept: a number a double holds exactly stays a number, a longer one is stored as its digits.
+          const d: Dec | null = v === '' || v === null || v === undefined || typeof v === 'boolean' ? null : toDec(v);
+          if (!d) { out[p.key] = p.default; break; }
+          const lo = fromNumber(p.min), hi = fromNumber(p.max);
+          const c = cmp(d, lo) < 0 ? lo : cmp(d, hi) > 0 ? hi : d;
+          const packed = packDec(c);
+          out[p.key] = typeof packed === 'number' ? packed : toPlain(packed);
+          break;
+        }
+        const x = typeof v === 'number' ? v : isDec(v) ? toNumber(v) : Number(v);
         out[p.key] = Number.isFinite(x) && v !== '' && v !== null ? clamp(x, p.min, p.max) : p.default;
         break;
       }
@@ -184,7 +196,7 @@ export function resolveParams(def: ModuleDef, raw: Params): Params {
         break;
       case 'text':
         // A number sent to a text setting keeps every digit (it is not tidied), so a Decimal Value never loses any.
-        out[p.key] = typeof v === 'string' ? v.slice(0, p.maxLength ?? 2000) : typeof v === 'number' && Number.isFinite(v) ? numText(v).slice(0, p.maxLength ?? 2000) : p.default;
+        out[p.key] = typeof v === 'string' ? v.slice(0, p.maxLength ?? 2000) : typeof v === 'number' && Number.isFinite(v) ? numText(v).slice(0, p.maxLength ?? 2000) : isDec(v) ? toPlain(v).slice(0, p.maxLength ?? 2000) : p.default;
         break;
       case 'bool':
         out[p.key] = typeof v === 'boolean' ? v : p.default;

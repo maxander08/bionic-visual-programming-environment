@@ -2314,5 +2314,41 @@ export const zhHant: Record<string, string> = {
  "No setting pin: this choice decides which other settings exist.": "沒有設定引腳：這個選項決定了其他設定是否存在。",
  "Also a": "同時也是",
  "Setting pin": "設定引腳",
- "Steps ahead": "預測步數"
+ "Steps ahead": "預測步數",
+
+  /* Constant */
+  'The value to emit. A number keeps every digit you type.': '要輸出的值。數字會保留你輸入的每一位。',
+  /* arithmetic nodes */
+  'out = a + b + offset, worked out exactly: every digit of every number is kept (3 + 0.14159265 is 3.14159265, 0.1 + 0.2 is 0.3). Missing b counts as 0; a missing a keeps the node idle.': 'out = a + b + offset，精確計算：每個數的每一位都會保留（3 + 0.14159265 等於 3.14159265，0.1 + 0.2 等於 0.3）。缺少 b 時按 0 計；缺少 a 時節點保持閒置。',
+  'out = a − b − offset, worked out exactly: every digit of every number is kept. Missing b counts as 0; a missing a keeps the node idle.': 'out = a − b − offset，精確計算：每個數的每一位都會保留。缺少 b 時按 0 計；缺少 a 時節點保持閒置。',
+  'out = a × b, or a × factor when b is not connected. The product is exact: every digit of both numbers is kept.': 'out = a × b；b 未連線時為 a × 係數。乘積是精確的：兩個數的每一位都會保留。',
+  'out = a ÷ b, or a ÷ divisor when b is not connected. A quotient that ends (1 ÷ 8 = 0.125) is exact. One that never ends (1 ÷ 3) is worked out to the Precision setting (50 significant digits by default) and rounded once, at the last digit.': 'out = a ÷ b；b 未連線時為 a ÷ 除數。能除盡的商（1 ÷ 8 = 0.125）是精確的；除不盡的商（1 ÷ 3）按「精度」設定計算（預設 50 位有效數字），只在最後一位捨入一次。',
+  'Evaluates the selected function on a (and b) with exact decimals. abs, square, floor, round, ceil, min, max, mod and a power with a whole exponent are exact; sqrt, sin, cos, tanh, exp, log and a power with a fractional exponent are worked out to the Precision setting (50 significant digits by default). sin and cos take radians.': '用精確小數對 a（和 b）計算所選函式。abs、square、floor、round、ceil、min、max、mod 以及整數指數的冪是精確的；sqrt、sin、cos、tanh、exp、log 以及小數指數的冪按「精度」設定計算（預設 50 位有效數字）。sin 和 cos 以弧度為單位。',
+  'Numbers compare numerically, digit for digit (equality within tolerance), so 0.1 + 0.2 equals 0.3 and two numbers that differ only in the 30th digit are still different. Otherwise values compare as text.': '數字按數值逐位比較（相等允許容差），所以 0.1 + 0.2 等於 0.3，而僅在第 30 位不同的兩個數仍然不同。否則按文本比較。',
+  'Only connected inputs that have a signal take part. Numeric modes are exact (a mean that never ends is worked out to 50 significant digits) and reject non-numeric values with a warning.': '只有已連線且有訊號的輸入參與運算。數值模式是精確的（除不盡的平均值計算到 50 位有效數字），遇到非數值會給出警告並拒絕。',
+  'Inc/Dec events are arrivals of a truthy value, so a pulse train counts once per pulse. The count is exact (0.1 added ten times is 1) and is clamped to [min, max] or wraps.': '增／減事件是真值的到達，因此脈衝序列每個脈衝計一次。計數是精確的（0.1 加十次等於 1），並被限制在 [最小值, 最大值] 內或迴繞。',
+  'Precision': '精度',
+  'digits': '位',
+  'How many significant digits a result that never ends (1 ÷ 3, √2, sin) is worked out to. A result that ends (1 ÷ 8 = 0.125) is exact and never padded.': '除不盡的結果（1 ÷ 3、√2、sin）計算到多少位有效數字。能除盡的結果（1 ÷ 8 = 0.125）是精確的，不會補零。',
+  /* Decimal */
+  'Keeps exactly the digits you type (or that arrive) and emits them in full, with no limit on how many: on the Decimal pin as an exact number that the arithmetic nodes (Adder, Subtractor, Multiplier, Divisor, Math, Combine, Counter…) add, multiply and compare digit for digit, and on Text as written. Rounding, decimal places and notation are done only by the Number Formatter actor, when you ask for it.': '原樣保留你輸入（或傳入）的每一位並完整輸出，位數不限：「小數」引腳輸出精確數值，算術節點（加法器、減法器、乘法器、除法器、數學、組合器、計數器……）會逐位相加、相乘和比較；「文本」引腳按原樣輸出。捨入、小數位數和記數法只由數字格式化器執行器在你需要時處理。',
+  'Decimal 3 → Adder ← Decimal 0.14159265: 3.14159265, every digit kept.': '小數 3 → 加法器 ← 小數 0.14159265：得 3.14159265，每一位都保留。',
+  'The number with every digit it was given, never rounded. Wire it to an Adder, Multiplier, Math, Projector or another node: they all work on the exact digits (3.14159265358979323846 stays 3.14159265358979323846).': '帶有所給全部數位、絕不捨入的數。可接到加法器、乘法器、數學、投影器或其他節點：它們都按精確數位運算（3.14159265358979323846 仍是 3.14159265358979323846）。',
+  'The number written out in full with every digit it was given, never rounded and never in exponent form. Handy when you want the digits as text, for example to join them into a sentence.': '把數按所給的每一位完整寫出，絕不捨入，也不用指數形式。需要把數位當作文本時很方便，例如拼進一句話。',
+  /* Number Formatter */
+  'The rounded value as a number, with every digit of it: the arithmetic nodes carry on from exactly this value.': '捨入後的數值，保留它的每一位：算術節點正是從這個值繼續運算。',
+  /* guide */
+  'The sum is exact: every digit of every number is kept. 3 + 0.14159265 is 3.14159265, and 0.1 + 0.2 is 0.3. Nothing is rounded.': '和是精確的：每個數的每一位都保留。3 + 0.14159265 等於 3.14159265，0.1 + 0.2 等於 0.3。不做任何捨入。',
+  'Used only while B is unconnected. Keeps every digit you type.': '僅在 B 未連線時使用。保留你輸入的每一位。',
+  'A quotient that ends (1 ÷ 8 = 0.125) is exact. One that never ends (1 ÷ 3) is worked out to the **Precision** setting, 50 significant digits by default, up to 1000.': '能除盡的商（1 ÷ 8 = 0.125）是精確的；除不盡的商（1 ÷ 3）按**精度**設定計算，預設 50 位有效數字，最多 1000 位。',
+  'Significant digits of a quotient that never ends. A quotient that ends is exact whatever this says.': '除不盡的商的有效數字位數。能除盡的商無論如何設定都是精確的。',
+  'abs, square, floor, round, ceil, min, max, mod and pow with a whole exponent are exact. sqrt, sin, cos, tanh, exp, log and pow with a fractional exponent are worked out to the **Precision** setting.': 'abs、square、floor、round、ceil、min、max、mod 以及整數指數的 pow 是精確的；sqrt、sin、cos、tanh、exp、log 以及小數指數的 pow 按**精度**設定計算。',
+  'Significant digits of a result that never ends (√2, sin 1). Exact results are never padded or cut.': '除不盡的結果（√2、sin 1）的有效數字位數。精確的結果不會補零或截斷。',
+  'Connect **Decimal** to an [[n:add]], [[n:mul]], [[n:math]] or any node that takes a number: it carries every digit, so nothing is lost on the way.': '把**小數**接到 [[n:add]]、[[n:mul]]、[[n:math]] 或任何接收數字的節點：它攜帶每一位，途中不會遺失任何數位。',
+  'The arithmetic nodes ([[n:add]], [[n:sub]], [[n:mul]], [[n:div]], [[n:math]]) work on all the digits, so 3 + 0.14159265358979323846 is exactly 3.14159265358979323846.': '算術節點（[[n:add]]、[[n:sub]]、[[n:mul]]、[[n:div]]、[[n:math]]）按全部數位運算，所以 3 + 0.14159265358979323846 恰好等於 3.14159265358979323846。',
+  'Only the **Text** pin keeps trailing zeros (3.50): the **Decimal** pin is a number, and 3.50 and 3.5 are the same number.': '只有**文本**引腳保留末尾的 0（3.50）：**小數**引腳是數值，3.50 與 3.5 是同一個數。',
+  'Numbers beyond about 1e308 are fine too, but a node that uses a double (a Meter plot, a Wave) can only follow them as far as a double goes.': '超過約 1e308 的數也可以處理，但使用雙精度數的節點（儀表繪圖、波形）只能跟到雙精度的範圍為止。',
+  'Numbers arrive with every digit they have, and lists arrive as their JSON text. To shorten them, use a [[n:actor-numfmt]].': '數字帶著它的每一位到達，列表以 JSON 文本到達。要縮短它們，請使用 [[n:actor-numfmt]]。',
+  'Feed it a **Decimal**, or any number with more than 15 digits: it is rounded exactly, on every digit.': '給它接入**小數**，或任何超過 15 位的數：它會基於每一位進行精確捨入。',
+  '**Number** carries the rounded value with every digit. **Formatted** is the same value as text, with the trailing zeros you asked for.': '**數值**攜帶捨入後的值及其每一位。**格式化**是同一個值的文本形式，帶有你要求的末尾 0。',
 };

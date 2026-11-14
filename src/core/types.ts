@@ -1,4 +1,5 @@
 // Core data model for Neural Studio. Pure data, no browser objects.
+import type { Dec } from './decimal';
 
 export type PortType = 'num' | 'bool' | 'text' | 'image' | 'data' | 'any';
 export type Side = 'top' | 'bottom' | 'left' | 'right';
@@ -31,7 +32,7 @@ interface ParamBase {
   pinSide?: Side;
 }
 export type ParamDef =
-  | (ParamBase & { kind: 'number'; min: number; max: number; step: number; default: number; unit?: string })
+  | (ParamBase & { kind: 'number'; min: number; max: number; step: number; default: number; unit?: string; /** The setting may hold any number of digits (kept as text when a double cannot hold them). Read it with ctx.dec(). */ exact?: boolean })
   | (ParamBase & { kind: 'select'; options: SelectOption[]; default: string })
   | (ParamBase & { kind: 'text'; default: string; multiline?: boolean; maxLength?: number; placeholder?: string; /** Autocomplete suggestions offered by the inspector. The value is still free text. */ suggest?: () => string[] })
   | (ParamBase & { kind: 'bool'; default: boolean })
@@ -178,6 +179,8 @@ export interface Ctx {
   has(port: string): boolean;
   changed(port: string): boolean;
   num(key: string): number;
+  /** A number setting with every digit it was given, as an exact decimal. */
+  dec(key: string): Dec;
   str(key: string): string;
   bool(key: string): boolean;
   emit(port: string, value: unknown, strength?: number, event?: boolean): void;

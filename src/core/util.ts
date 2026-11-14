@@ -1,4 +1,5 @@
 import type { ImageSig, PortType } from './types';
+import { exactText, isDec, isZero, jsonText, packDec, parseDec, toNumber, toPlain } from './decimal';
 
 export const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 export const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -40,6 +41,7 @@ export function isImage(v: unknown): v is ImageSig {
 
 export function toNum(v: unknown): number {
   if (typeof v === 'number') return v;
+  if (isDec(v)) return toNumber(v);
   if (typeof v === 'boolean') return v ? 1 : 0;
   if (typeof v === 'string') {
     const t = v.trim();
@@ -48,6 +50,7 @@ export function toNum(v: unknown): number {
   return NaN;
 }
 export function toBool(v: unknown): boolean {
+  if (isDec(v)) return !isZero(v);
   if (typeof v === 'string') return v !== '' && v !== 'false' && v !== '0';
   if (typeof v === 'number') return v !== 0 && !Number.isNaN(v);
   return !!v;
@@ -66,16 +69,18 @@ export function fmtNum(n: number, digits = 3): string {
 export const numText = (n: number): string => (Object.is(n, -0) ? '0' : String(n));
 
 /** Text for passing data on: numbers keep every digit, everything else as toText. */
-export const toExactText = (v: unknown): string => (typeof v === 'number' ? numText(v) : toText(v));
+export const toExactText = (v: unknown): string => (typeof v === 'number' ? numText(v) : isDec(v) ? toPlain(v) : toText(v));
 
 export function toText(v: unknown): string {
   if (v === undefined || v === null) return '';
   if (typeof v === 'string') return v;
-  if (typeof v === 'number') return fmtNum(v, 4);
+  // A number is shown with every digit it has: nothing is rounded for display (rounding is the Number Formatter's job).
+  if (typeof v === 'number') return Number.isFinite(v) ? exactText(v) : String(v);
+  if (isDec(v)) return toPlain(v);
   if (typeof v === 'boolean') return v ? 'true' : 'false';
   if (isImage(v)) return `image ${v.w}×${v.h}`;
   try {
-    return JSON.stringify(v);
+    return jsonText(v);
   } catch {
     return String(v);
   }
@@ -89,7 +94,7 @@ export function describe(v: unknown): string {
 }
 
 export function typeOfValue(v: unknown): PortType {
-  if (typeof v === 'number') return 'num';
+  if (typeof v === 'number' || isDec(v)) return 'num';
   if (typeof v === 'boolean') return 'bool';
   if (typeof v === 'string') return 'text';
   if (isImage(v)) return 'image';
@@ -113,6 +118,12 @@ export function coerceTo(v: unknown, to: PortType): unknown {
       return v;
     case 'num': {
       if (typeof v === 'number') return Number.isNaN(v) ? undefined : v;
+      if (isDec(v)) return v;
+      // Text keeps every digit it was written with: the number it names travels exactly, not as the nearest double.
+      if (typeof v === 'string') {
+        const r = parseDec(v);
+        if (r.ok) return packDec(r.dec);
+      }
       const n = toNum(v);
       return Number.isNaN(n) ? undefined : n;
     }

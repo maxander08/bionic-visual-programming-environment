@@ -1,6 +1,15 @@
 // Pure support for the Base Data section: Integer, Decimal, String, Character, Boolean and Array. No engine, no UI.
 
 import { numText } from './util';
+import { isDec, isZero, jsonText, packDec, parseDec, parseJsonExact, toPlain } from './decimal';
+
+/** A number read from text with every digit it has (a number when a double holds it exactly, an exact decimal when it takes more). Undefined when the text is not a number. */
+export function readNumber(s: string): number | import('./decimal').Dec | undefined {
+  const r = parseDec(s);
+  if (r.ok) return packDec(r.dec);
+  const n = Number(s);
+  return Number.isFinite(n) ? n : undefined;
+}
 
 /* ───── Integer ───── */
 
@@ -74,6 +83,7 @@ const FALSY = new Set(['', 'false', 'f', 'no', 'n', 'off', '0', 'null', 'undefin
 export function readBool(v: unknown): boolean {
   if (typeof v === 'string') return !FALSY.has(v.trim().toLowerCase());
   if (typeof v === 'number') return v !== 0 && !Number.isNaN(v);
+  if (isDec(v)) return !isZero(v);
   if (Array.isArray(v)) return v.length > 0;
   return !!v;
 }
@@ -94,7 +104,7 @@ export function parseItems(text: string, separator: string, as: ItemsAs | string
   if (t === '') return { ok: true, items: [] };
   if (t.startsWith('[') && t.endsWith(']')) {
     try {
-      const j = JSON.parse(t);
+      const j = parseJsonExact(t);
       if (Array.isArray(j)) return { ok: true, items: j };
     } catch { /* not JSON: fall through and split it as plain text */ }
   }
@@ -103,12 +113,12 @@ export function parseItems(text: string, separator: string, as: ItemsAs | string
   for (const s of parts) {
     if (as === 'text') items.push(s);
     else if (as === 'number') {
-      const n = Number(s);
-      if (!Number.isFinite(n)) return { ok: false, error: `“${s}” is not a number. Items as “Numbers” needs every item to be one.` };
+      const n = readNumber(s);
+      if (n === undefined) return { ok: false, error: `“${s}” is not a number. Items as “Numbers” needs every item to be one.` };
       items.push(n);
     } else if (s === 'true') items.push(true);
     else if (s === 'false') items.push(false);
-    else items.push(Number.isFinite(Number(s)) ? Number(s) : s);
+    else { const n = readNumber(s); items.push(n === undefined ? s : n); }
   }
   return { ok: true, items };
 }
@@ -116,8 +126,9 @@ export function parseItems(text: string, separator: string, as: ItemsAs | string
 export function fmtItem(v: unknown): string {
   if (typeof v === 'string') return quote(v);
   if (typeof v === 'number') return numText(v);
+  if (isDec(v)) return toPlain(v);
   if (typeof v === 'boolean' || v === null || v === undefined) return String(v);
-  try { return JSON.stringify(v); } catch { return String(v); }
+  try { return jsonText(v); } catch { return String(v); }
 }
 
 export const fmtList = (items: unknown[]): string => `[${items.map(fmtItem).join(', ')}]`;

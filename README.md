@@ -120,6 +120,8 @@ src/
 │   ├── equation.ts    Safe expression parser, equation data and plot sampler
 │   ├── util.ts        Coercion, RNG, image statistics
 │   ├── timekeeping.ts Duration formatting, time-of-day parsing, time-zone maths for the Timekeeping modules
+│   ├── decimal.ts     Arbitrary-precision decimal numbers: parsing, formatting, rounding, exact signal values
+│   ├── decmath.ts     Exact + − × ÷ mod pow √ exp ln sin cos tanh on those decimals (BigInt)
 │   ├── basedata.ts    Base Data: integer/decimal/string/character/boolean/list conversion and formatting
 │   ├── quantities.ts  Quantities: the SI prefixes, the unit table, <amount><unit> parsing and conversion
 │   ├── core.test.ts   54 tests
@@ -165,6 +167,18 @@ x = 0 and y = 0. Click the expand icon on the Meter for a full-size view with ti
 - `t` is simulation time in seconds, so `sin(x - 2t)` animates.
 - The optional **X** input and the **y(x)** output evaluate the first equation at a point, so an Equation also works as a Math-style node.
 - Parsing is done by a small hand-written evaluator — no `eval`, no `Function`. Errors name the problem.
+
+### Exact decimals
+
+Numbers keep every digit they are given. Nothing in the data flow rounds to a fixed number of places: that happens only in the **Number Formatter**, and only when you ask for it.
+
+* **Decimal** carries any number of digits on its *Decimal* pin as well as on *Text*. `3` + `0.14159265` through an **Adder** is `3.14159265`, and `0.1 + 0.2` is `0.3`.
+* **Adder, Subtractor, Multiplier, Combine, Counter, Compare, Threshold, Plastic Nerve, Inverter** and the exact functions of **Math** (`abs square floor round ceil min max mod`, and `pow` with a whole exponent) are exact: every digit of the answer is kept.
+* **Divisor** and the endless functions of **Math** (`sqrt sin cos tanh exp log`, `pow` with a fractional exponent) are worked out to a **Precision** setting (50 significant digits by default, up to 1000) and rounded once, correctly, at the last digit. A quotient that ends (`1 ÷ 8`) is exact and never padded.
+* The settings of the arithmetic nodes (Offset, Factor, Divisor, Threshold, Step…) take any number of digits too, and so do values arriving on their setting pins.
+* **Projector, Text, the inspector and the pin tooltips** show every digit. A Projector rounds only if you pick *Integer*, *2 decimals* or *Percent*.
+* On a wire a number is a plain JS number whenever a double holds it exactly (`0.5`, `42`, `0.3`), so every other module keeps working, and an exact decimal (`src/core/decimal.ts`) when it needs more digits. Arithmetic lives in `src/core/decmath.ts` (BigInt, no dependencies).
+* The Quantities section and the Unit Converter still tidy results to 12 significant digits, because their unit factors (°F, degrees of arc, light-years) are not finite decimals. Modules that sample in floating point (Wave, Smooth, Envelope, Random, the Equation plotter) emit their double unrounded.
 
 ### Honest labelling
 

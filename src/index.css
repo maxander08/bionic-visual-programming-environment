@@ -279,7 +279,7 @@ fieldset.driven { margin: 0; padding: 0; border: 0; min-width: 0; opacity: 0.5; 
 .imgcv { width: 100%; height: 100%; object-fit: contain; border-radius: 6px; display: block; }
 .empty { width: 100%; height: 100%; }
 .meter-wrap { position: relative; width: 100%; height: 100%; } .meter-wrap .art { height: 100%; }
-.meter-num { position: absolute; right: 0; bottom: -2px; font-size: 10.5px; color: #fff9; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.meter-num { position: absolute; right: 0; bottom: -2px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; font-size: 10.5px; color: #fff9; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .eqplot { color: #fff; }
 .graph-full { background: #000; border: 1.5px solid var(--line2); border-radius: 12px; padding: 12px; display: grid; place-items: center; min-height: 240px; }
 .graph-full svg { width: 100%; height: auto; max-height: 62vh; display: block; }

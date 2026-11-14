@@ -1,10 +1,12 @@
-// Arbitrary-precision decimal numbers, as digit strings. No engine, no UI, no BigInt, no rounding unless asked for.
+// Arbitrary-precision decimal numbers, as digit strings. No engine, no UI, no rounding unless asked for.
+// (Arithmetic on them lives in decmath.ts; this file reads, writes and formats them.)
 //
 // A Dec is  ±digits × 10^(−scale):  "3.50" is { digits: "350", scale: 2 }, 1.5e3 is { digits: "15", scale: −2 }. Digits are kept
 // exactly as given (trailing zeros included), so nothing is ever lost on the way in. Rounding happens only in the functions below
 // that are called by the Number Formatter.
 
-import { numText } from './util';
+/** A double as the shortest text that reads back as exactly the same double. */
+const shortest = (n: number): string => (Object.is(n, -0) ? '0' : String(n));
 
 export interface Dec { neg: boolean; digits: string; scale: number }
 
@@ -24,7 +26,7 @@ const ZERO = (scale = 0): Dec => ({ neg: false, digits: '0', scale });
 
 /** Read a JS number as digits: its shortest text, which reads back as exactly the same double. */
 export const fromNumber = (n: number): Dec => {
-  const r = parseDec(numText(n));
+  const r = parseDec(shortest(n));
   return r.ok ? r.dec : ZERO();
 };
 
@@ -58,6 +60,62 @@ export const toNumber = (d: Dec): number => Number(`${d.neg ? '-' : ''}${d.digit
 
 /** Position of the leading digit: 1234.5 → 3, 0.012 → −2. */
 export const leadExp = (d: Dec): number => d.digits.length - 1 - d.scale;
+
+/** Is this value an exact decimal travelling on a wire (as opposed to a plain double)? */
+export const isDec = (v: unknown): v is Dec =>
+  typeof v === 'object' && v !== null && typeof (v as Dec).digits === 'string' && typeof (v as Dec).scale === 'number' && typeof (v as Dec).neg === 'boolean';
+
+/** The one spelling of a value: no trailing zeros in the digits (1500 is 15 × 10², 2.50 is 25 × 10⁻¹), zero is never negative. */
+export function canon(d: Dec): Dec {
+  if (isZero(d)) return { neg: false, digits: '0', scale: 0 };
+  const t = d.digits.replace(/0+$/, '');
+  return t.length === d.digits.length ? d : { neg: d.neg, digits: t, scale: d.scale - (d.digits.length - t.length) };
+}
+
+/** Do two decimals hold the same value, whatever their trailing zeros? */
+export function sameDec(a: Dec, b: Dec): boolean {
+  const x = canon(a), y = canon(b);
+  return x.neg === y.neg && x.digits === y.digits && x.scale === y.scale;
+}
+
+/**
+ * Put an exact value on a wire. When a double holds it exactly (its shortest text reads back as the same digits: 0.5, 42, 0.3)
+ * it travels as a plain number, so everything that only knows numbers keeps working. When it needs more digits than a double has
+ * (3.14159265358979323846, 1e400) it travels as the exact Dec itself.
+ */
+export function packDec(d: Dec): number | Dec {
+  const c = canon(d);
+  const n = toNumber(c);
+  if (Number.isFinite(n) && (n !== 0 || isZero(c)) && sameDec(fromNumber(n), c)) return n + 0;
+  return c;
+}
+
+/** Two signal values that mean the same thing: identical, or exact decimals with the same digits. */
+export const sameValue = (a: unknown, b: unknown): boolean => a === b || (isDec(a) && isDec(b) && sameDec(a, b));
+
+/** Every digit of a number or exact decimal, written out in full with no exponent: 0.1 + 0.2 reads 0.3, 3.14159265358979323846 keeps all 21 digits. */
+export const exactText = (v: number | Dec): string => toPlain(typeof v === 'number' ? fromNumber(v) : v);
+
+/**
+ * JSON text that keeps exact decimals whole: they are written as plain numbers with every digit. A value JSON cannot write
+ * (undefined) is shown as String(v).
+ */
+export function jsonText(v: unknown, space?: number): string {
+  const MARK = '\uE000dec:';
+  const text = JSON.stringify(v, (_k, x) => (isDec(x) ? MARK + toPlain(x) : x), space);
+  return text === undefined ? String(v) : text.replace(new RegExp(`"${MARK}([^"]*)"`, 'g'), '$1');
+}
+
+/** Read JSON without losing digits: numbers with more digits than a double holds become exact decimals (where the browser exposes the source text). */
+export function parseJsonExact(text: string): unknown {
+  return JSON.parse(text, function (this: unknown, _k: string, v: unknown, ctx?: { source?: string }) {
+    if (typeof v === 'number' && ctx?.source) {
+      const r = parseDec(ctx.source);
+      if (r.ok) return packDec(r.dec);
+    }
+    return v;
+  } as (this: unknown, key: string, value: unknown) => unknown);
+}
 
 const strip = (s: string): string => s.replace(/^0+/, '') || '0';
 
@@ -173,6 +231,7 @@ export function formatDec(d: Dec, o: FormatOptions): Formatted {
 
 /** Read whatever arrives on a pin as exact digits: text keeps every digit, a number is read by its shortest text. */
 export function decFromValue(v: unknown): DecParse {
+  if (isDec(v)) return { ok: true, dec: v };
   if (typeof v === 'number') return Number.isFinite(v) ? { ok: true, dec: fromNumber(v) } : { ok: false, error: `${String(v)} is not a number.` };
   if (typeof v === 'boolean') return { ok: true, dec: fromNumber(v ? 1 : 0) };
   if (typeof v === 'string') return parseDec(v);

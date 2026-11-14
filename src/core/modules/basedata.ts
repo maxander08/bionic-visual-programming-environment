@@ -1,6 +1,8 @@
 import type { ModuleDef } from '../types';
-import { toNum, toText, toExactText } from '../util';
-import { decFromValue, isZero, parseDec, toNumber, toPlain, type Dec } from '../decimal';
+import { toText, toExactText } from '../util';
+import { decFromValue, packDec, parseDec, toNumber, toPlain, type Dec } from '../decimal';
+import * as D from '../decmath';
+import { toDec } from '../decmath';
 import {
   INT_MAX, INT_MIN, MAX_ITEMS, applyCase, caseChar, chars, clampInt, codePointOf, fmtCodePoint, fmtInt, fmtItem, fmtList, itemAt,
   parseItems, quote, readBool, roundInt, validCodePoint, wordsFor,
@@ -35,9 +37,16 @@ export const baseData: ModuleDef[] = [
       sel('base', 'Base', 'dec', [['dec', 'Decimal (10)'], ['bin', 'Binary (2)'], ['oct', 'Octal (8)'], ['hex', 'Hexadecimal (16)']], 'How the integer is written on the node face and on the Text output. The Integer output is always a plain number.'),
     ],
     run(c) {
-      let x = c.has('in') ? toNum(c.get('in')) : c.num('value');
-      if (!Number.isFinite(x)) return c.fail(`${c.has('in') ? `“${toText(c.get('in'))}”` : 'This'} is not a number, so it cannot become an integer.`);
-      const r = clampInt(roundInt(x, c.str('rounding')));
+      let x: number;
+      if (c.has('in')) {
+        // Rounded on the exact digits, so 2147483647.99999999999 is cut to 2147483647, not pushed over the limit by a double.
+        const d = toDec(c.get('in'));
+        if (!d) return c.fail(`“${toText(c.get('in'))}” is not a number, so it cannot become an integer.`);
+        const how = c.str('rounding');
+        x = toNumber(how === 'round' ? D.round(d) : how === 'floor' ? D.floor(d) : how === 'ceil' ? D.ceil(d) : D.trunc(d)) + 0;
+      } else x = roundInt(c.num('value'), c.str('rounding'));
+      if (!Number.isFinite(x)) return c.fail('This is not a number, so it cannot become an integer.');
+      const r = clampInt(x);
       x = r.value;
       if (r.clamped) c.warn('Outside the 32-bit range −2 147 483 648 … 2 147 483 647: held at the nearest limit.');
       const text = fmtInt(x, c.str('base'));
@@ -60,8 +69,8 @@ export const baseData: ModuleDef[] = [
     chip: (p) => { const r = parseDec(String(p.value)); return r.ok ? toPlain(r.dec) : String(p.value); },
     inputs: [IN('A number, text such as 3.14159265358979323846 or 1.5e3, or true/false. Text keeps every digit.')],
     outputs: [
-      out('out', 'Decimal', 'num', 'The number as a double-precision value: the closest one to the exact digits (about 15–17 significant digits). Nothing is rounded to a chosen number of places. To carry every digit, use Text.'),
-      out('text', 'Text', 'text', 'The number written out in full with every digit it was given, never rounded and never in exponent form. Wire it to a Number Formatter, a Projector or another Decimal to keep all of its digits.'),
+      out('out', 'Decimal', 'num', 'The number with every digit it was given, never rounded. Wire it to an Adder, Multiplier, Math, Projector or another node: they all work on the exact digits (3.14159265358979323846 stays 3.14159265358979323846).'),
+      out('text', 'Text', 'text', 'The number written out in full with every digit it was given, never rounded and never in exponent form. Handy when you want the digits as text, for example to join them into a sentence.'),
     ],
     params: [
       txt('value', 'Value', '1.5', 'The number to emit, with as many digits as you like: 3.14159265358979323846264338327950288 is kept whole. Digits after the point, trailing zeros and an exponent (6.022e23) are all allowed.', { maxLength: 5000, placeholder: 'Any number, any number of digits' }),
@@ -79,20 +88,16 @@ export const baseData: ModuleDef[] = [
         dec = r.dec;
       }
       const text = toPlain(dec);
-      const x = toNumber(dec);
-      if (Number.isFinite(x) && (x !== 0 || isZero(dec))) c.emit('out', x);
-      else {
-        c.emit('out', undefined);
-        c.warn('This number is beyond what the Decimal pin can hold (about 1e±308). The Text pin still has every digit.');
-      }
+      // Every digit travels on the Decimal pin: a number a double holds exactly goes out as a plain number, a longer one as an exact decimal.
+      c.emit('out', packDec(dec));
       c.emit('text', text);
       c.view({ chip: text });
     },
     doc: {
       summary: 'A number with a fractional part, such as 3.14 or −0.5, with as many digits as you want. Nothing is ever rounded.',
-      runtime: 'Keeps exactly the digits you type (or that arrive as text) and emits them in full on Text. The Decimal pin carries the closest double-precision number, which holds about 15–17 significant digits: use Text, a Number Formatter or another Decimal when every digit matters. Rounding, decimal places and notation are done by the Number Formatter actor.',
+      runtime: 'Keeps exactly the digits you type (or that arrive) and emits them in full, with no limit on how many: on the Decimal pin as an exact number that the arithmetic nodes (Adder, Subtractor, Multiplier, Divisor, Math, Combine, Counter…) add, multiply and compare digit for digit, and on Text as written. Rounding, decimal places and notation are done only by the Number Formatter actor, when you ask for it.',
       errors: ['An Input that is not a number raises an error.', 'A number whose exponent is beyond ±99999 is refused.'],
-      examples: ['Decimal Text → Number Formatter: round 3.14159265358979323846 to 10 places without losing the rest first.', 'Decimal → Multiplier: scale a signal by a factor.', 'Decimal Text (3.50) → Projector: show 3.50 with its zero.'],
+      examples: ['Decimal Text → Number Formatter: round 3.14159265358979323846 to 10 places without losing the rest first.', 'Decimal 3 → Adder ← Decimal 0.14159265: 3.14159265, every digit kept.', 'Decimal → Multiplier: scale a signal by a factor.', 'Decimal Text (3.50) → Projector: show 3.50 with its zero.'],
     },
   },
 
