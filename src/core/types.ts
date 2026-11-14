@@ -148,10 +148,11 @@ export type Family =
   | 'timekeeping'
   | 'quantity'
   | 'file'
+  | 'actor'
   | 'info'
   | 'workspace';
 
-export type Category = 'Sensor' | 'Nucleus' | 'Behavior' | 'Node' | 'Base Data' | 'Timekeeping' | 'Quantities' | 'Files' | 'Info' | 'Workspace Settings';
+export type Category = 'Sensor' | 'Nucleus' | 'Behavior' | 'Node' | 'Base Data' | 'Timekeeping' | 'Quantities' | 'Files' | 'Actors' | 'Info' | 'Workspace Settings';
 
 export interface ModuleDoc {
   summary: string;

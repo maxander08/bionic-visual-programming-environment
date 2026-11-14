@@ -8,6 +8,7 @@ import { behaviors } from './modules/behavior';
 import { timekeeping } from './modules/timekeeping';
 import { quantities } from './modules/quantities';
 import { files } from './modules/files';
+import { actors } from './modules/actors';
 import { workspace } from './modules/workspace';
 import { getLang, tr } from '../i18n';
 import { localizeDef } from './localize';
@@ -35,11 +36,11 @@ const compoundShell: ModuleDef = {
   doc: { summary: 'A reusable subsystem: a group of modules wrapped with defined inputs, outputs and exposed settings.', runtime: 'At run time the compound is expanded into its inner modules. Open it to inspect the inner graph.' },
 };
 
-export const MODULES: ModuleDef[] = [...sensors, ...nuclei, ...behaviors, ...nodes, ...baseData, ...timekeeping, ...quantities, ...files, ...info, ...workspace];
+export const MODULES: ModuleDef[] = [...sensors, ...nuclei, ...behaviors, ...nodes, ...baseData, ...timekeeping, ...quantities, ...files, ...actors, ...info, ...workspace];
 const BY_TYPE = new Map(MODULES.map((m) => [m.type, m]));
 /** Library view: the modules with their text in the current language. */
 export const localizedModules = (): ModuleDef[] => MODULES.map(localizeDef);
-export const CATEGORIES = ['Sensor', 'Nucleus', 'Behavior', 'Node', 'Base Data', 'Timekeeping', 'Quantities', 'Files', 'Info', 'Workspace Settings'] as const;
+export const CATEGORIES = ['Sensor', 'Nucleus', 'Behavior', 'Node', 'Base Data', 'Timekeeping', 'Quantities', 'Files', 'Actors', 'Info', 'Workspace Settings'] as const;
 
 // ---- setting pins -------------------------------------------------------------------------------------------
 // Every setting of a module (number, choice, text, switch) also exists as an optional input pin. While a signal
@@ -105,7 +106,8 @@ function placeSettingPins(def: ModuleDef, params: ParamDef[]): ModuleDef {
 
 const settingCache = new WeakMap<ModuleDef, Map<string, ModuleDef>>();
 function withSettingPins(def: ModuleDef, params: ParamDef[]): ModuleDef {
-  const sig = params.map((p) => p.key).join('|');
+  // Modules whose choices depend on other settings (the Actors) list the choices in the key, so each variant keeps its own pin hints.
+  const sig = params.map((p) => (def.dynamicParams && p.kind === 'select' ? `${p.key}:${p.options.map((o) => o.value).join(',')}` : p.key)).join('|');
   let m = settingCache.get(def);
   if (!m) settingCache.set(def, (m = new Map()));
   let d = m.get(sig);

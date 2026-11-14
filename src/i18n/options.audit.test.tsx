@@ -28,8 +28,16 @@ const DATA_FACES: Record<string, RegExp> = {
 };
 // Files nodes show the file formats they take (.DOCX .DOC): format names are Latin in every language.
 for (const k of FILE_KINDS) DATA_FACES[k.type] = /^[.A-Z0-9\s]+$/;
+// The Actors show what flows through them, not interface text: a converted amount with its unit symbol (0.0006ft, ← 1m),
+// a unit symbol on its own (ft, Ci), or the format route of a conversion (IMG → PDF). Those stay Latin in every language.
+const UNIT_TOKEN = /^[A-Za-z°μΩÅ$€£¥/·²³₂‾⁰¹²³⁴⁵⁶⁷⁸⁹\s]{1,9}$/;
+const ROUTE = /^[A-Za-z0-9.·]{1,6}( → [A-Za-z0-9.·]{1,6})?$/;
+DATA_FACES['actor-unitconv'] = /^(?:[←→]\s*)?[-−+]?[\d.]/;
+DATA_FACES['actor-fileconv'] = ROUTE;
 const SYMBOLS = /\b(Hz|UTC)\b/g;
-const OK_QTY = /^[=\s\d.eE+\-−]*[A-Za-zμΩ°/·²³]{1,6}$/;
+const OK_QTY = /^[=\s\d.eE+\-−]*[A-Za-zμΩ°/·²³₂‾⁰¹²³⁴⁵⁶⁷⁸⁹]{1,6}$/;
+/** A unit symbol alone, or a number followed by one: what an Actor face shows. */
+const isUnitOrAmount = (s: string) => UNIT_TOKEN.test(s) || /^(?:[←→]\s*)?[-−+]?[\d.]/.test(s);
 
 it.each(['zh-Hans', 'zh-Hant'] as const)('%s: every node face on the canvas is translated after a language switch', async (lang) => {
   const specs: { type: string; params?: Record<string, unknown>; why: string }[] = [];
@@ -60,7 +68,8 @@ it.each(['zh-Hans', 'zh-Hant'] as const)('%s: every node face on the canvas is t
       const mt = meta.get(id) ?? '';
       const qty = mt.startsWith('qty-');
       const data = DATA_FACES[mt.split(':')[0]];
-      for (const s of new Set(texts)) if (/[A-Za-z]{2,}/.test(s.replace(SYMBOLS, '')) && !(qty && (OK_QTY.test(s) || !/[A-Za-z]{6,}/.test(s))) && !data?.test(s)) (found.get(s) ?? found.set(s, new Set()).get(s)!).add(meta.get(id) ?? id);
+      const actor = mt.startsWith('actor-');
+      for (const s of new Set(texts)) if (/[A-Za-z]{2,}/.test(s.replace(SYMBOLS, '')) && !(qty && (OK_QTY.test(s) || !/[A-Za-z]{6,}/.test(s))) && !(actor && isUnitOrAmount(s)) && !data?.test(s)) (found.get(s) ?? found.set(s, new Set()).get(s)!).add(meta.get(id) ?? id);
     });
   }
   stop();

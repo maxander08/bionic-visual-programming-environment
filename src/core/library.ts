@@ -213,4 +213,30 @@ export const TEMPLATES: Template[] = [
       b.wire('ra', 'out', 'dec', 'a'); b.wire('rb', 'out', 'dec', 'b'); b.wire('dec', 'label', 's2', 'in');
     }, ['toggle-state-machine', 'decision-circuit']),
   },
+  {
+    id: 'unit-conversion', name: 'Unit conversion',
+    summary: 'Two Unit Converters: a marathon written in miles becomes kilometres, and 100 °C becomes °F.',
+    expect: 'The first Projector shows 42.1648128km and the second 212°F. Change a unit in the inspector, or send text such as 5280ft into the Quantity pin.',
+    build: () => make('Unit conversion', 'Unit Converters turn a quantity into another unit of the same kind.', (b) => {
+      b.add('dist', 'constant', 0, 0, { kind: 'text', value: '26.2mi' });
+      b.add('km', 'actor-unitconv', 0, 48, { group: 'length', from: 'm', to: 'm', toPrefix: 'k' });
+      b.add('p1', 'projector', 0, 288);
+      b.add('deg', 'constant', 168, 0, { value: '100' });
+      b.add('tf', 'actor-unitconv', 168, 48, { group: 'temperature', from: '°C', to: '°F' });
+      b.add('p2', 'projector', 168, 288);
+      b.wire('dist', 'out', 'km', 'in'); b.wire('km', 'quantity', 'p1', 'in');
+      b.wire('deg', 'out', 'tf', 'in'); b.wire('tf', 'quantity', 'p2', 'in');
+    }),
+  },
+  {
+    id: 'file-conversion', name: 'File conversion and Projector',
+    summary: 'A picture goes through a File Converter to become a PDF, and the Projector shows the result.',
+    expect: 'Drop a picture on the Image node and press Run. The converter says “Converting…” and then shows the PDF’s name and size; the Projector shows it, and its expand icon opens it in a full-size window.',
+    build: () => make('File conversion', 'Image → File Converter (PDF) → Projector.', (b) => {
+      b.add('img', 'file-image', 0, 0);
+      b.add('cv', 'actor-fileconv', 0, 168, { from: 'image', to: 'pdf', format: 'pdf' });
+      b.add('show', 'projector', 0, 408);
+      b.wire('img', 'file', 'cv', 'file'); b.wire('cv', 'file', 'show', 'in');
+    }),
+  },
 ];

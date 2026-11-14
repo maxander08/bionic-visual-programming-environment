@@ -268,3 +268,40 @@
 .lang-face { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; height: 100%; text-align: center; color: #c9a3ff; }
 .lang-face b { font-size: 17px; font-weight: 500; letter-spacing: 0; line-height: 1.2; white-space: nowrap; }
 .lang-face span { font-size: 10px; color: var(--ink3, #75757b); letter-spacing: 0; }
+
+/* ---------- Projector window (full size) ---------- */
+.modal.full { width: min(1600px, 98vw); height: min(940px, 94vh); max-height: none; }
+.modal.full .modal-body { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; padding: 12px 14px 14px; overflow: hidden; }
+.modal:fullscreen { width: 100vw; height: 100vh; max-width: none; border-radius: 0; }
+.modal-actions { display: flex; align-items: center; gap: 4px; }
+.pw-file, .pw-col { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.pw-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-height: 28px; flex: none; }
+.pw-name { font-weight: 600; max-width: 40ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pw-meta { color: var(--dim); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.pw-spacer { flex: 1 1 auto; }
+.pw-tabs { margin: 0; }
+.pw-stage { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.pw-pre { flex: 1 1 auto; min-height: 0; margin: 0; padding: 14px 16px; overflow: auto; background: #050505; border: 1px solid var(--hair2, #2a2a2a); border-radius: 10px; color: #e8e8e8; font-size: 13px; line-height: 1.55; white-space: pre; tab-size: 4; user-select: text; font-family: var(--code); }
+.pw-pre.wrap { white-space: pre-wrap; overflow-wrap: anywhere; }
+.pw-pre:focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }
+.pw-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; border: 1px solid var(--hair2, #2a2a2a); border-radius: 10px; background: #050505; }
+.pw-table { border-collapse: collapse; font-size: 12.5px; width: max-content; min-width: 100%; }
+.pw-table th, .pw-table td { border: 1px solid #262626; padding: 5px 10px; text-align: left; white-space: nowrap; max-width: 34ch; overflow: hidden; text-overflow: ellipsis; }
+.pw-table th { position: sticky; top: 0; background: #121212; font-weight: 600; }
+.pw-number { flex: 1 1 auto; display: grid; place-items: center; color: var(--acc); font-size: clamp(56px, 16vw, 220px); line-height: 1.05; font-weight: 400; text-align: center; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; background: #000; border: 1.5px solid var(--acc); border-radius: 14px; padding: 24px; }
+.pw-img { flex: 1 1 auto; min-height: 0; display: grid; place-items: center; background: #000; border: 1px solid var(--hair2, #2a2a2a); border-radius: 10px; padding: 10px; overflow: hidden; }
+.pw-img img, .pw-img canvas { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; display: block; border-radius: 4px; }
+.pw-img canvas { width: 100%; height: 100%; }
+.pw-plot { flex: 1 1 auto; min-height: 0; display: grid; place-items: center; background: #000; border: 1.5px solid var(--hair2, #2a2a2a); border-radius: 12px; padding: 12px; overflow: auto; }
+.pw-plot svg { width: 100%; height: auto; max-height: 100%; }
+.pw-frame { flex: 1 1 auto; min-height: 0; width: 100%; border: 1px solid var(--hair2, #2a2a2a); border-radius: 10px; background: #262626; }
+.pw-frame.light { background: #fff; }
+.pw-video { flex: 1 1 auto; min-height: 0; width: 100%; background: #000; border-radius: 10px; object-fit: contain; }
+.pw-media { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: #050505; border: 1px solid var(--hair2, #2a2a2a); border-radius: 10px; }
+.pw-media audio { width: min(640px, 90%); }
+.pw-badge { padding: 6px 16px; border: 2px solid var(--acc); color: var(--acc); border-radius: 10px; font-size: 22px; font-weight: 700; letter-spacing: 0.04em; }
+.pw-card { align-self: center; margin: auto; width: min(520px, 100%); display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 22px; background: #070707; border: 1px solid var(--hair2, #2a2a2a); border-radius: 14px; }
+.pw-card .file-facts { width: 100%; }
+.pw-empty { flex: 1 1 auto; display: grid; place-items: center; color: var(--dim); text-align: center; border: 1px dashed var(--hair2, #2a2a2a); border-radius: 12px; padding: 24px; }
+.pw-col .callout { margin: 0; flex: none; }
+.pval .view-btn { margin-left: 6px; vertical-align: middle; }

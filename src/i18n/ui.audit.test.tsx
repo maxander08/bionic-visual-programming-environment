@@ -43,6 +43,10 @@ function strings(): string[] {
 
 // Values that sit in editable fields (what the user typed or a stored default) or are fixtures of this test.
 const DATA_VALUES = /^(hello|sin\(x\)|y = sin\(x\)|true \/ false|Tokyo, Japan|Asia\/Tokyo|Note to self|Delete this\?|idle>active[\s\S]*)$/;
+// The File Converter's inspector lists the formats each category can become (.PNG .JPG …), and its face shows the route it will take.
+// Extensions are Latin in every language, so they are data, not untranslated interface text.
+const FORMAT_LIST = /^(?:\.[A-Z0-9]{1,5})(?: \.[A-Z0-9]{1,5})*$/;
+const ROUTE_LABEL = /^[A-Za-z0-9.·]{1,6}( → [A-Za-z0-9.·]{1,6})?$/;
 const KEYNAMES = /\b(Hz|UTC|kHz|MHz|ms|Enter|Ctrl|Shift|Esc|Space|Alt|Cmd|Tab|Del|Delete|Backspace|zh-Hans|zh-Hant|English|JSON|PNG|SVG|QR|URL|HTML|CSV|RGB|HSL|HSV|Neural Studio|Base64|ID|en|x|y|t)\b/g;
 const bad = (s: string) => /[A-Za-z]{3,}/.test(s.replace(/\([a-z]+-\d+\)/g, '').replace(KEYNAMES, '')) && !OK.test(s);
 
@@ -91,7 +95,7 @@ it.each(['zh-Hans', 'zh-Hant'] as const)('%s: the whole interface is translated'
   fs.writeFileSync(`/tmp/ui-leftovers-${lang}.txt`, lines.join('\n'));
   // Documentation article prose is long-form content that is still English-only; it is reported in the file above, not asserted.
   // Asserted: every short interface label (not docs prose, not sentence-length port descriptions, not default project names).
-  const labels = lines.filter((l) => { if (/←  docs:/.test(l)) return false; const s: string = JSON.parse(l.split('  ←  ')[0]); return s.length <= 40 && !/[.。]$/.test(s) && !/[\u3400-\u9fff]/.test(s) && s !== 'Untitled program' && !DATA_VALUES.test(s); });
+  const labels = lines.filter((l) => { if (/←  docs:/.test(l)) return false; const s: string = JSON.parse(l.split('  ←  ')[0]); return s.length <= 40 && !/[.。]$/.test(s) && !/[\u3400-\u9fff]/.test(s) && s !== 'Untitled program' && !DATA_VALUES.test(s) && !FORMAT_LIST.test(s) && !ROUTE_LABEL.test(s); });
   expect(labels.slice(0, 60).join('\n')).toBe('');
 }, 600000);
 

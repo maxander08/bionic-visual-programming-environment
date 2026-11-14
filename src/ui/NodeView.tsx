@@ -9,14 +9,16 @@ import { useSyncExternalStore } from 'react';
 import { useStore } from '../state/store';
 import { Icon } from './icons';
 import { EquationPlot } from './EquationPlot';
-import { FileFace, FilePreview, useFileDrop } from './FilePanel';
-import { FILE_KIND_BY_TYPE } from '../core/files';
+import { FileFace, FilePreview, Thumb, useFileDrop } from './FilePanel';
+import { FILE_KIND_BY_TYPE, fmtBytes, type FileDescriptor } from '../core/files';
+import { routeLabel } from '../core/convert';
+import type { FileKindId } from '../core/files';
 import { getLang, langInfo, normalizeLang, tr, trFace, trPlace } from '../i18n';
 import { fmtClockDate, fmtClockTime, fmtCountdown } from '../i18n/format';
 
 export const FAMILY_VAR: Record<string, string> = {
   sensor: '#ff2a2a', sense: '#6fd3ee', knowledge: '#a259ff', attention: '#f7c52b', fear: '#3ddc97', memory: '#86f0cc', apparatus: '#2fd6c0',
-  emotion: '#ff8a50', behavior: '#f4f4f4', projector: '#2fd9cf', node: '#ffc933', data: '#e84dff', timekeeping: '#ff7ac6', quantity: '#b6e34a', file: '#3aa0ff', info: '#7b8cff', workspace: '#c9a3ff',
+  emotion: '#ff8a50', behavior: '#f4f4f4', projector: '#2fd9cf', node: '#ffc933', data: '#e84dff', timekeeping: '#ff7ac6', quantity: '#b6e34a', file: '#3aa0ff', actor: '#ff9f43', info: '#7b8cff', workspace: '#c9a3ff',
 };
 
 const TK_STATE: Record<string, string> = { idle: 'Ready', running: 'Running', paused: 'Paused', done: 'Done', stopped: 'Stopped', limit: 'Limit reached', armed: 'Armed', ringing: 'Ringing', snoozed: 'Snoozed' };
@@ -68,6 +70,40 @@ function QuantityFace({ text, sub, dim }: { text: string; sub: string; dim?: boo
       <div className="qty-sub clamp1" title={sub}>{sub || ' '}</div>
     </div>
   );
+}
+
+/** The face of the File Converter: the route (IMG → PDF), the file it is working on, and what state it is in. */
+function ConverterFace({ route, name, state, size }: { route: string; name: string; state: string; size?: number }) {
+  const label = state === 'working' ? tr('Converting…') : state === 'done' ? fmtBytes(size ?? 0) : state === 'error' ? tr('Error') : tr('Waiting for a file');
+  return (
+    <div className={`actor ac-${state}`}>
+      <div className="ac-route" title={route}>{route}</div>
+      <div className="ac-name clamp1" title={name}>{name || ' '}</div>
+      {state === 'working' ? <div className="ac-bar" aria-hidden="true"><i /></div> : <div className="ac-state">{label}</div>}
+    </div>
+  );
+}
+
+/** What the Projector shows on its node: a short look at the value. The expand button opens everything. */
+function ProjectorFace({ view }: { view: Record<string, any> }) {
+  const k = view.kind;
+  if (k === 'image') return <ImageCanvas img={view.image} />;
+  if (k === 'number') { const n = String(view.text).length; return <div className={`big n${n > 8 ? 3 : n > 5 ? 2 : 1}`}>{view.text}</div>; }
+  if (k === 'plot') return <EquationPlot plot={view.plot} />;
+  if (k === 'text' || k === 'data') return <div className="proj-text pre clamp4">{String(view.text ?? '').slice(0, 360)}</div>;
+  if (k === 'file') {
+    const f = view.file as FileDescriptor;
+    return (
+      <div className="pf">
+        {view.image ? <span className="ff-thumb"><Thumb img={view.image} /></span>
+          : view.text !== undefined ? <div className="proj-text pre clamp3">{String(view.text).slice(0, 240) || tr('(empty)')}</div>
+          : <span className="ff-badge">{f.ext ? '.' + f.ext.toUpperCase() : '—'}</span>}
+        <span className="ff-name clamp1" title={f.name}>{f.name}</span>
+        <span className="ff-meta">{view.present ? [f.ext.toUpperCase(), fmtBytes(f.size)].filter(Boolean).join(' · ') : tr('Not in this browser')}</span>
+      </div>
+    );
+  }
+  return <div className="empty" />;
 }
 
 export function ImageCanvas({ img }: { img: unknown }) {
@@ -198,17 +234,16 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
     }
     case 'device': body = <div className="dim-text clamp1">{trFace(String(out('name') ?? ''))}</div>; break;
     case 'keys': body = <div className="dim-text clamp1">{String(out('key') ?? '')}</div>; break;
-    case 'text': body = <div className="text-body clamp4">{view.text ?? ''}</div>; break;
+    case 'text': body = <div className="text-body pre clamp4">{view.text ?? ''}</div>; break;
     case 'image': body = view.image ? <ImageCanvas img={view.image} /> : <div className="empty" />; break;
-    case 'projector': {
-      const k = view.kind;
+    case 'projector':
       body = (
-        <>
-          {k === 'image' ? <ImageCanvas img={view.image} /> : k === 'number' ? <div className={`big n${String(view.text).length > 8 ? 3 : String(view.text).length > 5 ? 2 : 1}`}>{view.text}</div> : k === 'text' ? <div className="proj-text clamp4">{view.text}</div> : <div className="empty" />}
-        </>
+        <div className="proj-wrap">
+          <ProjectorFace view={view} />
+          {!ro && <button className="expand" data-interactive aria-label={tr("Open the Projector full size")} title={tr("Open the Projector full size")} onClick={() => useStore.getState().openDialog('projector', rid)}><Icon name="expand" /></button>}
+        </div>
       );
       break;
-    }
     case 'meter':
       body = view.plot ? (
         <div className="meter-wrap">
@@ -279,6 +314,12 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
     case 'decision': body = <Art kind="fork" level={(view.best ?? -1) >= 0 ? 1 : 0.2} />; break;
     case 'state': body = <><Art kind="cycle" level={0.7} extra={Math.max(0, Number(out('index')) || 0)} /><div className="state-name clamp1">{view.state ?? ''}</div></>; break;
     case 'compound': body = <Art kind="grid" level={0.4} />; break;
+    case 'actor-fileconv': body = (
+      <ConverterFace route={String(view.route ?? routeLabel(params.from as FileKindId, params.to as FileKindId, String(params.format)))} name={String(view.name ?? '')} state={String(view.state ?? 'idle')} size={Number(view.size) || 0} />
+    ); break;
+    case 'actor-unitconv': body = (
+      <QuantityFace text={String(view.text ?? `${fmtNum(Number(params.amount), 6)}${params.from}`)} sub={view.src !== undefined ? `← ${view.src}` : ''} dim={view.text === undefined} />
+    ); break;
     default: body = fileKind ? <FileFace node={node} kind={fileKind} ro={ro} /> : def.family === 'quantity' ? <QuantityFace text={String(view.text ?? def.chip?.(params) ?? '')} sub={tr(String(view.sub ?? ''))} dim={view.text === undefined} /> : null;
   }
 
@@ -348,6 +389,8 @@ export function PreviewNode({ def, scale = 0.78 }: { def: ModuleDef; scale?: num
   else if (def.type === 'text') body = <div className="text-body">{"Hello World"}</div>;
   else if (def.type === 'color') body = <div className="hsv"><div><span>H</span><span>S</span><span>V</span></div><i style={{ background: '#0a7aff' }} /></div>;
   else if (def.type === 'projector') body = <i className="grad" />;
+  else if (def.type === 'actor-fileconv') body = <ConverterFace route="IMG → PDF" name="photo.png" state="done" size={48210} />;
+  else if (def.type === 'actor-unitconv') body = <QuantityFace text="3.28084ft" sub="← 1m" />;
   else if (def.type === 'meter') body = <svg className="art meter" viewBox="0 0 100 40" preserveAspectRatio="none"><polyline points="0,22 20,22 30,8 38,34 46,22 60,18 100,22" fill="none" stroke="currentColor" strokeWidth="1.4" vectorEffect="non-scaling-stroke" /></svg>;
   else if (def.type === 'image') body = <i className="grad dark" />;
   else if (def.type === 'motion') body = <div className="cross"><i /><b /></div>;

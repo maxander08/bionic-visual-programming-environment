@@ -37,7 +37,7 @@ export function useFileDrop(nodeId: string, disabled = false) {
   return { over, handlers };
 }
 
-function Thumb({ img }: { img: ImageSig }) {
+export function Thumb({ img }: { img: ImageSig }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const c = ref.current;

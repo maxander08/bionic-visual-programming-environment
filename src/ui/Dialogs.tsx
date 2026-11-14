@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import qrcode from 'qrcode-generator';
 import { TEMPLATES } from '../core/library';
 import { QR_BYTE_LIMIT, encodeShare, sha256Hex } from '../core/project';
@@ -9,41 +9,12 @@ import { storageAvailable, projects, clearAll } from '../state/storage';
 import { useStore } from '../state/store';
 import { exportJSON, importCode, importFile, openWithBackup, openTemplate, download, fileSlug } from '../state/actions';
 import { Canvas } from './Canvas';
+import { Modal } from './Modal';
+import { ProjectorWindow } from './ProjectorWindow';
 import { Icon } from './icons';
 import { Docs } from './docs/Docs';
 import { CURVE_COLORS, EquationPlot } from './EquationPlot';
 import { LANGS, tr } from '../i18n';
-
-function Modal({ title, onClose, children, wide, label }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean; label?: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const prev = useRef<Element | null>(null);
-  useEffect(() => {
-    prev.current = document.activeElement;
-    const el = ref.current!;
-    const focusables = () => [...el.querySelectorAll<HTMLElement>('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter((x) => !x.hasAttribute('disabled'));
-    (el.querySelector<HTMLElement>('[data-autofocus]') ?? focusables()[0] ?? el).focus();
-    const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.stopPropagation(); onClose(); }
-      if (e.key === 'Tab') {
-        const f = focusables();
-        if (!f.length) return;
-        const first = f[0], last = f[f.length - 1];
-        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-      }
-    };
-    window.addEventListener('keydown', key, true);
-    return () => { window.removeEventListener('keydown', key, true); (prev.current as HTMLElement | null)?.focus?.(); };
-  }, [onClose]);
-  return (
-    <div className="overlay" onPointerDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div ref={ref} className={`modal ${wide ? 'wide' : ''}`} role="dialog" aria-modal="true" aria-label={label ?? title} tabIndex={-1}>
-        <div className="modal-head"><h2>{title}</h2><button className="icon-btn" aria-label={tr("Close dialog")} onClick={onClose}><Icon name="close" size={16} /></button></div>
-        <div className="modal-body">{children}</div>
-      </div>
-    </div>
-  );
-}
 
 function Confirm({ onClose }: { onClose: () => void }) {
   const a = useStore((s) => s.ui.arg) as { title: string; body: string; confirm: string; danger?: boolean; onConfirm: () => void };
@@ -263,6 +234,7 @@ export function Dialogs() {
     case 'settings': return <Settings onClose={close} />;
     case 'compound': return <CompoundViewer onClose={close} />;
     case 'meter': return <MeterGraph onClose={close} />;
+    case 'projector': return <ProjectorWindow onClose={close} />;
     default: return null;
   }
 }

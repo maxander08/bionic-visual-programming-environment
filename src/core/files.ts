@@ -148,5 +148,19 @@ export function descriptorOf(kind: FileKind, info: FileInfo): FileDescriptor {
   if (!d) descs.set(info.id, (d = describeFile(kind, info)));
   return d;
 }
+/** Is this value the File record a Files node (or an Actor) sends? */
+export function isFileDescriptor(v: unknown): v is FileDescriptor {
+  const d = v as Partial<FileDescriptor> | null;
+  return !!d && typeof d === 'object' && d.kind === 'file' && typeof d.id === 'string' && typeof d.name === 'string' && FILE_KIND_BY_ID.has(d.type as FileKindId);
+}
+
+const forgetters = new Set<(id: string) => void>();
+/** Be told when a file the runtime made (a conversion result) is thrown away, so its bytes can go too. */
+export const onFileForgotten = (cb: (id: string) => void) => (forgetters.add(cb), () => void forgetters.delete(cb));
+/** Throw away what is known about a file made by an Actor. Never used for a file in a Files node. */
+export function forgetFile(id: string) {
+  infos.delete(id); descs.delete(id); states.delete(id);
+  forgetters.forEach((f) => f(id));
+}
 export const subscribeFiles = (cb: () => void) => (subs.add(cb), () => void subs.delete(cb));
 export const filesVersion = () => version;

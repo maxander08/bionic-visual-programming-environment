@@ -11,6 +11,7 @@ import { audio, notificationState, requestNotifications, vibrationSupported } fr
 import { bridge, useStore } from '../state/store';
 import { Icon } from './icons';
 import { FileInspector } from './FilePanel';
+import { FileConverterPanel, ProjectorPanel, UnitConverterPanel } from './ActorPanel';
 import { FILE_KIND_BY_TYPE } from '../core/files';
 import { tr, trFace } from '../i18n';
 
@@ -106,6 +107,11 @@ function PortTable({ node, def }: { node: NodeInst; def: ModuleDef }) {
     return o;
   }, [graph.nodes, compounds, node.id, lang]);
   const st = useStore.getState();
+  // Any value on any pin can be opened in the Projector's full-size window.
+  const viewBtn = (label: string, value: unknown) => (
+    <button type="button" className="icon-btn sm view-btn" aria-label={tr('View “{label}” in the Projector', { label })} title={tr('View in the Projector')}
+      onClick={() => st.openDialog('projector', { value, title: `${def.name} · ${label}` })}><Icon name="expand" size={12} /></button>
+  );
   return (
     <div className="ports">
       {def.inputs.length === 0 && def.outputs.length === 0 && <p className="muted">{tr("This module has no ports.")}</p>}
@@ -116,7 +122,7 @@ function PortTable({ node, def }: { node: NodeInst; def: ModuleDef }) {
         return (
           <div className="port-row" key={`i${p.id}`}>
             <div className="ph"><span className="pdir">{tr("IN")}</span><b>{p.label}</b><span className="ptype">{trFace(p.type)}{p.optional ? ' · ' + tr('optional') : ''}</span></div>
-            <div className="pval">{sig ? <>{describe(sig.v)}<i> {tr("strength")} {sig.s.toFixed(2)}</i></> : <span className="muted">{edge ? tr('no signal yet') : p.optional ? tr("not connected (optional)") : tr("not connected (required)")}</span>}</div>
+            <div className="pval">{sig ? <>{describe(sig.v)}<i> {tr("strength")} {sig.s.toFixed(2)}</i>{viewBtn(p.label, sig.v)}</> : <span className="muted">{edge ? tr('no signal yet') : p.optional ? tr("not connected (optional)") : tr("not connected (required)")}</span>}</div>
             <select aria-label={tr('Source for input {label}', { label: p.label })} value={sel} onChange={(e) => {
               if (!e.target.value) { if (edge) st.removeEdge(edge.id); return; }
               const [fn, fp] = e.target.value.split('|');
@@ -142,7 +148,7 @@ function PortTable({ node, def }: { node: NodeInst; def: ModuleDef }) {
         return (
           <div className="port-row" key={`o${p.id}`}>
             <div className="ph"><span className="pdir out">{tr("OUT")}</span><b>{p.label}</b><span className="ptype">{trFace(p.type)}</span></div>
-            <div className="pval">{sig ? <>{describe(sig.v)}<i> {tr("strength")} {sig.s.toFixed(2)}</i></> : <span className="muted">{tr("no signal")}</span>}</div>
+            <div className="pval">{sig ? <>{describe(sig.v)}<i> {tr("strength")} {sig.s.toFixed(2)}</i>{viewBtn(p.label, sig.v)}</> : <span className="muted">{tr("no signal")}</span>}</div>
             <p className="doc">{p.doc}</p>
           </div>
         );
@@ -321,6 +327,9 @@ function NodePanel({ id }: { id: string }) {
       <OutputStatus def={def} />
       {rt && rt.evals > 0 && <p className="runline">{tr("Evaluated")} {rt.evals}×{rt.lastFire >= 0 ? tr(" · last output at ") + fmtNum(rt.lastFire / 1000, 2) + ' s simulated' : tr(" · no output signal")}</p>}
       {cdef && <CompoundPanel node={node} cdef={cdef} />}
+      {node.type === 'projector' && <Section title={tr("Projector")}><ProjectorPanel id={id} /></Section>}
+      {node.type === 'actor-fileconv' && <Section title={tr("Conversion")}><FileConverterPanel node={node} /></Section>}
+      {node.type === 'actor-unitconv' && <Section title={tr("Result")}><UnitConverterPanel node={node} /></Section>}
       {FILE_KIND_BY_TYPE.has(node.type) && <Section title={tr("File")}><FileInspector node={node} kind={FILE_KIND_BY_TYPE.get(node.type)!} /></Section>}
       {defs.length > 0 && (
         <Section title={tr("Settings")}>

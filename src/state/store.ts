@@ -8,7 +8,7 @@ import { detectLang, langInfo, normalizeLang, setActiveLang, tr, type Lang } fro
 
 export interface Snapshot { graph: Graph; compounds: Record<string, CompoundDef>; name: string }
 export interface Settings { snap: boolean; motion: 'system' | 'reduced' | 'full'; minimap: boolean; tickMs: number; speed: number; language: Lang }
-export type DialogKind = null | 'templates' | 'projects' | 'share' | 'docs' | 'settings' | 'compound' | 'meter' | 'confirm' | 'group';
+export type DialogKind = null | 'templates' | 'projects' | 'share' | 'docs' | 'settings' | 'compound' | 'meter' | 'projector' | 'confirm' | 'group';
 export interface Toast { id: number; msg: string; kind: 'info' | 'error' | 'ok' }
 export interface ConfirmArg { title: string; body: string; confirm: string; danger?: boolean; onConfirm: () => void }
 

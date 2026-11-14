@@ -178,10 +178,11 @@ export const GUIDE: Record<string, NodeGuide> = {
     up: ['vision', 'color'], alias: 'picture show display photo',
   },
   projector: {
-    when: 'You want one display that picks the right layout for numbers, text or images.',
-    steps: ['Add **Projector** and connect anything to **Input**.', 'For numbers, choose a **Number format**.'],
-    tips: ['If you are unsure what type is coming, use Projector rather than Text or Image.'],
-    up: ['sense', 'counter', 'vision', 'decision'], alias: 'display show screen readout big number',
+    when: 'You want one display that picks the right layout for anything: numbers, text, images, graphs, lists, and whole files.',
+    steps: ['Add **Projector** and connect anything to **Input**.', 'For numbers, choose a **Number format**.', 'Click the expand icon in the node’s corner (or **Open full size** in the inspector) to see all of it in a large window.'],
+    tips: ['If you are unsure what type is coming, use Projector rather than Text or Image.', 'Connect a Files node’s **File** output and the Projector shows the file itself: the words of a text, Word, web or CSV file, a picture, a presentation’s slide text. In the full-size window a PDF is paged, sound and video play, a web page can be read as source or as a safe preview, and a CSV can be read as a table.', 'In the inspector every signal has its own expand button, so you can open any value in the Projector window without wiring anything.', 'The window can go full screen, and its Copy and Download buttons keep what you read.'],
+    pitfalls: ['The node itself shows only a short preview. A long text is cut there and complete in the window.', 'A shared program does not carry its files, so a Projector fed by a file shows the file’s name and a note until you drop the file on its Files node again.'],
+    up: ['sense', 'counter', 'vision', 'decision', 'file-text', 'actor-fileconv', 'actor-unitconv'], alias: 'display show screen readout big number viewer preview view popup window full size file content text',
     settings: { format: 'Only affects numbers.' },
     options: { format: { auto: 'Shows the number as-is, trimmed sensibly.', int: 'Whole number.', fixed2: 'Always two decimals.', percent: 'A 0–1 value as a percentage.' } },
   },
@@ -711,6 +712,78 @@ Object.assign(GUIDE, {
     options: { as: { auto: 'Numbers, true/false and text, each read as it looks.', number: 'Every item must be a number.', text: 'Every item stays text.' } },
   },
 } satisfies Record<string, NodeGuide>);
+
+
+/* ───── Actors ───── */
+GUIDE['actor-fileconv'] = {
+  when: 'You have a file in one category and need it in another: a picture as a PDF, a Word document as plain text, a CSV as an Excel workbook, a video as a still frame.',
+  steps: [
+    'Add a Files node (for example **Image**) from the **Files** section and drop a file on it.',
+    'Add **File Converter** from the **Actors** section and connect the Files node’s **File** output to its **File** pin.',
+    'In the inspector choose **Convert from** (the category of your file), **Convert to** and **Format**. Only conversions that really work are offered.',
+    'Press **Run**. The node says “Converting…” and then shows the new file’s name and size. Use **Download result** in the inspector to save it, or connect **File** to a [[n:projector]] to look at it.',
+  ],
+  tips: [
+    'Convert once, then convert again: the **File** output can feed another File Converter (for example Image → PDF → ZIP).',
+    'Text and tables work in both directions where it makes sense: Text → Document (.DOCX), Document → Text, CSV ↔ XLSX, Web page → Text, Spreadsheet → Web page.',
+    'Anything can be packed into a ZIP, including files that no other conversion takes.',
+    'Every setting is also a pin on the left. A [[n:constant]] holding text like `webp` on **Format** switches the result type while the program runs.',
+    '**Result name** renames the new file; leave it empty to keep the original name with the new extension.',
+  ],
+  pitfalls: [
+    'The file’s category must match **Convert from**. A picture sent to a converter that takes text is refused with a message that names both.',
+    'Changing **Convert from** can change **Convert to** and **Format**, because only valid pairs are offered. The first valid choice is used.',
+    'PDF files cannot be read for their text, and old .DOC, .XLS and .PPT files cannot be opened in a browser, so they can only be packed into a ZIP.',
+    'MP3 cannot be written (browsers cannot encode it). Sound becomes a .WAV, which is large; a very long recording is refused.',
+    'Text with characters outside Western European languages (Chinese, for example) becomes a PDF made of page pictures, so its text cannot be selected.',
+    'The converted file is not saved with the program; it is made again each time the program runs.',
+  ],
+  up: ['file-document', 'file-text', 'file-image', 'file-audio', 'file-video', 'file-spreadsheet', 'file-presentation', 'file-web', 'file-pdf', 'file-compressed'],
+  down: ['projector', 'text', 'image', 'actor-fileconv', 'timer'],
+  alias: 'convert converter file format transform change save as export import pdf docx png jpg jpeg webp bmp svg wav zip csv xlsx html txt md rtf image picture document audio video spreadsheet',
+  settings: {
+    from: 'The category of the file you will connect. Set it first: it decides what the other two settings offer.',
+    to: 'The category you want. Choose Compressed to pack any file into a ZIP.',
+    format: 'The file type of the result. The choice depends on the category you picked.',
+    name: 'Without an extension. The extension always comes from **Format**.',
+    quality: 'Only JPEG, WebP and pictures drawn into a PDF use it. 0.92 is a good balance; lower is smaller.',
+  },
+};
+
+GUIDE['actor-unitconv'] = {
+  when: 'You have a quantity in one unit and need it in another of the same kind: kilometres to miles, °C to °F, pounds to kilograms, litres to gallons.',
+  steps: [
+    'Add **Unit Converter** from the **Actors** section.',
+    'Choose the **Quantity** (the kind: Length, Mass, Temperature …). Then choose the **From unit** and the **To unit**; only units of that kind are listed.',
+    'Type an **Amount** in the inspector, or connect a number or text such as `5280ft` to the **Quantity** pin.',
+    'Read the result on **Quantity** (text like `1.609344km`), **Amount** (the number) or **Unit**. Connect it to a [[n:projector]] to see it.',
+  ],
+  tips: [
+    'Text on the **Quantity** pin brings its own unit: `26.2mi` is read as miles whatever **From unit** says. A plain number is read in the **From unit**.',
+    'Use a prefix for metric units: **To unit** *m* with **To prefix** *k* gives kilometres. Set **To prefix** to *auto* to let the converter choose.',
+    'Units like ft, lb, psi and mph take no prefix, so the prefix setting is ignored for them.',
+    '**Swap units** in the inspector turns a conversion around.',
+    'Every setting is also a pin on the left. Drive **To unit** with a [[n:switch]] or a [[n:constant]] to let the program choose the unit.',
+    'The **SI value** output is the same quantity in the metre, kilogram, second or kelvin: handy for comparing quantities written in different units.',
+  ],
+  pitfalls: [
+    'A length cannot be converted to a mass. A quantity of another kind on the **Quantity** pin (`5kg` into a length converter) raises an error that names both kinds.',
+    'Changing the **Quantity** changes the units on offer; a unit that no longer fits is replaced by the first one of the new kind.',
+    'The unit names are case-sensitive: *mm* is millimetres, *Mm* is megametres, and *Pa* is not *pa*.',
+    'Temperatures convert by their scales, not by ratio: 0 °C is 32 °F, not 0.',
+  ],
+  up: ['constant', 'switch', 'random', 'qty-length', 'qty-mass', 'qty-temperature', 'qty-time'],
+  down: ['projector', 'text', 'compare', 'meter'],
+  alias: 'convert converter unit units measurement quantity metric imperial length mass temperature celsius fahrenheit kelvin feet inches miles kilometres kilometers pounds kilograms gallons litres liters speed mph pressure psi energy area',
+  settings: {
+    group: 'Pick this first: it decides which units are listed.',
+    amount: 'Used when nothing is connected to the Quantity pin.',
+    from: 'The unit your amount is written in.',
+    fromPrefix: 'Optional SI prefix, for example *k* + *m* for kilometres.',
+    to: 'The unit you want.',
+    toPrefix: '*auto* keeps the result between 1 and 999 by choosing a prefix.',
+  },
+};
 
 /* ───── Files: one guide per kind of file ───── */
 const FILE_GUIDE: Record<string, Partial<NodeGuide> & { when: string }> = {

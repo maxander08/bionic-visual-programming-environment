@@ -2,6 +2,39 @@ import type { ModuleDef } from '../types';
 import { clamp, hsvToRgb, isImage, makeImage, toBool, toNum, toText } from '../util';
 import { isEquation, samplePlot } from '../equation';
 import { bol, inp, num, out, sel, txt } from './kit';
+import { getFileInfo, isFileDescriptor } from '../files';
+
+/** Longest value the Projector keeps for display. Longer values are cut (the view says so). */
+export const PROJECT_MAX_CHARS = 2_000_000;
+
+/**
+ * What the Projector shows for a value. The node face, the full-size pop-up and the “view” button of the inspector all draw from this,
+ * so every kind of value looks the same everywhere: numbers large, pictures drawn, a file shown by its content (text read out, a picture
+ * drawn, a PDF/sound/video played in the pop-up) rather than as the little record that travels on the wire, anything else as readable text.
+ */
+export function projectView(v: unknown, format = 'auto'): Record<string, unknown> {
+  const cut = (t: string) => (t.length > PROJECT_MAX_CHARS ? { text: t.slice(0, PROJECT_MAX_CHARS), cut: true } : { text: t, cut: false });
+  if (v === undefined || v === null) return { kind: 'empty' };
+  if (isImage(v)) return { kind: 'image', image: v };
+  if (typeof v === 'number') {
+    const t = format === 'int' ? String(Math.round(v)) : format === 'fixed2' ? v.toFixed(2) : format === 'percent' ? `${(v * 100).toFixed(0)}%` : toText(v);
+    return { kind: 'number', text: t, value: v };
+  }
+  if (isFileDescriptor(v)) {
+    const info = getFileInfo(v.id);
+    return { kind: 'file', file: v, present: !!info, image: info?.image, ...(info?.text !== undefined ? cut(info.text) : {}), textCut: info?.textCut, info };
+  }
+  if (isEquation(v)) {
+    const r = samplePlot(v);
+    if (r.ok) return { kind: 'plot', plot: r.plot };
+    return { kind: 'text', text: toText(v), error: r.error };
+  }
+  if (typeof v === 'string') return { kind: 'text', ...cut(v) };
+  if (typeof v === 'boolean') return { kind: 'text', text: v ? 'true' : 'false', cut: false };
+  let json: string;
+  try { json = JSON.stringify(v, null, 2) ?? String(v); } catch { json = String(v); }
+  return { kind: 'data', ...cut(json) };
+}
 
 const base = { category: 'Behavior' as const, family: 'behavior' as const };
 const COLORS: [string, string][] = [['white', 'White'], ['red', 'Red'], ['green', 'Green'], ['cyan', 'Cyan'], ['yellow', 'Yellow']];
@@ -23,16 +56,13 @@ export const behaviors: ModuleDef[] = [
     ...base, type: 'projector', name: 'Projector', caption: 'Projector', glyph: 'projector', family: 'projector', size: 'square', keywords: 'display output large show number text image',
     inputs: [inp('in', 'Input', 'any', 'Any value: numbers, text and images are drawn appropriately.')], outputs: [],
     params: [sel('format', 'Number format', 'auto', [['auto', 'Automatic'], ['int', 'Integer'], ['fixed2', '2 decimals'], ['percent', 'Percent (×100)']], 'How numbers are shown.')],
-    run(c) {
-      const v = c.get('in'), f = c.str('format');
-      if (isImage(v)) return c.view({ kind: 'image', image: v });
-      if (typeof v === 'number') {
-        const t = f === 'int' ? String(Math.round(v)) : f === 'fixed2' ? v.toFixed(2) : f === 'percent' ? `${(v * 100).toFixed(0)}%` : toText(v);
-        return c.view({ kind: 'number', text: t });
-      }
-      c.view({ kind: 'text', text: toText(v) });
+    run(c) { c.view(projectView(c.get('in'), c.str('format'))); },
+    doc: {
+      summary: 'The general-purpose display for anything: numbers, text, images, equations, lists and whole files.',
+      runtime: 'Chooses a layout from the value type: large number, text, picture, graph, or a file shown by its content (the words of a text, Word, web or CSV file, a picture, the first lines of a presentation). The node itself shows a short preview; the expand button in its corner opens a full-size window that shows everything: all of a long text, scrolling and selectable, a picture at full size, a PDF page by page, audio and video with player controls, and a Download button for files. The inspector has the same expand button next to every signal, so any value can be read in full.',
+      errors: ['A file that is no longer in this browser (a shared program does not carry its files) shows its name and a note instead of its content.'],
+      examples: ['Text file Content → Projector: read a file on the workspace, and open the window for the whole of it.', 'Files node File → Projector: view the file itself, whatever its kind.', 'File Converter File → Projector: see what the conversion made.'],
     },
-    doc: { summary: 'The general-purpose display for numbers, text and images.', runtime: 'Chooses a layout from the value type: image, large number, or text.' },
   },
   {
     ...base, type: 'meter', name: 'Meter', caption: 'Meter Display', glyph: 'meter', size: 'square', keywords: 'plot graph scope history equation function curve axes',

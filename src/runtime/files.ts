@@ -7,7 +7,7 @@
 import { strFromU8, unzipSync } from 'fflate';
 import type { ImageSig } from '../core/types';
 import {
-  FILE_KIND_BY_TYPE, MAX_FILE_BYTES, MAX_TEXT_CHARS, accepts, classify, extList, extOf, fmtBytes, getFileInfo, setFileInfo, setFileState, fileState,
+  FILE_KIND_BY_TYPE, MAX_FILE_BYTES, MAX_TEXT_CHARS, accepts, classify, extList, extOf, fmtBytes, getFileInfo, setFileInfo, setFileState, fileState, onFileForgotten,
   type FileInfo, type FileKind,
 } from '../core/files';
 import { useStore } from '../state/store';
@@ -57,6 +57,22 @@ async function idbGet(id: string): Promise<Rec | undefined> {
     } catch { resolve(undefined); }
   });
 }
+
+// ---- the bytes in memory -----------------------------------------------------------------------------------------
+
+// Every file the program holds (a Files node's, or one an Actor made) is reachable by id: the converters read their input here, and
+// the Projector window plays or downloads from it. Files from a Files node also live in IndexedDB so they survive a reload; what an
+// Actor makes is not kept, it is simply made again when the program runs.
+const blobs = new Map<string, Blob>();
+export const setBlob = (id: string, blob: Blob) => void blobs.set(id, blob);
+export async function getBlob(id: string): Promise<Blob | undefined> {
+  const hit = blobs.get(id);
+  if (hit) return hit;
+  const rec = await idbGet(id);
+  if (rec) blobs.set(id, rec.blob);
+  return rec?.blob;
+}
+onFileForgotten((id) => void blobs.delete(id));
 
 // ---- reading -----------------------------------------------------------------------------------------------------
 
@@ -229,6 +245,7 @@ export async function loadFile(nodeId: string, file: File): Promise<boolean> {
   let info: FileInfo;
   try { info = await analyse(id, file); } catch { setFileState(id, undefined); toast(tr('Could not read “{name}”.', { name: file.name }), 'error'); return false; }
   setFileInfo(info);
+  setBlob(id, file);
   const kept = await idbPut({ id, blob: file, name: file.name, type: file.type, modified: file.lastModified });
   // The node may have been deleted while the file was being read.
   if (!useStore.getState().project.graph.nodes[nodeId]) return false;
@@ -280,6 +297,7 @@ export function hydrate() {
     setFileState(id, 'loading');
     void idbGet(id).then(async (rec) => {
       if (!rec) { setFileState(id, 'missing'); return; }
+      setBlob(id, rec.blob);
       const f = new File([rec.blob], rec.name, { type: rec.type, lastModified: rec.modified });
       setFileInfo(await analyse(id, f));
     }).catch(() => setFileState(id, 'missing')).finally(() => { asking.delete(id); refresh(id); });
