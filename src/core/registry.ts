@@ -13,7 +13,7 @@ import { workspace } from './modules/workspace';
 import { getLang, tr } from '../i18n';
 import { localizeDef } from './localize';
 import { txt } from './modules/kit';
-import { clamp, fmtNum } from './util';
+import { clamp, fmtNum, numText } from './util';
 
 const info: ModuleDef[] = [
   {
@@ -183,7 +183,8 @@ export function resolveParams(def: ModuleDef, raw: Params): Params {
         out[p.key] = p.options.some((o) => o.value === v) ? v : p.default;
         break;
       case 'text':
-        out[p.key] = typeof v === 'string' ? v.slice(0, p.maxLength ?? 2000) : p.default;
+        // A number sent to a text setting keeps every digit (it is not tidied), so a Decimal Value never loses any.
+        out[p.key] = typeof v === 'string' ? v.slice(0, p.maxLength ?? 2000) : typeof v === 'number' && Number.isFinite(v) ? numText(v).slice(0, p.maxLength ?? 2000) : p.default;
         break;
       case 'bool':
         out[p.key] = typeof v === 'boolean' ? v : p.default;

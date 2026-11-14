@@ -1,10 +1,11 @@
 import type { ModuleDef, ParamDef, Params } from '../types';
-import { toNum } from '../util';
+import { toNum, toText } from '../util';
+import { decFromValue, formatDec, formatOptionsOf, toNumber } from '../decimal';
 import { FILE_KIND_BY_ID, isFileDescriptor, type FileKindId } from '../files';
 import { SOURCE_KINDS, formatLabel, formatsOf, isKindId, requestConversion, routeLabel, targetsOf } from '../convert';
 import { PREFIXES, autoPrefix, fmtQuantity } from '../quantities';
 import { CONV_BY_SYM, CONV_GROUPS, CONV_GROUP_BY_ID, cFromBase, cToBase, ignoresPrefix, parseConv, tidy } from '../units';
-import { inp, num, out, sel, txt } from './kit';
+import { bol, inp, num, out, sel, txt } from './kit';
 
 // The Actors section: modules that carry out one predefined job. Like every module they keep their settings in the inspector and
 // show each of them as a setting pin on the node (the registry derives the pins from the parameter list), so a signal can choose
@@ -187,4 +188,64 @@ const unitConverter: ModuleDef = {
   },
 };
 
-export const actors: ModuleDef[] = [fileConverter, unitConverter];
+// ---- Number Formatter ------------------------------------------------------------------------------------------------------
+
+const NF_MODES: [string, string][] = [
+  ['places', 'Round to n decimal places'], ['digits', 'Round to n significant digits'], ['sci', 'Scientific notation'], ['eng', 'Engineering notation'], ['plain', 'Exact (no rounding)'],
+];
+const NF_ROUNDING: [string, string][] = [
+  ['nearest', 'Nearest (halves away from zero)'], ['even', 'Nearest (halves to even)'], ['up', 'Up (toward +∞)'], ['down', 'Down (toward −∞)'], ['zero', 'Toward zero (cut off)'], ['away', 'Away from zero'],
+];
+
+const numberFormatter: ModuleDef = {
+  type: 'actor-numfmt', name: 'Number Formatter', caption: 'Number Formatter', category: 'Actors', family: 'actor', glyph: 'FMT', size: 'square', source: true,
+  keywords: 'number format formatter round rounding decimal places digits significant figures scientific engineering notation exponent mantissa precision truncate ceiling floor banker',
+  inputs: [inp('in', 'Number', 'any', 'The number to format. Text keeps every digit it has (for example the Text output of a Decimal), so the rounding is done once, on the full value. A plain number is read by its shortest exact text. It replaces Value while connected.', 'top', true)],
+  outputs: [
+    out('text', 'Formatted', 'text', 'The number written as text in the chosen format, for example 3.14, 1.235e+3 or 12.35e+3. Every digit asked for is in it, trailing zeros included.', 'bottom'),
+    out('number', 'Number', 'num', 'The rounded value as a number. A number holds about 15–17 significant digits, so a longer result is the nearest such number; use Formatted to keep every digit.', 'bottom'),
+    out('mantissa', 'Mantissa', 'num', 'The digits before the power of ten in scientific form (1.235), or in engineering form (12.35) when that is the chosen notation. Plain modes use the scientific form.', 'right'),
+    out('exponent', 'Exponent', 'num', 'The power of ten that goes with Mantissa. In engineering notation it is always a multiple of three.', 'right'),
+  ],
+  params: [
+    txt('value', 'Value', '1234.56789', 'The number to format, with as many digits as you like. Used when the Number pin has no signal.', { maxLength: 5000, placeholder: 'Any number, any number of digits' }),
+    sel('mode', 'Format', 'places', NF_MODES, 'What to do with the number. Round to n decimal places and Round to n significant digits shorten it; Scientific and Engineering notation write it with a power of ten; Exact only rewrites it, dropping nothing.'),
+    num('n', 'Digits (n)', 2, 0, 1000, 1, 'How many decimal places (Round to n decimal places) or significant digits (the other formats) to keep. For decimal places 0 gives a whole number. For significant digits and the two notations 0 means keep every digit.'),
+    sel('rounding', 'Rounding', 'nearest', NF_ROUNDING, 'How a number that does not fit is rounded. It decides what 2.5 and −2.5 become at 0 places, and whether any leftover digit pushes the last kept digit up.'),
+    bol('trim', 'Trim trailing zeros', false, 'Off: 3.1 at 3 places is 3.100. On: it is 3.1. Applies to every format, including the mantissa of scientific and engineering notation.'),
+    sel('style', 'Exponent style', 'e', [['e', 'e-notation (1.5e+3)'], ['x10', 'Times ten (1.5 × 10³)']], 'How the power of ten is written in scientific and engineering notation. Ignored by the other formats.'),
+  ],
+  run(c) {
+    const viaPin = c.has('in');
+    const src = viaPin ? c.get('in') : c.str('value');
+    const r = decFromValue(src);
+    if (!r.ok) {
+      c.view({ state: 'error' });
+      return c.fail(`${viaPin ? `“${toText(src).slice(0, 40)}”` : 'This'} is not a number, so it cannot be formatted.`);
+    }
+    const f = formatDec(r.dec, formatOptionsOf(c.params));
+    const x = toNumber(f.rounded);
+    c.emit('text', f.text);
+    if (Number.isFinite(x) && (x !== 0 || f.rounded.digits === '0')) c.emit('number', x);
+    else { c.emit('number', undefined); c.warn('The result is beyond what a number can hold (about 1e±308). Formatted still has every digit.'); }
+    const m = Number(f.mantissa);
+    c.emit('mantissa', Number.isFinite(m) ? m : undefined);
+    c.emit('exponent', f.exponent);
+    c.view({ text: f.text, mode: c.str('mode'), n: c.num('n') });
+  },
+  doc: {
+    summary: 'Rounds a number to n decimal places or n significant digits, or writes it in scientific or engineering notation. This is the only place numbers are rounded.',
+    runtime: 'Takes the number on the Number pin (or the Value setting), keeps every digit it has, and applies the chosen Format once. The result leaves as text on Formatted, as a number on Number, and as Mantissa and Exponent. Decimals never round by themselves: wire a Decimal’s Text output here to round it exactly, however many digits it has. Every setting is also a pin on the left, so signals can change the number of digits while the program runs.',
+    errors: [
+      'An input that is not a number (for example “1,5” with a comma, or “abc”) raises an error.',
+      'A number whose exponent is beyond ±99999 is refused.',
+    ],
+    examples: [
+      'Decimal (3.14159265358979323846) Text → Number Formatter (10 decimal places) → Projector: 3.1415926536.',
+      'Constant → Number Formatter (Scientific, 3 digits) → Projector: 123456 reads 1.23e+5.',
+      'Decimal Text → Number Formatter (Engineering) → Exponent output: pick the power of three for a unit prefix.',
+    ],
+  },
+};
+
+export const actors: ModuleDef[] = [fileConverter, unitConverter, numberFormatter];

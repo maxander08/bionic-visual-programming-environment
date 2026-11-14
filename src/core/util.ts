@@ -62,6 +62,12 @@ export function fmtNum(n: number, digits = 3): string {
   return s === '-0' ? '0' : s;
 }
 
+/** A number as the shortest text that reads back as exactly the same number: no digit is dropped (unlike toText, which tidies for display). */
+export const numText = (n: number): string => (Object.is(n, -0) ? '0' : String(n));
+
+/** Text for passing data on: numbers keep every digit, everything else as toText. */
+export const toExactText = (v: unknown): string => (typeof v === 'number' ? numText(v) : toText(v));
+
 export function toText(v: unknown): string {
   if (v === undefined || v === null) return '';
   if (typeof v === 'string') return v;
@@ -113,7 +119,7 @@ export function coerceTo(v: unknown, to: PortType): unknown {
     case 'bool':
       return toBool(v);
     case 'text':
-      return toText(v);
+      return toExactText(v);
     case 'image':
       return isImage(v) ? v : undefined;
     case 'data':

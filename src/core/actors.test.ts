@@ -29,11 +29,11 @@ describe('Actors in the library', () => {
   it('have their own category, between Files and Info', () => {
     expect(CATEGORIES).toContain('Actors');
     expect(CATEGORIES.indexOf('Actors')).toBe(CATEGORIES.indexOf('Files') + 1);
-    expect(MODULES.filter((m) => m.category === 'Actors').map((m) => m.type)).toEqual(['actor-fileconv', 'actor-unitconv']);
+    expect(MODULES.filter((m) => m.category === 'Actors').map((m) => m.type)).toEqual(['actor-fileconv', 'actor-unitconv', 'actor-numfmt']);
   });
 
   it('give every setting a setting pin, like every other module', () => {
-    for (const type of ['actor-fileconv', 'actor-unitconv']) {
+    for (const type of ['actor-fileconv', 'actor-unitconv', 'actor-numfmt']) {
       const d = getDef(type)!;
       const keys = paramDefsOf(d, {}).map((p) => p.key);
       expect(d.paramPins!.map((p) => p.param)).toEqual(keys);

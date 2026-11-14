@@ -122,22 +122,48 @@ describe('Integer', () => {
 });
 
 describe('Decimal', () => {
-  it('rounds to the decimal places and writes itself in the chosen notation', () => {
-    const e = build([['d', 'decimal', { value: 3.14159, places: 2, notation: 'fixed' }]]);
-    expect(e.out('d', 'out')).toBe(3.14);
-    expect(e.out('d', 'text')).toBe('3.14');
-    expect(bd.fmtDecimal(3.5, 3, 'fixed')).toBe('3.500');
-    expect(bd.fmtDecimal(3.5, 3, 'plain')).toBe('3.5');
-    expect(bd.fmtDecimal(1500, 3, 'sci')).toBe('1.5e+3');
-    expect(bd.fmtDecimal(-0.0001, 2, 'plain')).toBe('0');
+  const PI = '3.14159265358979323846264338327950288419716939937510';
+  it('never rounds: every typed digit comes out on Text, even beyond a double', () => {
+    const e = build([['d', 'decimal', { value: PI }]]);
+    expect(e.out('d', 'text')).toBe(PI);
+    expect(e.out('d', 'out')).toBe(Math.PI);
   });
-  it('tidies float noise', () => {
-    const e = build([['c', 'constant', { value: '0.30000000000000004' }], ['d', 'decimal']], [['c', 'out', 'd', 'in']]);
-    expect(e.out('d', 'out')).toBe(0.3);
+  it('keeps trailing zeros and expands exponents', () => {
+    expect(build([['d', 'decimal', { value: '3.500' }]]).out('d', 'text')).toBe('3.500');
+    expect(build([['d', 'decimal', { value: '6.022e23' }]]).out('d', 'text')).toBe('602200000000000000000000');
+    expect(build([['d', 'decimal', { value: '-1.5e-7' }]]).out('d', 'text')).toBe('-0.00000015');
+    expect(build([['d', 'decimal', { value: '.5' }]]).out('d', 'text')).toBe('0.5');
+  });
+  it('hands text to the next Decimal without losing a digit', () => {
+    const e = build([['a', 'decimal', { value: PI }], ['b', 'decimal']], [['a', 'text', 'b', 'in']]);
+    expect(e.out('b', 'text')).toBe(PI);
+  });
+  it('no longer has places or notation: those moved to the Number Formatter', () => {
+    expect(paramDefsOf(getDef('decimal')!, {}).map((p) => p.key)).toEqual(['value']);
+  });
+  it('reads a number from an old program (value saved as a number) without rounding it', () => {
+    const e = build([['d', 'decimal', { value: 0.1 + 0.2, places: 2, notation: 'fixed' }]]);
+    expect(e.out('d', 'text')).toBe('0.30000000000000004');
+  });
+  it('a number arriving on the Input is read by its shortest exact text', () => {
+    const e = build([['c', 'constant', { value: 0.1 + 0.2 }], ['d', 'decimal']], [['c', 'out', 'd', 'in']]);
+    expect(e.out('d', 'text')).toBe('0.30000000000000004');
+    expect(e.out('d', 'out')).toBe(0.1 + 0.2);
+  });
+  it('a number sent to the Value setting pin keeps every digit', () => {
+    const e = build([['c', 'constant', { value: 1 / 3 }], ['d', 'decimal', { value: '1' }]], [['c', 'out', 'd', 'p:value']]);
+    expect(e.out('d', 'text')).toBe('0.3333333333333333');
   });
   it('rejects text that is not a number', () => {
     const e = build([['c', 'constant', { kind: 'text', value: '1,5' }], ['d', 'decimal']], [['c', 'out', 'd', 'in']]);
     expect(status(e, 'd').level).toBe('error');
+    expect(status(build([['d', 'decimal', { value: 'abc' }]]), 'd').level).toBe('error');
+  });
+  it('holds a number beyond a double on Text and warns on the Decimal pin', () => {
+    const e = build([['d', 'decimal', { value: '1e400' }]]);
+    expect(e.out('d', 'out')).toBeUndefined();
+    expect(e.out('d', 'text')).toBe('1' + '0'.repeat(400));
+    expect(status(e, 'd').level).toBe('warn');
   });
 });
 

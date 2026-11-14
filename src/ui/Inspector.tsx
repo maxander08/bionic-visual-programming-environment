@@ -11,7 +11,7 @@ import { audio, notificationState, requestNotifications, vibrationSupported } fr
 import { bridge, useStore } from '../state/store';
 import { Icon } from './icons';
 import { FileInspector } from './FilePanel';
-import { FileConverterPanel, ProjectorPanel, UnitConverterPanel } from './ActorPanel';
+import { ExactValuePanel, FileConverterPanel, ProjectorPanel, UnitConverterPanel } from './ActorPanel';
 import { FILE_KIND_BY_TYPE } from '../core/files';
 import { tr, trFace } from '../i18n';
 
@@ -330,6 +330,8 @@ function NodePanel({ id }: { id: string }) {
       {node.type === 'projector' && <Section title={tr("Projector")}><ProjectorPanel id={id} /></Section>}
       {node.type === 'actor-fileconv' && <Section title={tr("Conversion")}><FileConverterPanel node={node} /></Section>}
       {node.type === 'actor-unitconv' && <Section title={tr("Result")}><UnitConverterPanel node={node} /></Section>}
+      {node.type === 'actor-numfmt' && <Section title={tr("Result")}><ExactValuePanel node={node} field="text" hint={tr('The full result, every digit. The node face shows only as much as fits.')} /></Section>}
+      {node.type === 'decimal' && <Section title={tr("Exact value")}><ExactValuePanel node={node} field="chip" hint={tr('Every digit of the number, never rounded. Use a Number Formatter to round it.')} /></Section>}
       {FILE_KIND_BY_TYPE.has(node.type) && <Section title={tr("File")}><FileInspector node={node} kind={FILE_KIND_BY_TYPE.get(node.type)!} /></Section>}
       {defs.length > 0 && (
         <Section title={tr("Settings")}>

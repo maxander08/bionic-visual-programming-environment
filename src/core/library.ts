@@ -239,4 +239,19 @@ export const TEMPLATES: Template[] = [
       b.wire('img', 'file', 'cv', 'file'); b.wire('cv', 'file', 'show', 'in');
     }),
   },
+  {
+    id: 'number-formatting', name: 'Exact decimals and Number Formatter',
+    summary: 'A Decimal keeps 35 digits of π untouched; three Number Formatters round it to 10 places, to 5 significant digits, and write it in engineering notation.',
+    expect: 'The Projectors show 3.1415926536, 3.1416 and 3.14159265358979323846264338327950288e+0. The Decimal itself never rounds: only the Number Formatters do.',
+    build: () => make('Exact decimals and Number Formatter', 'Decimal Text → Number Formatter → Projector. Wire Text, not the Decimal pin, so every digit reaches the formatter.', (b) => {
+      b.add('pi', 'decimal', 156, 0, { value: '3.14159265358979323846264338327950288' });
+      b.add('f1', 'actor-numfmt', 0, 120, { mode: 'places', n: 10 });
+      b.add('f2', 'actor-numfmt', 156, 120, { mode: 'digits', n: 5 });
+      b.add('f3', 'actor-numfmt', 312, 120, { mode: 'eng', n: 0 });
+      b.add('p1', 'projector', 0, 360);
+      b.add('p2', 'projector', 156, 360);
+      b.add('p3', 'projector', 312, 360);
+      for (const [f, p] of [['f1', 'p1'], ['f2', 'p2'], ['f3', 'p3']]) { b.wire('pi', 'text', f, 'in'); b.wire(f, 'text', p, 'in'); }
+    }),
+  },
 ];

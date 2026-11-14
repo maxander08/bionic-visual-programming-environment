@@ -34,6 +34,7 @@ const UNIT_TOKEN = /^[A-Za-z°μΩÅ$€£¥/·²³₂‾⁰¹²³⁴⁵⁶⁷�
 const ROUTE = /^[A-Za-z0-9.·]{1,6}( → [A-Za-z0-9.·]{1,6})?$/;
 DATA_FACES['actor-unitconv'] = /^(?:[←→]\s*)?[-−+]?[\d.]/;
 DATA_FACES['actor-fileconv'] = ROUTE;
+DATA_FACES['actor-numfmt'] = /^[-−+]?[\d.]/; // a formatted number: digits, a point, an exponent (1.235e+3)
 const SYMBOLS = /\b(Hz|UTC)\b/g;
 const OK_QTY = /^[=\s\d.eE+\-−]*[A-Za-zμΩ°/·²³₂‾⁰¹²³⁴⁵⁶⁷⁸⁹]{1,6}$/;
 /** A unit symbol alone, or a number followed by one: what an Actor face shows. */

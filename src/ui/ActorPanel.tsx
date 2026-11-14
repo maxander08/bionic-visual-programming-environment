@@ -69,3 +69,24 @@ export function ProjectorPanel({ id }: { id: string }) {
     </div>
   );
 }
+
+/** A number written out in full, selectable, with a Copy button: nodes show only the start of a long number on their face. */
+export function ExactValuePanel({ node, field, hint }: { node: NodeInst; field: 'text' | 'chip'; hint: string }) {
+  useNodeVer(node.id);
+  const rt = engine.nodes.get(node.id);
+  const view = (rt?.viewData ?? {}) as Record<string, unknown>;
+  const v = typeof view[field] === 'string' ? (view[field] as string) : undefined;
+  const copy = () => {
+    if (v === undefined) return;
+    navigator.clipboard?.writeText(v).then(() => toast(tr('Copied.'), 'ok'), () => toast(tr('Copying is not allowed here.'), 'error'));
+  };
+  return (
+    <div className="field">
+      {v !== undefined
+        ? <p className="exact-val" tabIndex={0} aria-label={hint}>{v}</p>
+        : <p className="status-line warn">{tr('Press Run to see the result.')}</p>}
+      {v !== undefined && <div className="btn-row"><button type="button" className="btn sm" onClick={copy}>{tr('Copy')}</button></div>}
+      <p className="doc">{hint}</p>
+    </div>
+  );
+}

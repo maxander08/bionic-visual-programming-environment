@@ -374,6 +374,7 @@ fieldset.driven { margin: 0; padding: 0; border: 0; min-width: 0; opacity: 0.5; 
 .qty-val .qa { color: #e9f7c4; } .qty-val .qu { color: var(--c, #b6e34a); margin-left: 1px; }
 .qty-sub { font-size: 10.5px; color: #8fa85a; max-width: 100%; min-height: 1.2em; font-variant-numeric: tabular-nums; }
 .qty.idle .qty-val { opacity: 0.72; }
+.exact-val { margin: 0; padding: 8px 10px; border-radius: 8px; border: 1px solid #17382c; background: #04120c; color: #e9f7c4; font-size: 12px; line-height: 1.5; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; word-break: break-all; max-height: 9em; overflow: auto; user-select: text; }
 
 /* ───── Files: one node per kind of file. The face is a drop target (and a button) until it holds a file. ───── */
 .file-input { display: none; }

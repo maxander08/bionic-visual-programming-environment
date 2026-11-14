@@ -1,8 +1,9 @@
 import type { ModuleDef } from '../types';
-import { toNum, toText } from '../util';
+import { toNum, toText, toExactText } from '../util';
+import { decFromValue, isZero, parseDec, toNumber, toPlain, type Dec } from '../decimal';
 import {
-  INT_MAX, INT_MIN, MAX_ITEMS, applyCase, caseChar, chars, clampInt, codePointOf, fmtCodePoint, fmtDecimal, fmtInt, fmtItem, fmtList, itemAt,
-  parseItems, quote, readBool, roundInt, roundPlaces, validCodePoint, wordsFor,
+  INT_MAX, INT_MIN, MAX_ITEMS, applyCase, caseChar, chars, clampInt, codePointOf, fmtCodePoint, fmtInt, fmtItem, fmtList, itemAt,
+  parseItems, quote, readBool, roundInt, validCodePoint, wordsFor,
 } from '../basedata';
 import { bol, inp, num, out, sel, txt } from './kit';
 
@@ -55,32 +56,43 @@ export const baseData: ModuleDef[] = [
   /* ───── Decimal ───── */
   {
     ...base, type: 'decimal', name: 'Decimal', caption: 'Decimal', glyph: 'Dec',
-    keywords: 'float double real fraction floating point number precision places scientific',
-    chip: (p) => fmtDecimal(Number(p.value), Number(p.places), String(p.notation)),
-    inputs: [IN('A number, text such as 3.14 or 1.5e3, or true/false.')],
+    keywords: 'float double real fraction floating point number precision arbitrary exact digits pi',
+    chip: (p) => { const r = parseDec(String(p.value)); return r.ok ? toPlain(r.dec) : String(p.value); },
+    inputs: [IN('A number, text such as 3.14159265358979323846 or 1.5e3, or true/false. Text keeps every digit.')],
     outputs: [
-      out('out', 'Decimal', 'num', 'The number, rounded to the chosen Decimal places.'),
-      out('text', 'Text', 'text', 'The number written as text in the chosen Notation.'),
+      out('out', 'Decimal', 'num', 'The number as a double-precision value: the closest one to the exact digits (about 15–17 significant digits). Nothing is rounded to a chosen number of places. To carry every digit, use Text.'),
+      out('text', 'Text', 'text', 'The number written out in full with every digit it was given, never rounded and never in exponent form. Wire it to a Number Formatter, a Projector or another Decimal to keep all of its digits.'),
     ],
     params: [
-      num('value', 'Value', 1.5, -1e15, 1e15, 0.1, 'The number to emit. It may have a fractional part.'),
-      num('places', 'Decimal places', 6, 0, 12, 1, 'How many digits after the decimal point are kept. The Decimal output is rounded to this many.'),
-      sel('notation', 'Notation', 'plain', [['plain', 'Plain (3.5)'], ['fixed', 'Fixed (3.500)'], ['sci', 'Scientific (3.5e+0)']], 'How the number is written on the node face and on the Text output. Plain drops trailing zeros, Fixed always shows every place.'),
+      txt('value', 'Value', '1.5', 'The number to emit, with as many digits as you like: 3.14159265358979323846264338327950288 is kept whole. Digits after the point, trailing zeros and an exponent (6.022e23) are all allowed.', { maxLength: 5000, placeholder: 'Any number, any number of digits' }),
     ],
     run(c) {
-      const raw = c.has('in') ? toNum(c.get('in')) : c.num('value');
-      if (!Number.isFinite(raw)) return c.fail(`${c.has('in') ? `“${toText(c.get('in'))}”` : 'This'} is not a number, so it cannot become a decimal.`);
-      const x = roundPlaces(raw, c.num('places'));
-      const text = fmtDecimal(x, c.num('places'), c.str('notation'));
-      c.emit('out', x);
+      let dec: Dec;
+      if (c.has('in')) {
+        const v = c.get('in');
+        const r = decFromValue(v);
+        if (!r.ok) return c.fail(`“${toText(v)}” is not a number, so it cannot become a decimal.`);
+        dec = r.dec;
+      } else {
+        const r = parseDec(c.str('value'));
+        if (!r.ok) return c.fail('This is not a number, so it cannot become a decimal.');
+        dec = r.dec;
+      }
+      const text = toPlain(dec);
+      const x = toNumber(dec);
+      if (Number.isFinite(x) && (x !== 0 || isZero(dec))) c.emit('out', x);
+      else {
+        c.emit('out', undefined);
+        c.warn('This number is beyond what the Decimal pin can hold (about 1e±308). The Text pin still has every digit.');
+      }
       c.emit('text', text);
       c.view({ chip: text });
     },
     doc: {
-      summary: 'A number with a fractional part, such as 3.14 or −0.5. Converts anything it is given into a decimal.',
-      runtime: 'Emits the Value (or the converted Input) rounded to Decimal places (0–12), and the same number as text in the chosen Notation. Numbers are double-precision, so about 15 significant digits are exact.',
-      errors: ['An Input that is not a number raises an error.'],
-      examples: ['Decimal → Multiplier: scale a signal by an exact factor.', 'Random → Decimal: tidy a noisy number to 2 places.', 'Decimal Text (Fixed) → Projector: show 3.50 with its zero.'],
+      summary: 'A number with a fractional part, such as 3.14 or −0.5, with as many digits as you want. Nothing is ever rounded.',
+      runtime: 'Keeps exactly the digits you type (or that arrive as text) and emits them in full on Text. The Decimal pin carries the closest double-precision number, which holds about 15–17 significant digits: use Text, a Number Formatter or another Decimal when every digit matters. Rounding, decimal places and notation are done by the Number Formatter actor.',
+      errors: ['An Input that is not a number raises an error.', 'A number whose exponent is beyond ±99999 is refused.'],
+      examples: ['Decimal Text → Number Formatter: round 3.14159265358979323846 to 10 places without losing the rest first.', 'Decimal → Multiplier: scale a signal by a factor.', 'Decimal Text (3.50) → Projector: show 3.50 with its zero.'],
     },
   },
 
@@ -100,7 +112,7 @@ export const baseData: ModuleDef[] = [
       bol('trim', 'Trim', false, 'Remove spaces and line breaks from the start and the end.'),
     ],
     run(c) {
-      let s = c.has('in') ? toText(c.get('in')) : c.str('value');
+      let s = c.has('in') ? toExactText(c.get('in')) : c.str('value');
       if (c.bool('trim')) s = s.trim();
       s = applyCase(s, c.str('case'));
       c.emit('out', s);

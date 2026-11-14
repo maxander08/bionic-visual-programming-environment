@@ -182,7 +182,7 @@ export const GUIDE: Record<string, NodeGuide> = {
     steps: ['Add **Projector** and connect anything to **Input**.', 'For numbers, choose a **Number format**.', 'Click the expand icon in the node’s corner (or **Open full size** in the inspector) to see all of it in a large window.'],
     tips: ['If you are unsure what type is coming, use Projector rather than Text or Image.', 'Connect a Files node’s **File** output and the Projector shows the file itself: the words of a text, Word, web or CSV file, a picture, a presentation’s slide text. In the full-size window a PDF is paged, sound and video play, a web page can be read as source or as a safe preview, and a CSV can be read as a table.', 'In the inspector every signal has its own expand button, so you can open any value in the Projector window without wiring anything.', 'The window can go full screen, and its Copy and Download buttons keep what you read.'],
     pitfalls: ['The node itself shows only a short preview. A long text is cut there and complete in the window.', 'A shared program does not carry its files, so a Projector fed by a file shows the file’s name and a note until you drop the file on its Files node again.'],
-    up: ['sense', 'counter', 'vision', 'decision', 'file-text', 'actor-fileconv', 'actor-unitconv'], alias: 'display show screen readout big number viewer preview view popup window full size file content text',
+    up: ['sense', 'counter', 'vision', 'decision', 'file-text', 'actor-fileconv', 'actor-unitconv', 'actor-numfmt'], alias: 'display show screen readout big number viewer preview view popup window full size file content text',
     settings: { format: 'Only affects numbers.' },
     options: { format: { auto: 'Shows the number as-is, trimmed sensibly.', int: 'Whole number.', fixed2: 'Always two decimals.', percent: 'A 0–1 value as a percentage.' } },
   },
@@ -578,30 +578,28 @@ Object.assign(GUIDE, {
     },
   },
   decimal: {
-    when: 'You need a number that can have a fractional part, and control over how many places it keeps.',
+    when: 'You need a number with a fractional part and you want it kept exactly as typed, with as many digits as you like.',
     steps: [
-      'Add **Decimal** and type a **Value** such as 3.14159.',
-      'Set **Decimal places** to the precision you want to keep.',
-      'Connect **Decimal** to anything that takes a number, or **Text** to a [[n:projector]] to display it.',
+      'Add **Decimal** and type a **Value** such as 3.14159265358979323846264338327950288.',
+      'Connect **Text** to a [[n:projector]] to see every digit, or to a [[n:actor-numfmt]] to round or reformat it.',
+      'Connect **Decimal** to anything that takes a number (it is the nearest double-precision number).',
     ],
     tips: [
-      'Rounding to a few places tidies up float noise: 0.1 + 0.2 becomes 0.3 at 6 places.',
-      'Pick *Fixed* notation to always show every place (3.500) and *Scientific* for very large or small numbers (1.5e+3).',
-      'Value, Decimal places and Notation have setting pins on the top edge.',
+      'A Decimal never rounds. Every digit you type, including trailing zeros (3.50), comes out on **Text**.',
+      'To round to n places or n digits, or to write the number in scientific or engineering notation, use a [[n:actor-numfmt]] from the **Actors** section.',
+      'Wire **Text** (not **Decimal**) into the Number Formatter when the number has more than about 15 digits, so nothing is lost before it is rounded.',
+      'Exponents are understood: 6.022e23 comes out as 602200000000000000000000.',
     ],
     pitfalls: [
-      'Numbers are double-precision: about 15 significant digits are exact, so very long values lose their tail.',
-      'Decimal places apply to the output, not just the display: the Decimal output really is rounded.',
+      'The **Decimal** pin is a double-precision number, which holds about 15–17 significant digits. The **Text** pin is the one that keeps all of them.',
       'Input text that is not a number (for example “1,5” with a comma) raises an error.',
+      'A number beyond about 1e308 has no number form: the Decimal pin stays empty with a warning, and Text still has every digit.',
     ],
-    up: ['constant', 'random', 'integer', 'wave', 'string'], down: ['mul', 'add', 'compare', 'projector', 'meter'],
-    alias: 'float double real fraction floating point precision places scientific notation base data type',
+    up: ['constant', 'random', 'integer', 'wave', 'string'], down: ['actor-numfmt', 'mul', 'add', 'compare', 'projector', 'meter'],
+    alias: 'float double real fraction floating point precision places arbitrary exact digits big pi base data type',
     settings: {
-      value: 'Any number from −10¹⁵ to 10¹⁵.',
-      places: '0 keeps whole numbers only; 12 is the most.',
-      notation: 'Display only: it changes the node face and the Text output, not the Decimal output.',
+      value: 'Any number, with any number of digits (up to 5000 characters). Commas are not accepted; use a point.',
     },
-    options: { notation: { plain: 'Trailing zeros dropped: 3.5.', fixed: 'Every place shown: 3.500.', sci: 'Mantissa and exponent: 3.5e+0.' } },
   },
   string: {
     when: 'You need a piece of text: a message, a label, a name, a command.',
@@ -614,7 +612,7 @@ Object.assign(GUIDE, {
     tips: [
       'Case can change the text to capitals, small letters or Capitalize Words, and Trim removes stray spaces. Both have setting pins.',
       'Length counts characters the way a person does: an emoji is one, not two.',
-      'Numbers arrive written the way they would appear in a display (1.5, not 1.500000), and lists arrive as their JSON text.',
+      'Numbers arrive with every digit they have (0.1 + 0.2 is 0.30000000000000004), and lists arrive as their JSON text. To shorten them, use a [[n:actor-numfmt]].',
     ],
     pitfalls: [
       'Text is not a number: “42” only becomes 42 when you send it to a module that takes numbers. Use [[n:integer]] or [[n:decimal]] to convert it.',
@@ -782,6 +780,60 @@ GUIDE['actor-unitconv'] = {
     fromPrefix: 'Optional SI prefix, for example *k* + *m* for kilometres.',
     to: 'The unit you want.',
     toPrefix: '*auto* keeps the result between 1 and 999 by choosing a prefix.',
+  },
+};
+
+GUIDE['actor-numfmt'] = {
+  when: 'You need a number rounded to some decimal places or digits, or written in scientific or engineering notation, for display or for the next step of your program.',
+  steps: [
+    'Add **Number Formatter** from the **Actors** section.',
+    'Pick the **Format**: round to n decimal places, round to n significant digits, scientific notation, engineering notation, or exact.',
+    'Set **Digits (n)**, and the **Rounding** rule if you need something other than the nearest.',
+    'Type a **Value** in the inspector, or connect a number (or the **Text** of a [[n:decimal]]) to the **Number** pin.',
+    'Read the result on **Formatted** (text), **Number**, **Mantissa** or **Exponent**. Connect it to a [[n:projector]] to see it.',
+  ],
+  tips: [
+    'This is the only node that rounds. [[n:decimal]] keeps every digit, so you choose when and how much to round.',
+    'Feed it the **Text** output of a Decimal to round a number with more than 15 digits exactly; the **Decimal** pin is only a double.',
+    '**Digits (n)** means decimal places for *Round to n decimal places* and significant digits for everything else. In the digits and notation formats, 0 keeps every digit.',
+    'Engineering notation keeps the exponent a multiple of 3 (12.35e+3), which lines up with the SI prefixes. **Exponent** gives that power for a Quantities prefix.',
+    '**Trim trailing zeros** turns 3.100 into 3.1. **Exponent style** switches 1.5e+3 to 1.5 × 10³.',
+    'Every setting is also a pin on the left, so a signal can change the number of digits while the program runs.',
+  ],
+  pitfalls: [
+    'Rounding 2.5 to 0 places gives 3 with *Nearest* but 2 with *halves to even*. Pick the rule your field uses.',
+    '**Number** is a double-precision number: a result with more than about 15 digits is the nearest such number. **Formatted** always has every digit.',
+    'A value that is not a number (“1,5”, “abc”) raises an error; the comma is not a decimal point.',
+    'Rounding a number up can add a digit: 9.99 to 2 significant digits is 10, shown as 10.',
+  ],
+  up: ['decimal', 'integer', 'constant', 'random', 'string', 'qty-length'],
+  down: ['projector', 'text', 'string', 'compare'],
+  alias: 'number format formatter round rounding decimal places digits significant figures scientific engineering notation exponent mantissa precision truncate ceiling floor banker',
+  settings: {
+    value: 'Used when nothing is connected to the Number pin. Any number of digits.',
+    mode: 'Decimal places and significant digits shorten the number; the notations write it with a power of ten; Exact only rewrites it.',
+    n: 'Decimal places or significant digits, 0 to 1000. For significant digits, scientific and engineering, 0 keeps every digit.',
+    rounding: 'Only matters when digits are cut off.',
+    trim: 'Off keeps the zeros the digits count asks for (3.100); on removes them (3.1).',
+    style: 'Only used by scientific and engineering notation.',
+  },
+  options: {
+    mode: {
+      places: 'Fixed number of digits after the point: 3.14159 at 2 places is 3.14.',
+      digits: 'Fixed number of significant digits: 31415.9 at 3 digits is 31400.',
+      sci: 'One digit before the point and a power of ten: 31415.9 is 3.14159e+4.',
+      eng: 'One to three digits before the point and a power of ten that is a multiple of 3: 31415.9 is 31.4159e+3.',
+      plain: 'Every digit, written out without an exponent. Nothing is rounded.',
+    },
+    rounding: {
+      nearest: 'The closest value; a tie goes away from zero: 2.5 → 3, −2.5 → −3.',
+      even: 'The closest value; a tie goes to the even digit: 2.5 → 2, 3.5 → 4.',
+      up: 'Always toward +∞: 2.1 → 3, −2.9 → −2.',
+      down: 'Always toward −∞: 2.9 → 2, −2.1 → −3.',
+      zero: 'Cut the extra digits off: 2.9 → 2, −2.9 → −2.',
+      away: 'Any leftover digit pushes the number away from zero: 2.1 → 3, −2.1 → −3.',
+    },
+    style: { e: 'The letter e and a signed exponent: 1.5e+3.', x10: 'Times ten to a superscript power: 1.5 × 10³.' },
   },
 };
 

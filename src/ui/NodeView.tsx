@@ -12,6 +12,7 @@ import { EquationPlot } from './EquationPlot';
 import { FileFace, FilePreview, Thumb, useFileDrop } from './FilePanel';
 import { FILE_KIND_BY_TYPE, fmtBytes, type FileDescriptor } from '../core/files';
 import { routeLabel } from '../core/convert';
+import { formatText } from '../core/decimal';
 import type { FileKindId } from '../core/files';
 import { getLang, langInfo, normalizeLang, tr, trFace, trPlace } from '../i18n';
 import { fmtClockDate, fmtClockTime, fmtCountdown } from '../i18n/format';
@@ -70,6 +71,17 @@ function QuantityFace({ text, sub, dim }: { text: string; sub: string; dim?: boo
       <div className="qty-sub clamp1" title={sub}>{sub || ' '}</div>
     </div>
   );
+}
+
+/** What a Number Formatter is set to do, in a few words for under its number. */
+function numFmtSub(mode: string, n: number): string {
+  switch (mode) {
+    case 'places': return n === 1 ? tr('1 decimal place') : tr('{n} decimal places', { n });
+    case 'digits': return n > 0 ? tr('{n} sig. digits', { n }) : tr('All digits');
+    case 'sci': return n > 0 ? tr('Sci · {n} sig. digits', { n }) : tr('Scientific');
+    case 'eng': return n > 0 ? tr('Eng · {n} sig. digits', { n }) : tr('Engineering');
+    default: return tr('Exact');
+  }
 }
 
 /** The face of the File Converter: the route (IMG → PDF), the file it is working on, and what state it is in. */
@@ -320,6 +332,11 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
     case 'actor-unitconv': body = (
       <QuantityFace text={String(view.text ?? `${fmtNum(Number(params.amount), 6)}${params.from}`)} sub={view.src !== undefined ? `← ${view.src}` : ''} dim={view.text === undefined} />
     ); break;
+    case 'actor-numfmt': {
+      const shown = typeof view.text === 'string' ? view.text : (formatText(String(params.value), params)?.text ?? String(params.value));
+      body = <QuantityFace text={shown} sub={numFmtSub(String(view.mode ?? params.mode), Number(view.n ?? params.n))} dim={view.text === undefined} />;
+      break;
+    }
     default: body = fileKind ? <FileFace node={node} kind={fileKind} ro={ro} /> : def.family === 'quantity' ? <QuantityFace text={String(view.text ?? def.chip?.(params) ?? '')} sub={tr(String(view.sub ?? ''))} dim={view.text === undefined} /> : null;
   }
 
@@ -391,6 +408,7 @@ export function PreviewNode({ def, scale = 0.78 }: { def: ModuleDef; scale?: num
   else if (def.type === 'projector') body = <i className="grad" />;
   else if (def.type === 'actor-fileconv') body = <ConverterFace route="IMG → PDF" name="photo.png" state="done" size={48210} />;
   else if (def.type === 'actor-unitconv') body = <QuantityFace text="3.28084ft" sub="← 1m" />;
+  else if (def.type === 'actor-numfmt') body = <QuantityFace text="1.235e+3" sub={numFmtSub('sci', 4)} />;
   else if (def.type === 'meter') body = <svg className="art meter" viewBox="0 0 100 40" preserveAspectRatio="none"><polyline points="0,22 20,22 30,8 38,34 46,22 60,18 100,22" fill="none" stroke="currentColor" strokeWidth="1.4" vectorEffect="non-scaling-stroke" /></svg>;
   else if (def.type === 'image') body = <i className="grad dark" />;
   else if (def.type === 'motion') body = <div className="cross"><i /><b /></div>;

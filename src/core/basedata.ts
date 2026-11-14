@@ -1,6 +1,6 @@
 // Pure support for the Base Data section: Integer, Decimal, String, Character, Boolean and Array. No engine, no UI.
 
-import { fmtNum } from './util';
+import { numText } from './util';
 
 /* ───── Integer ───── */
 
@@ -32,29 +32,7 @@ export function fmtInt(x: number, base: IntBase | string = 'dec'): string {
 }
 
 /* ───── Decimal ───── */
-
-export type Notation = 'plain' | 'fixed' | 'sci';
-
-/** Round to a number of decimal places (0–12). */
-export function roundPlaces(x: number, places: number): number {
-  const p = Math.min(12, Math.max(0, Math.round(places)));
-  return Number(x.toFixed(p)) + 0;
-}
-
-const trimZeros = (s: string) => (s.includes('.') ? s.replace(/0+$/, '').replace(/\.$/, '') : s);
-
-export function fmtDecimal(x: number, places: number, notation: Notation | string = 'plain'): string {
-  if (!Number.isFinite(x)) return String(x);
-  const p = Math.min(12, Math.max(0, Math.round(places)));
-  if (notation === 'sci') {
-    const [m, e] = x.toExponential(p).split('e');
-    return `${trimZeros(m)}e${e}`;
-  }
-  if (Math.abs(x) >= 1e21) return String(x);
-  const s = x.toFixed(p);
-  const out = notation === 'fixed' ? s : trimZeros(s);
-  return out === '-0' ? '0' : out;
-}
+// A Decimal keeps whatever digits it is given: see decimal.ts. Rounding and notation belong to the Number Formatter actor.
 
 /* ───── String and Character ───── */
 
@@ -137,7 +115,7 @@ export function parseItems(text: string, separator: string, as: ItemsAs | string
 
 export function fmtItem(v: unknown): string {
   if (typeof v === 'string') return quote(v);
-  if (typeof v === 'number') return fmtNum(v, 6);
+  if (typeof v === 'number') return numText(v);
   if (typeof v === 'boolean' || v === null || v === undefined) return String(v);
   try { return JSON.stringify(v); } catch { return String(v); }
 }
