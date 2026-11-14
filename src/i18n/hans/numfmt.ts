@@ -106,7 +106,7 @@ export const numfmt: Record<string, string> = {
   'Exact decimals and Number Formatter': '精确小数与数字格式化器',
   'A Decimal keeps 35 digits of π untouched; three Number Formatters round it to 10 places, to 5 significant digits, and write it in engineering notation.': '一个小数原样保留 35 位 π；三个数字格式化器分别把它舍入到 10 位小数、5 位有效数字，并用工程记数法写出。',
   'The Projectors show 3.1415926536, 3.1416 and 3.14159265358979323846264338327950288e+0. The Decimal itself never rounds: only the Number Formatters do.': '投影器显示 3.1415926536、3.1416 和 3.14159265358979323846264338327950288e+0。小数本身从不舍入：只有数字格式化器会舍入。',
-  'Decimal Text → Number Formatter → Projector. Wire Text, not the Decimal pin, so every digit reaches the formatter.': '小数“文本” → 数字格式化器 → 投影器。请接“文本”而不是“小数”引脚，这样每一位数字都能到达格式化器。',
+  'Decimal → Number Formatter → Projector. Both the Decimal pin and the Text pin carry every digit.': '小数 → 数字格式化器 → 投影器。“小数”和“文本”两个引脚都会携带每一位数字。',
 
   /* messages */
   'This is not a number, so it cannot be formatted.': '这不是数字，无法格式化。',

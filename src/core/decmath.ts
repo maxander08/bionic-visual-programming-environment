@@ -30,6 +30,8 @@ export const fromInt = (n: number): Dec => {
 export function toDec(v: unknown): Dec | null {
   const r = decFromValue(v);
   if (r.ok) return r.dec;
+  // Only fall back to JS Number() for non-decimal literals (0xFF, 0b101, 0o77), not out-of-range decimals like 1e-100000.
+  if (typeof v === 'string' && !/^[+-]?0[xXbBoO]/.test(v.trim())) return null;
   const n = toNum(v);
   return Number.isFinite(n) ? fromNumber(n) : null;
 }
@@ -94,10 +96,13 @@ export const min = (a: Dec, b: Dec): Dec => (cmp(a, b) <= 0 ? a : b);
 export const max = (a: Dec, b: Dec): Dec => (cmp(a, b) >= 0 ? a : b);
 export const isInteger = (d: Dec): boolean => canon(d).scale <= 0;
 
-/** a ÷ b to `prec` significant digits. Exact (and unpadded) when the quotient ends sooner. */
-export function div(a: Dec, b: Dec, prec = DEFAULT_PRECISION): Dec {
-  if (isZero(b)) throw new DecError('Division by zero.');
-  if (isZero(a)) return ZERO;
+function gcd(x: bigint, y: bigint): bigint {
+  while (y !== 0n) { const t = x % y; x = y; y = t; }
+  return x;
+}
+
+/** a ÷ b rounded to `prec` significant digits (internal helper when a non-exact caller always wants `prec` digits). */
+function divToPrec(a: Dec, b: Dec, prec: number): Dec {
   const A = BigInt(a.digits), B = BigInt(b.digits);
   const k = Math.max(0, prec + 3 + b.digits.length - a.digits.length);
   const num = A * P10(k);
@@ -106,6 +111,33 @@ export function div(a: Dec, b: Dec, prec = DEFAULT_PRECISION): Dec {
   // A leftover remainder is remembered as one extra non-zero digit, so rounding never mistakes “just under” for an exact tie.
   if (r !== 0n) { digits += '1'; scale += 1; }
   return canon(roundSignificant({ neg: a.neg !== b.neg, digits, scale }, prec));
+}
+
+/** a ÷ b to `prec` significant digits. Exact (and unpadded) whenever the quotient terminates in base 10. */
+export function div(a: Dec, b: Dec, prec = DEFAULT_PRECISION): Dec {
+  if (isZero(b)) throw new DecError('Division by zero.');
+  if (isZero(a)) return ZERO;
+  const A = BigInt(a.digits), B = BigInt(b.digits);
+  const neg = a.neg !== b.neg;
+  // A quotient terminates in base 10 iff the reduced denominator has only factors of 2 and 5.
+  const g = gcd(A, B);
+  const A1 = A / g;
+  let B1 = B / g;
+  let c2 = 0, c5 = 0;
+  while (B1 > 1n && (B1 & 0x3fffffffn) === 0n && c2 <= MAX_DIGITS) { B1 >>= 30n; c2 += 30; }
+  while (B1 > 1n && (B1 & 1n) === 0n && c2 <= MAX_DIGITS) { B1 >>= 1n; c2++; }
+  while (B1 > 1n && B1 % 1220703125n === 0n && c5 <= MAX_DIGITS) { B1 /= 1220703125n; c5 += 13; }
+  while (B1 > 1n && B1 % 5n === 0n && c5 <= MAX_DIGITS) { B1 /= 5n; c5++; }
+  if (B1 === 1n) {
+    const m = Math.max(c2, c5);
+    const extra = c2 > c5 ? Math.ceil((c2 - c5) * 0.699) : Math.ceil((c5 - c2) * 0.302);
+    if (A1.toString().length + extra <= MAX_DIGITS) {
+      const mult = c2 > c5 ? 5n ** BigInt(c2 - c5) : 2n ** BigInt(c5 - c2);
+      const digits = (A1 * mult).toString();
+      if (digits.length <= MAX_DIGITS) return canon({ neg, digits, scale: a.scale - b.scale + m });
+    }
+  }
+  return divToPrec(a, b, prec);
 }
 
 /** The remainder with the sign of b (JavaScript's ((a % b) + b) % b), exact. */
@@ -139,7 +171,7 @@ function isqrt(n: bigint): bigint {
   }
 }
 
-/** Square root to `prec` significant digits (exact for perfect squares such as 2.25). */
+/** Square root to `prec` significant digits (exact and unpadded for perfect squares such as 2.25). */
 export function sqrt(a: Dec, prec = DEFAULT_PRECISION): Dec {
   if (a.neg && !isZero(a)) throw new DecError('The square root of a negative number is not a real number.');
   if (isZero(a)) return ZERO;
@@ -149,7 +181,8 @@ export function sqrt(a: Dec, prec = DEFAULT_PRECISION): Dec {
   if ((((s % 2) + 2) % 2) === 1) { N *= 10n; s += 1; }
   const r = isqrt(N);
   let digits = r.toString(), scale = s / 2;
-  if (r * r !== N) { digits += '1'; scale += 1; }
+  if (r * r === N) return canon({ neg: false, digits, scale });
+  digits += '1'; scale += 1;
   return canon(roundSignificant({ neg: false, digits, scale }, prec));
 }
 
@@ -189,12 +222,31 @@ function piFixed(W: number): bigint {
   return pi;
 }
 
-function ln2Fixed(W: number): bigint {
+const ln2Cache = new Map<number, bigint>();
+const ln10Cache = new Map<number, bigint>();
+function atanhInvFixed(n: bigint, W: number): bigint {
   const one = P10(W);
-  const z = one / 3n, z2 = (z * z) / one;
-  let term = z, sum = z, k = 1n;
-  while (term !== 0n) { term = (term * z2) / one; k += 2n; sum += term / k; }
-  return 2n * sum;
+  const n2 = n * n;
+  let term = one / n, sum = term, k = 1n;
+  while (term !== 0n) { term /= n2; k += 2n; sum += term / k; }
+  return sum;
+}
+function ln2Fixed(W: number): bigint {
+  const hit = ln2Cache.get(W);
+  if (hit !== undefined) return hit;
+  const v = 2n * atanhInvFixed(3n, W);
+  if (ln2Cache.size > 8) ln2Cache.clear();
+  ln2Cache.set(W, v);
+  return v;
+}
+function ln10Fixed(W: number): bigint {
+  const hit = ln10Cache.get(W);
+  if (hit !== undefined) return hit;
+  // 10 = 8 × (5/4), and ln(5/4) = 2·atanh(1/9).
+  const v = 3n * ln2Fixed(W) + 2n * atanhInvFixed(9n, W);
+  if (ln10Cache.size > 8) ln10Cache.clear();
+  ln10Cache.set(W, v);
+  return v;
 }
 
 const EXP_LIMIT = 20000;
@@ -222,42 +274,77 @@ export function exp(x: Dec, prec = DEFAULT_PRECISION): Dec {
   return fromFixed(sum, W, prec);
 }
 
+const HALF_DEC: Dec = { neg: false, digits: '5', scale: 1 };
+const TWO_DEC: Dec = { neg: false, digits: '2', scale: 0 };
+
 /** Natural logarithm to `prec` significant digits. */
 export function ln(x: Dec, prec = DEFAULT_PRECISION): Dec {
   if (x.neg || isZero(x)) throw new DecError('The logarithm is only defined for numbers above zero.');
   const near = sub(x, ONE);
-  const W = prec + 23 + (isZero(near) ? 0 : Math.max(0, -leadExp(near)));
-  const m = Number('0.' + x.digits.slice(0, 15));
-  const est = (leadExp(x) + 1) * Math.log2(10) + Math.log2(m);
-  const j = Math.round(est);
-  const y = j >= 0 ? div(x, fromBig(1n << BigInt(j), 0), W + 5) : mul(x, fromBig(1n << BigInt(-j), 0));
+  if (isZero(near)) return ZERO;
+  // Very close to 1: ln(1 + t) = t − t²/2 + …, strictly less than t for all t ≠ 0.
+  const ne = leadExp(near);
+  if (ne < 0 && -2 * ne > prec + 10) {
+    const eps: Dec = { neg: false, digits: '1', scale: -ne + prec + 5 };
+    return canon(roundSignificant(sub(near, eps), prec));
+  }
+  const inUnit = cmp(x, HALF_DEC) >= 0 && cmp(x, TWO_DEC) <= 0;
+  const W = prec + 29 + (inUnit ? Math.max(0, -ne) : 0);
   const one = P10(W);
-  const Y = toFixed(y, W);
+  let e = 0, j = 0, Y: bigint;
+  if (inUnit) {
+    Y = toFixed(x, W);
+  } else {
+    e = leadExp(x);
+    const m: Dec = { neg: false, digits: x.digits, scale: x.digits.length - 1 }; // m ∈ [1, 10)
+    const mn = Number(m.digits[0] + '.' + m.digits.slice(1, 5));
+    j = mn < 1.4 ? 0 : mn < 2.8 ? 1 : mn < 5.6 ? 2 : 3;
+    Y = toFixed(m, W) >> BigInt(j);
+  }
   const z = ((Y - one) * one) / (Y + one), z2 = (z * z) / one;
   let term = z, sum = z, k = 1n;
   while (term !== 0n) { term = (term * z2) / one; k += 2n; sum += term / k; }
-  const total = 2n * sum + BigInt(j) * ln2Fixed(W);
+  const total = 2n * sum + (j ? BigInt(j) * ln2Fixed(W) : 0n) + (e ? BigInt(e) * ln10Fixed(W) : 0n);
   return fromFixed(total, W, prec);
 }
 
 function sinCos(x: Dec, prec: number, wantSin: boolean): Dec {
   if (isZero(x)) return wantSin ? ZERO : ONE;
-  const W = prec + 15 + Math.max(0, leadExp(x) + 1) + Math.max(0, -leadExp(x));
-  if (W > 5000) throw new DecError('That angle needs more than 5000 digits of working precision.');
-  const one = P10(W);
-  const X = toFixed(x, W);
-  const twoPi = 2n * piFixed(W);
-  const q = floorDiv(2n * X + twoPi, 2n * twoPi);
-  const R = X - q * twoPi;
-  const R2 = (R * R) / one;
-  let term = wantSin ? R : one, sum = term, n = 1n;
-  for (;;) {
-    const d = wantSin ? (2n * n) * (2n * n + 1n) : (2n * n - 1n) * (2n * n);
-    term = -((term * R2) / one) / d;
-    if (term === 0n) break;
-    sum += term; n += 1n;
+  const e = leadExp(x);
+  // Very small |x|: |x²/2| and |x³/6| lie far past the kept digits, so no π reduction or giant fixed-point is needed.
+  if (e < 0 && -2 * e > prec + 10) {
+    if (!wantSin) return ONE;
+    // |sin(x)| < |x| for all x ≠ 0; a tiny nudge toward zero breaks any exact tie at digit `prec` in the true direction.
+    const eps: Dec = { neg: x.neg, digits: '1', scale: -e + prec + 5 };
+    return canon(roundSignificant(sub(x, eps), prec));
   }
-  return fromFixed(sum, W, prec);
+  const needReduce = e >= 0; // |x| < 1 is already well inside (−π, π).
+  let W = prec + 15 + Math.max(0, e + 1) + Math.max(0, -e);
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (W > 5000) throw new DecError('That angle needs more than 5000 digits of working precision.');
+    const one = P10(W);
+    const X = toFixed(x, W);
+    let R = X;
+    if (needReduce) {
+      const twoPi = 2n * piFixed(W);
+      const q = floorDiv(2n * X + twoPi, 2n * twoPi);
+      R = X - q * twoPi;
+    }
+    const R2 = (R * R) / one;
+    let term = wantSin ? R : one, sum = term, n = 1n;
+    for (;;) {
+      const d = wantSin ? (2n * n) * (2n * n + 1n) : (2n * n - 1n) * (2n * n);
+      term = -((term * R2) / one) / d;
+      if (term === 0n) break;
+      sum += term; n += 1n;
+    }
+    const mag = babs(sum);
+    const sigDigits = mag === 0n ? 0 : mag.toString().length;
+    // Near a multiple of π/2, cancellation can leave fewer than `prec + 8` digits: retry with extra working precision.
+    if (sigDigits >= prec + 8 || !needReduce) return fromFixed(sum, W, prec);
+    W += (W - sigDigits) + 16;
+  }
+  throw new DecError('That angle needs more than 5000 digits of working precision.');
 }
 export const sin = (x: Dec, prec = DEFAULT_PRECISION): Dec => sinCos(x, prec, true);
 export const cos = (x: Dec, prec = DEFAULT_PRECISION): Dec => sinCos(x, prec, false);
@@ -265,11 +352,17 @@ export const cos = (x: Dec, prec = DEFAULT_PRECISION): Dec => sinCos(x, prec, fa
 /** Hyperbolic tangent to `prec` significant digits. */
 export function tanh(x: Dec, prec = DEFAULT_PRECISION): Dec {
   if (isZero(x)) return ZERO;
+  const e = leadExp(x);
+  if (e < 0 && -2 * e > prec + 10) {
+    // |tanh(x)| < |x| for all x ≠ 0, with |tanh(x) − x| ≈ |x|³/3.
+    const eps: Dec = { neg: x.neg, digits: '1', scale: -e + prec + 5 };
+    return canon(roundSignificant(sub(x, eps), prec));
+  }
   const xn = toNumber(x);
-  if (!Number.isFinite(xn) || Math.abs(xn) > EXP_LIMIT / 2) return x.neg ? { neg: true, digits: '1', scale: 0 } : ONE;
-  const P = prec + 15 + Math.max(0, -leadExp(x));
+  if (!Number.isFinite(xn) || Math.abs(xn) > Math.min(EXP_LIMIT / 2, (prec + 12) * 1.16)) return x.neg ? { neg: true, digits: '1', scale: 0 } : ONE;
+  const P = prec + 15 + Math.max(0, -e);
   const e2 = exp(add(x, x), P);
-  return div(sub(e2, ONE), add(e2, ONE), prec);
+  return divToPrec(sub(e2, ONE), add(e2, ONE), prec);
 }
 
 /** a ^ b. Whole exponents are exact (negative ones to `prec` digits); other exponents are worked out as e^(b·ln a) to `prec` digits. */

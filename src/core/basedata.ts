@@ -7,6 +7,8 @@ import { isDec, isZero, jsonText, packDec, parseDec, parseJsonExact, toPlain } f
 export function readNumber(s: string): number | import('./decimal').Dec | undefined {
   const r = parseDec(s);
   if (r.ok) return packDec(r.dec);
+  // Only fall back to JS Number() for non-decimal literals (0x1F, 0b101, 0o77), not empty text or out-of-range decimals.
+  if (!/^[+-]?0[xXbBoO]/.test(s.trim())) return undefined;
   const n = Number(s);
   return Number.isFinite(n) ? n : undefined;
 }

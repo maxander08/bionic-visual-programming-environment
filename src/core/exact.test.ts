@@ -6,7 +6,7 @@ import { toText } from './util';
 import { isDec, jsonText, packDec, parseDec, parseJsonExact, toPlain, type Dec } from './decimal';
 import * as M from './decmath';
 import { projectView } from './modules/behavior';
-import { parseItems } from './basedata';
+import { parseItems, readNumber } from './basedata';
 import { resolveParams, getDef } from './registry';
 
 const D = (s: string): Dec => { const r = parseDec(s); if (!r.ok) throw new Error(r.error); return r.dec; };
@@ -174,5 +174,54 @@ describe('nodes keep every digit', () => {
     expect(resolveParams(def, { offset: 0.5 }).offset).toBe(0.5);
     expect(resolveParams(def, { offset: '1e99' }).offset).toBe(1e6);
     expect(resolveParams(def, { offset: 'abc' }).offset).toBe(0);
+  });
+  it('exact terminating quotients and perfect-square roots are never truncated by Precision', () => {
+    expect(P(M.div(D('1'), D('8'), 2))).toBe('0.125');
+    expect(P(M.div(D('3'), D('6'), 1))).toBe('0.5');
+    const sixty = '1234567890'.repeat(6);
+    expect(P(M.div(D(sixty), D('1'), 50))).toBe(sixty);
+    expect(P(M.sqrt(D('1.5625'), 2))).toBe('1.25');
+    const big = D('9007199254740993');
+    expect(P(M.sqrt(M.mul(big, big), 10))).toBe('9007199254740993');
+  });
+  it('sin, cos, ln and tanh stay accurate and fast at extreme scales and near cancellation points', () => {
+    const tiny = D('1e-6000');
+    expect(M.sin(tiny, 50)).toEqual(tiny);
+    expect(P(M.cos(tiny, 50))).toBe('1');
+    expect(M.sin(D('1.5e-6000'), 1)).toEqual(D('1e-6000'));
+    expect(M.tanh(tiny, 50)).toEqual(tiny);
+    expect(P(M.tanh(D('1000'), 50))).toBe('1');
+    // Cancellation near π: sin(π_50) ≈ −4.179025055407692… × 10^−51 must keep all 50 significant digits.
+    const pi50 = D('3.14159265358979323846264338327950288419716939937511');
+    const s = M.sin(pi50, 50);
+    expect(s.neg).toBe(true);
+    expect(s.digits).toBe('4179025055407692183593713791001371965174657882932');
+    // ln(1) = 0, ln(1 + tiny) ≈ tiny, and huge/tiny exponents stay fast and accurate.
+    expect(P(M.ln(D('1'), 50))).toBe('0');
+    expect(M.ln(M.add(D('1'), tiny), 50)).toEqual(tiny);
+    expect(P(M.ln(D('1e99999'), 30))).toBe('230256.206714311574356115127477');
+    expect(P(M.ln(D('1e-99999'), 30))).toBe('-230256.206714311574356115127477');
+  });
+  it('toDec and readNumber reject out-of-range exponents and blank text while keeping 0x literals', () => {
+    expect(M.toDec('1e-100000')).toBeNull();
+    expect(M.toDec('1e100000')).toBeNull();
+    expect(readNumber('1e-100000')).toBeUndefined();
+    expect(readNumber('')).toBeUndefined();
+    expect(readNumber('   ')).toBeUndefined();
+    expect(readNumber('0x1F')).toBe(31);
+    expect(P(M.toDec('0x1F')!)).toBe('31');
+  });
+  it('Info sensor and Sequence preserve exact decimals, and Character code-point mode rejects out-of-range Decs', () => {
+    const pi = '3.1415926535897932384626433832795';
+    const e = build([
+      ['inf', 'info', { text: pi }],
+      ['seq', 'sequence', { values: `${pi}, 2` }],
+      ['d', 'decimal', { value: '65.000000000000000001' }],
+      ['ch', 'character', { numbers: 'code' }],
+    ], [['d', 'out', 'ch', 'in']]);
+    expect(val(e, 'inf', 'number')).toBe(pi);
+    expect(val(e, 'seq', 'out')).toBe(pi);
+    expect(e.nodes.get('ch')!.status.level).toBe('error');
+    expect(e.nodes.get('ch')!.status.message).toMatch(/Unicode code point/);
   });
 });

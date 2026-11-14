@@ -243,7 +243,7 @@ export const TEMPLATES: Template[] = [
     id: 'number-formatting', name: 'Exact decimals and Number Formatter',
     summary: 'A Decimal keeps 35 digits of π untouched; three Number Formatters round it to 10 places, to 5 significant digits, and write it in engineering notation.',
     expect: 'The Projectors show 3.1415926536, 3.1416 and 3.14159265358979323846264338327950288e+0. The Decimal itself never rounds: only the Number Formatters do.',
-    build: () => make('Exact decimals and Number Formatter', 'Decimal Text → Number Formatter → Projector. Wire Text, not the Decimal pin, so every digit reaches the formatter.', (b) => {
+    build: () => make('Exact decimals and Number Formatter', 'Decimal → Number Formatter → Projector. Both the Decimal pin and the Text pin carry every digit.', (b) => {
       b.add('pi', 'decimal', 156, 0, { value: '3.14159265358979323846264338327950288' });
       b.add('f1', 'actor-numfmt', 0, 120, { mode: 'places', n: 10 });
       b.add('f2', 'actor-numfmt', 156, 120, { mode: 'digits', n: 5 });

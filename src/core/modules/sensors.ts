@@ -1,5 +1,6 @@
 import type { ModuleDef } from '../types';
 import { clamp, imageStats, makeImage } from '../util';
+import { readNumber } from '../basedata';
 import { RATE, bol, inp, num, out, sel, txt } from './kit';
 
 /** Deterministic simulated scene: a bright disc travelling over a gradient. */
@@ -161,8 +162,7 @@ export const sensors: ModuleDef[] = [
     run(c) {
       const t = c.str('text');
       c.emit('text', t);
-      const n = t.trim() === '' ? NaN : Number(t);
-      c.emit('number', Number.isFinite(n) ? n : undefined);
+      c.emit('number', t.trim() === '' ? undefined : readNumber(t));
     },
     doc: {
       summary: 'Manual text and number source for offline experiments.',

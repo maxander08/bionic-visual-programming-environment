@@ -4,6 +4,7 @@ import { exactText, packDec, toPlain, type Dec } from '../decimal';
 import * as D from '../decmath';
 import { DEFAULT_PRECISION, MAX_PRECISION, DecError, needDec, toDec } from '../decmath';
 import { FUNCTION_NAMES, compileExpr, splitEquations, type EquationData } from '../equation';
+import { readNumber } from '../basedata';
 import { bol, dnum, inp, num, out, sel, txt } from './kit';
 
 // Numbers are exact decimals here: nothing is rounded to a fixed number of places (that is the Number Formatter's job).
@@ -19,7 +20,12 @@ const k = (dt: number, tau: number) => (tau <= 0 ? 1 : 1 - Math.exp(-dt / tau));
 const n = (v: unknown) => toNum(v);
 
 function parseList(s: string): unknown[] {
-  return s.split(',').map((t) => t.trim()).filter((t) => t !== '').map((t) => (t === 'true' ? true : t === 'false' ? false : Number.isFinite(Number(t)) ? Number(t) : t));
+  return s.split(',').map((t) => t.trim()).filter((t) => t !== '').map((t) => {
+    if (t === 'true') return true;
+    if (t === 'false') return false;
+    const v = readNumber(t);
+    return v !== undefined ? v : t;
+  });
 }
 
 const OUT_ANY = out('out', 'Output', 'any', 'Result.');

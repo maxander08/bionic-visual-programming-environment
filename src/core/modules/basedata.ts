@@ -1,6 +1,6 @@
 import type { ModuleDef } from '../types';
 import { toText, toExactText } from '../util';
-import { decFromValue, packDec, parseDec, toNumber, toPlain, type Dec } from '../decimal';
+import { decFromValue, isDec, packDec, parseDec, toNumber, toPlain, type Dec } from '../decimal';
 import * as D from '../decmath';
 import { toDec } from '../decmath';
 import {
@@ -153,8 +153,8 @@ export const baseData: ModuleDef[] = [
       let ch: string | undefined;
       if (c.has('in')) {
         const v = c.get('in');
-        if (typeof v === 'number' && c.str('numbers') === 'code') {
-          if (!validCodePoint(v)) return c.fail(`${toText(v)} is not a Unicode code point (a whole number from 0 to 1 114 111, not 55 296–57 343).`);
+        if ((typeof v === 'number' || isDec(v)) && c.str('numbers') === 'code') {
+          if (isDec(v) || !validCodePoint(v)) return c.fail(`${toText(v)} is not a Unicode code point (a whole number from 0 to 1 114 111, not 55 296–57 343).`);
           ch = String.fromCodePoint(v);
         } else ch = chars(toText(v))[0];
         if (ch === undefined) return c.fail('The Input is empty: a character needs one.');

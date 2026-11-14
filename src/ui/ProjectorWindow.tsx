@@ -189,12 +189,29 @@ function FileStage({ v }: { v: View }) {
 
 // ---- the window ----------------------------------------------------------------------------------------------------------------
 
+function NumberStage({ text }: { text: string }) {
+  if (text.length <= 20) return <div className="pw-number" aria-live="polite">{text}</div>;
+  const digits = text.replace(/[^0-9]/g, '').length;
+  const cls = text.length > 120 ? 'pw-number huge' : 'pw-number long';
+  return (
+    <div className="pw-col">
+      <div className="pw-bar">
+        <span className="pw-meta">{tr('{n} digits', { n: digits.toLocaleString('en-US') })}</span>
+        <span className="pw-spacer" />
+        <button type="button" className="btn sm" onClick={() => copy(text)}><Icon name="copy" size={13} />{tr('Copy')}</button>
+        <button type="button" className="btn sm" onClick={() => saveBlob(new Blob([text], { type: 'text/plain;charset=utf-8' }), 'number.txt')}><Icon name="save" size={13} />{tr('Download')}</button>
+      </div>
+      <div className={cls} tabIndex={0} aria-live="polite">{text}</div>
+    </div>
+  );
+}
+
 function Stage({ v, running }: { v: View | undefined; running: boolean }) {
   if (!v || !v.kind || v.kind === 'empty') {
     return <div className="pw-empty"><p>{running ? tr('Nothing has arrived at this Projector yet.') : tr('Press Run to see what this Projector receives.')}</p></div>;
   }
   switch (v.kind) {
-    case 'number': return <div className="pw-number" aria-live="polite">{String(v.text)}</div>;
+    case 'number': return <NumberStage text={String(v.text)} />;
     case 'text': return <TextStage text={String(v.text ?? '')} cut={!!v.cut} name="projector" />;
     case 'data': return <TextStage text={String(v.text ?? '')} cut={!!v.cut} name="projector" label="JSON" />;
     case 'image': return <div className="pw-img"><ImageCanvas img={v.image} /></div>;
