@@ -60,16 +60,24 @@ export function Art({ kind, level = 0.4, extra }: { kind: string; level?: number
   return <svg className="art" viewBox="0 0 100 70" preserveAspectRatio="xMidYMid meet" aria-hidden="true">{g}</svg>;
 }
 
+const QTY_NUM_SPLIT = /([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+|\s*×\s*10[⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)?)/i;
+const QTY_NUM_EXACT = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+|\s*×\s*10[⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)?$/i;
+
 /** The face of a Quantities module: <amount><unit> in large type, and the SI value (or the unit's name) underneath. */
 function QuantityFace({ text, sub, dim }: { text: string; sub: string; dim?: boolean }) {
-  const m = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)(.*)$/.exec(text);
-  const amount = m ? m[1] : text;
-  const unit = m ? m[2] : '';
+  // Split the whole text into number / unit runs so that every number is one colour and every unit another. A compound
+  // time such as "1min 11s" has two amounts and two units; matching only the first amount left the second number
+  // (and everything after the first one) in the unit colour.
+  const parts = text.split(QTY_NUM_SPLIT).filter((s) => s !== '');
+  const isNum = (s: string) => QTY_NUM_EXACT.test(s);
+  const hasNum = parts.some(isNum);
   // Full-width CJK glyphs are roughly twice as wide as Latin digits/letters; weight them so Chinese durations shrink to fit.
   const n = [...text].reduce((w, ch) => w + (/[\u3000-\u9fff\uff00-\uffef]/.test(ch) ? 1.9 : 1), 0);
   return (
     <div className={`qty ${dim ? 'idle' : ''}`}>
-      <div className={`qty-val ${n > 14 ? 'n3' : n > 9 ? 'n2' : ''}`} title={text}><span className="qa">{amount}</span><span className="qu">{unit}</span></div>
+      <div className={`qty-val ${n > 12 ? 'n3' : n > 9 ? 'n2' : ''}`} title={text}>{hasNum
+        ? parts.map((s, i) => (isNum(s) ? <span key={i} className="qa">{s}</span> : <span key={i} className="qu">{s}</span>))
+        : <span className="qa">{text}</span>}</div>
       <div className="qty-sub clamp1" title={sub}>{sub || ' '}</div>
     </div>
   );
@@ -420,7 +428,7 @@ export function PreviewNode({ def, scale = 0.78 }: { def: ModuleDef; scale?: num
   else if (def.type === 'alarm') body = <div className="tk"><div className="tk-time long">07:30:00.000</div><div className="tk-state">{tr("Armed")}</div><div className="tk-sub">in 08:12:00.250</div></div>;
   else if (def.type === 'stopwatch') body = <div className="tk"><div className="tk-time">01:23.400</div><div className="tk-state">{tr("Running")}</div></div>;
   else if (FILE_KIND_BY_TYPE.has(def.type)) body = <FilePreview kind={FILE_KIND_BY_TYPE.get(def.type)!} />;
-  else if (def.family === 'quantity') body = <QuantityFace text={def.chip?.(defaultParams(def)) ?? ''} sub="" />;
+  else if (def.family === 'quantity') body = <QuantityFace text={def.type === 'qty-time' ? localizeDuration(def.chip?.(defaultParams(def)) ?? '') : (def.chip?.(defaultParams(def)) ?? '')} sub="" />;
   else if (def.type === 'vital') body = <svg className="art" viewBox="0 0 100 40"><circle cx="50" cy="20" r="8" fill="currentColor" /></svg>;
   return (
     <div className="pv-wrap" style={{ width: size.w * scale, height: size.h * scale }}>
