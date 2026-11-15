@@ -2,6 +2,7 @@
 // live workspace through workspace.ts, and acts through actions.ts. No network, no account.
 import { useStore } from '../state/store';
 import { MODULES, getDef, nodeSize } from '../core/registry';
+import { parseDuration, toBaseUnit } from '../core/duration';
 import type { ModuleDef } from '../core/types';
 import { compileExpr } from '../core/equation';
 import { RECIPES } from '../ui/docs/recipes';
@@ -77,18 +78,25 @@ function resolveTargets(q: string, snap: Snapshot, mentions: ModuleMention[]): T
   return null;
 }
 
-const PRIMARY: Record<string, string> = { timer: 'duration', constant: 'value', alarm: 'time', pulse: 'period', switch: 'on', comment: 'text', by: 'author', integer: 'value', decimal: 'value', string: 'value', stopwatch: 'limit' };
+const PRIMARY: Record<string, string> = { timer: 'duration', constant: 'value', alarm: 'time', pulse: 'period', switch: 'on', comment: 'text', by: 'author', integer: 'value', decimal: 'value', string: 'value', stopwatch: 'limit', 'qty-time': 'span', delay: 'ms' };
 
-const TIME_RE = /(\d+(?:\.\d+)?)\s*(ms|milliseconds?|s|secs?|seconds?|m|mins?|minutes?|h|hrs?|hours?)\b/g;
+const TIME_RE = /(\d+(?:\.\d+)?)\s*(ms|milliseconds?|s|secs?|seconds?|m|mins?|minutes?|h|hrs?|hours?|days?|wks?|weeks?)\b/g;
+const CLOCK_DUR_RE = /\b(\d+(?::\d+){1,3}(?:\.\d+)?)\b/;
 function durationSeconds(text: string): number | null {
   let total = 0, any = false;
   for (const m of text.matchAll(TIME_RE)) {
     const n = Number(m[1]);
     const u = m[2];
-    total += /^ms|^milli/.test(u) ? n / 1000 : /^h/.test(u) ? n * 3600 : /^m/.test(u) ? n * 60 : n;
+    total += /^ms|^milli/.test(u) ? n / 1000 : /^w/.test(u) ? n * 604800 : /^d/.test(u) ? n * 86400 : /^h/.test(u) ? n * 3600 : /^m/.test(u) ? n * 60 : n;
     any = true;
   }
   return any ? total : null;
+}
+function clockDurationSeconds(raw: string): number | null {
+  const m = CLOCK_DUR_RE.exec(raw);
+  if (!m) return null;
+  const r = parseDuration(m[1], 's');
+  return r.ok ? r.seconds : null;
 }
 
 /** Read “duration 30 seconds”, “with repeat”, “format percent”, a quoted text… for one module out of a stretch of words. */
@@ -101,8 +109,8 @@ function parseSettings(def: ModuleDef, text: string, raw: string): Record<string
     const tp = params.find((p) => p.kind === 'text' && /text|value|note|content|message|title|label|author/i.test(p.key)) ?? params.find((p) => p.kind === 'text');
     if (tp) out[tp.key] = quoted[1];
   }
-  const dur = params.find((p) => p.kind === 'number' && p.unit === 's' && p.key === 'duration');
-  const secs = durationSeconds(t);
+  const dur = params.find((p) => p.kind === 'number' && p.time === 's' && (p.key === 'duration' || p.key === 'span'));
+  const secs = durationSeconds(t) ?? (dur ? clockDurationSeconds(raw) : null);
   if (dur && secs !== null) out[dur.key] = secs;
   const byLen = [...params].sort((a, b) => b.label.length - a.label.length);
   for (const p of byLen) {
@@ -115,21 +123,28 @@ function parseSettings(def: ModuleDef, text: string, raw: string): Record<string
       if (p.kind === 'bool') {
         out[p.key] = m[1] ? false : val ? (coerceParam(p, val.split(' ')[0]).ok ? (coerceParam(p, val.split(' ')[0]) as { value: unknown }).value : true) : true;
       } else if (val) {
-        const c = coerceParam(p, p.kind === 'number' ? val.match(/-?\d*\.?\d+\s*[a-z]*/)?.[0] ?? val : p.kind === 'select' ? val : (raw.match(new RegExp(`${esc(name)}\\s*(?:to|=|of|as|:|at|is)?\\s*([^,;]+)`, 'i'))?.[1] ?? val).trim());
+        const rawClause = p.kind === 'number' && p.time ? (raw.match(new RegExp(`${esc(name)}s?\\s*(?:to|=|of|as|:|at|is|be|on|equals)?\\s*([^,;]+)`, 'i'))?.[1]?.trim() ?? val) : val;
+        const c = coerceParam(p, p.kind === 'number' ? (p.time ? (parseDuration(rawClause, p.time).ok ? rawClause : val) : val.match(/-?\d*\.?\d+\s*[a-z]*/)?.[0] ?? val) : p.kind === 'select' ? val : (raw.match(new RegExp(`${esc(name)}\\s*(?:to|=|of|as|:|at|is)?\\s*([^,;]+)`, 'i'))?.[1] ?? val).trim());
         if (c.ok) out[p.key] = c.value;
       }
       break;
     }
   }
-  // “a timer of 30 seconds”, “a constant of 7”, “a switch on”
+  // “a timer of 30 seconds”, “a delay of 2 seconds”, “a constant of 7”, “a switch on”
   if (!Object.keys(out).length) {
     const key = PRIMARY[def.type];
     const p = key ? findParam(def, key) : undefined;
     if (p) {
-      const num = t.match(/(?:^|\s)(?:of|to|=|at|is|with|for)?\s*(-?\d*\.?\d+)\b/);
-      if (p.kind === 'number' && num) out[p.key] = Number(num[1]);
-      else if (p.kind === 'bool') { if (/\b(on|true|yes)\b/.test(t)) out[p.key] = true; else if (/\b(off|false|no)\b/.test(t)) out[p.key] = false; }
-      else if (p.kind === 'text' && num) out[p.key] = num[1];
+      if (p.kind === 'number' && p.time) {
+        const ts = durationSeconds(t) ?? clockDurationSeconds(raw);
+        if (ts !== null) out[p.key] = toBaseUnit(ts, p.time);
+      }
+      if (!(p.key in out)) {
+        const num = t.match(/(?:^|\s)(?:of|to|=|at|is|with|for)?\s*(-?\d*\.?\d+)\b/);
+        if (p.kind === 'number' && num) out[p.key] = Number(num[1]);
+        else if (p.kind === 'bool') { if (/\b(on|true|yes)\b/.test(t)) out[p.key] = true; else if (/\b(off|false|no)\b/.test(t)) out[p.key] = false; }
+        else if (p.kind === 'text' && num) out[p.key] = num[1];
+      }
     }
   }
   return out;

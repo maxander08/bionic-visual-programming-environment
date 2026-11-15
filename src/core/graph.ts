@@ -19,7 +19,8 @@ export function addNode(g: Graph, type: string, x: number, y: number, params: Pa
   const def = getDef(type, compounds, params);
   if (!def) throw new Error(`Unknown module type “${type}”`);
   const nid = id ?? nextId(g.nodes, type.replace(/[^a-z0-9]/gi, '') + '-');
-  const p = resolveParams(def, { ...defaultParams(def, params), ...params });
+  const migrated = def.migrate ? def.migrate(params) : params;
+  const p = resolveParams(def, { ...defaultParams(def, migrated), ...migrated });
   const node: NodeInst = { id: nid, type, x: snap(x), y: snap(y), params: p };
   return { graph: { ...g, nodes: { ...g.nodes, [nid]: node } }, id: nid };
 }
@@ -109,7 +110,7 @@ export function patchEdge(g: Graph, edgeId: string, patch: Partial<Pick<Edge, 'w
   if (!e) return g;
   const next = { ...e, ...patch };
   next.weight = Math.max(0, Math.min(4, Number.isFinite(next.weight) ? next.weight : 1));
-  next.delay = Math.max(0, Math.min(600000, Number.isFinite(next.delay) ? next.delay : 0));
+  next.delay = Math.max(0, Math.min(86400000, Number.isFinite(next.delay) ? next.delay : 0));
   return { ...g, edges: { ...g.edges, [edgeId]: next } };
 }
 
@@ -291,7 +292,7 @@ export function sanitizeGraph(raw: Graph, compounds: Record<string, CompoundDef>
     const chk = checkConnection(g, e.from, e.fromPort, e.to, e.toPort, compounds);
     if (!chk.ok || driven.has(key)) { problems.push(`Dropped connection ${e.from}.${e.fromPort} → ${e.to}.${e.toPort}: ${chk.reason ?? 'input already driven'}.`); continue; }
     driven.add(key);
-    g.edges[e.id] = { id: e.id, from: e.from, fromPort: e.fromPort, to: e.to, toPort: e.toPort, weight: Number.isFinite(e.weight) ? Math.max(0, Math.min(4, e.weight)) : 1, delay: Number.isFinite(e.delay) ? Math.max(0, Math.min(600000, e.delay)) : 0, enabled: e.enabled !== false };
+    g.edges[e.id] = { id: e.id, from: e.from, fromPort: e.fromPort, to: e.to, toPort: e.toPort, weight: Number.isFinite(e.weight) ? Math.max(0, Math.min(4, e.weight)) : 1, delay: Number.isFinite(e.delay) ? Math.max(0, Math.min(86400000, e.delay)) : 0, enabled: e.enabled !== false };
   }
   return { graph: g, problems };
 }

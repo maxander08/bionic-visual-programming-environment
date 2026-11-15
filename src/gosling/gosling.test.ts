@@ -275,4 +275,23 @@ describe('Gosling: planner, replace-reset, and voice regressions', () => {
       (window as any).SpeechSynthesisUtterance = origUtt;
     }
   });
+
+  it('parses natural durations for Time quantity, Delay, days/weeks, and clock syntax', () => {
+    respond('add a time module of 2 hours 40 minutes');
+    const q = Object.values(useStore.getState().project.graph.nodes).find((n) => n.type === 'qty-time')!;
+    expect(q.params.span).toBe(9600);
+
+    useStore.getState().newBlank();
+    respond('add a delay of 2 seconds');
+    const d = Object.values(useStore.getState().project.graph.nodes).find((n) => n.type === 'delay')!;
+    expect(d.params.ms).toBe(2000);
+
+    useStore.getState().newBlank();
+    respond('add a timer for 1 day 2 hours');
+    const t = Object.values(useStore.getState().project.graph.nodes).find((n) => n.type === 'timer')!;
+    expect(t.params.duration).toBe(93600);
+
+    respond(`set ${t.id} duration to 1:30:00`);
+    expect(useStore.getState().project.graph.nodes[t.id].params.duration).toBe(5400);
+  });
 });

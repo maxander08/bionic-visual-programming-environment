@@ -474,16 +474,16 @@ export const GUIDE: Record<string, NodeGuide> = {
   },
   timer: {
     when: 'You want something to happen after a set time: a countdown to show, a delay to wait out, or a repeating interval.',
-    steps: ['Add **Timer** and set **Duration** in seconds. With **Auto start** on (the default) it counts down as soon as you press Run.', 'Connect **Time** to a [[n:projector]] or [[n:text]] module to watch the countdown, to the millisecond (04:59.250).', 'Connect **Done** to what should happen at zero, for example a [[n:notify]] or a [[n:counter]].', 'To start it yourself, turn **Auto start** off and drive **Start** from a [[n:switch]], [[n:keys]] or any trigger. **Pause** holds it and **Reset** puts it back to the full time.'],
-    tips: ['**Progress** goes from 0 to 1, so it can drive a [[n:meter]] or a [[n:light]] that fills as time runs out.', 'Take the time left apart with **Hour**, **Minute**, **Seconds** and **Milliseconds** (numbers, on the right edge), the same pins as [[n:clock]]. **Hour** counts whole hours, so it is not wrapped at 24.', 'Turn on **Repeat** for a steady interval: **Done** then becomes a short pulse every round, and **Completions** counts the rounds.', 'Drive **Duration** from a signal via its setting pin to make the countdown longer or shorter while the program runs.', 'The START, PAUSE / RESUME and RESET buttons in the inspector work the same as the pins.'],
-    pitfalls: ['It counts simulation time, not the wall clock: pausing the program pauses the timer, and Stop → Run starts it over.', 'Changing **Duration** while the timer runs does not shorten the current countdown. It takes effect at the next start or after Reset.', 'With **Show milliseconds** off the Time text rounds up, so it shows 00:01 for the whole last second. The **Hour**, **Minute**, **Seconds** and **Milliseconds** pins stay exact either way.', 'The outputs refresh every tick (about 20 times a second by default) while the timer runs.'],
+    steps: ['Add **Timer** and type its **Duration** the way you say it, such as `2 h 40 min`, `1h30m`, `90 s` or `1:30:00`. With **Auto start** on (the default) it counts down as soon as you press Run.', 'Connect **Time** to a [[n:projector]] or [[n:text]] module to watch the countdown, to the millisecond (04:59.250).', 'Connect **Done** to what should happen at zero, for example a [[n:notify]] or a [[n:counter]].', 'To start it yourself, turn **Auto start** off and drive **Start** from a [[n:switch]], [[n:keys]] or any trigger. **Pause** holds it and **Reset** puts it back to the full time.'],
+    tips: ['**Progress** goes from 0 to 1, so it can drive a [[n:meter]] or a [[n:light]] that fills as time runs out.', 'Take the time left apart with **Hours**, **Minutes**, **Seconds** and **Milliseconds** (numbers, on the right edge), the same pins as [[n:clock]]. **Hours** counts whole hours, so it is not wrapped at 24.', 'Turn on **Repeat** for a steady interval: **Done** then becomes a short pulse every round, and **Completions** counts the rounds.', 'Drive **Duration** from a signal via its setting pin to make the countdown longer or shorter while the program runs.', 'The START, PAUSE / RESUME and RESET buttons in the inspector work the same as the pins.'],
+    pitfalls: ['It counts simulation time, not the wall clock: pausing the program pauses the timer, and Stop → Run starts it over.', 'Changing **Duration** while the timer runs does not shorten the current countdown. It takes effect at the next start or after Reset.', 'With **Show milliseconds** off the Time text rounds up, so it shows 00:01 for the whole last second. The **Hours**, **Minutes**, **Seconds** and **Milliseconds** pins stay exact either way.', 'The outputs refresh every tick (about 20 times a second by default) while the timer runs.'],
     up: ['switch', 'keys', 'threshold', 'pulse'], down: ['projector', 'text', 'notify', 'meter', 'counter'], alias: 'countdown count down timeout delay interval remaining egg cooking pomodoro',
-    settings: { duration: 'Seconds. 90 is a minute and a half; 3600 is one hour.', autostart: 'Leave on for a countdown that begins with the program. Turn off to use Start.', repeat: 'Makes the timer an interval clock.', millis: 'On by default: shows 04:59.250. Off shows 05:00 and only changes the Time text.' },
+    settings: { duration: 'Typed as you would say it: `2 h 40 min`, `1h30m`, `90 s`, `1:30:00`, `2.5 hours`. A plain number is seconds, so 90 is a minute and a half. The inspector reads it back (= 2 h 40 min) and has +1 min, +1 h buttons. A setting pin takes the same text, so a [[n:qty-time]] can drive it.', autostart: 'Leave on for a countdown that begins with the program. Turn off to use Start.', repeat: 'Makes the timer an interval clock.', millis: 'On by default: shows 04:59.250. Off shows 05:00 and only changes the Time text.' },
   },
   alarm: {
     when: 'You want something to happen at a time of day, such as 07:30, in this device’s time zone or in another city.',
     steps: ['Add **Alarm** and type the **Time**, such as `07:30`, `19:45:30`, `19:45:30.250` or `7:30 pm`.', 'Choose which days it rings with **Repeat**. Leave **City** empty to use this device’s clock, or type a city to use its clock.', 'Connect **Ringing** to what should react, for example a [[n:light]], an [[n:audio]] or a [[n:notify]].', 'Press **TEST RING** in the inspector to try the connection without waiting.'],
-    tips: ['**Time left** (to the millisecond, 07:12:30.250) and **Seconds left** count down to the next ring, and **Next ring** says when it is.', 'Take the time left apart with **Hour**, **Minute**, **Seconds** and **Milliseconds** (numbers, on the right edge), the same pins as [[n:clock]]. **Hour** counts whole hours, so a day and two hours is 26.', 'Wire a trigger to **Snooze** to silence the alarm for 5 minutes, or to **Dismiss** to silence it for good.', '**Ring time** sets how long **Ringing** stays true if nobody dismisses it.', 'Drive **Time** from text via its setting pin to set the alarm from the program.'],
+    tips: ['**Time left** (to the millisecond, 07:12:30.250) and **Seconds left** count down to the next ring, and **Next ring** says when it is.', 'Take the time left apart with **Hours**, **Minutes**, **Seconds** and **Milliseconds** (numbers, on the right edge), the same pins as [[n:clock]]. **Hours** counts whole hours, so a day and two hours is 26.', 'Wire a trigger to **Snooze** to silence the alarm for 5 minutes, or to **Dismiss** to silence it for good.', '**Ring time** sets how long **Ringing** stays true if nobody dismisses it.', 'Drive **Time** from text via its setting pin to set the alarm from the program.'],
     pitfalls: ['The program must be running when the time arrives. Starting it after the alarm time does not make the alarm ring.', '“Once” rings a single time and then waits until a setting changes.', 'It reads your device clock: if that clock is wrong, the alarm is wrong by the same amount.', 'Across a daylight-saving change the countdown can be off by an hour until that moment has passed.', 'The outputs refresh every tick, about 20 times a second by default. They have no value when the alarm will not ring again.'],
     up: ['switch', 'keys', 'timer', 'text'], down: ['light', 'audio', 'notify', 'projector', 'haptic'], alias: 'wake up ring bell reminder schedule snooze time of day clock buzzer',
     settings: { time: 'Written as 24-hour or with am/pm. Seconds and milliseconds are allowed: `07:30:15.250`. The alarm always shows its time, **Time left** and **Next ring** to the millisecond.', repeat: 'Weekdays means Monday to Friday, weekends Saturday and Sunday.', city: 'Same list as [[n:clock]]. Empty means this device.', ring: 'Seconds that Ringing stays true.' },
@@ -492,10 +492,10 @@ export const GUIDE: Record<string, NodeGuide> = {
   stopwatch: {
     when: 'You want to measure how long something takes, or know how much time has passed since an event.',
     steps: ['Add **Stopwatch**. With **Auto start** on (the default) it begins counting when you press Run.', 'Connect **Time** to a [[n:projector]] or [[n:text]] module (01:05.250), or **Elapsed** (seconds, to the millisecond) to a number consumer such as a [[n:threshold]].', 'Turn **Auto start** off and drive **Start**, **Stop**, **Lap** and **Reset** from triggers to control it yourself.', 'Use **Lap time** and **Laps** to read splits. The START / STOP, LAP and RESET buttons in the inspector do the same by hand.'],
-    tips: ['A lap is the time since the previous lap, so lap times add up to the total.', 'Set **Stop at** to make the stopwatch stop by itself, for example after 30 seconds. Start then begins a new run.', '**Running** is true while it counts: use it to light a [[n:light]] or gate a [[n:relay]].', 'Take the elapsed time apart with **Hour**, **Minute**, **Seconds** and **Milliseconds** (numbers, on the right edge), the same pins as [[n:clock]].'],
+    tips: ['A lap is the time since the previous lap, so lap times add up to the total.', 'Set **Stop at** to make the stopwatch stop by itself, for example after 30 seconds. Start then begins a new run.', '**Running** is true while it counts: use it to light a [[n:light]] or gate a [[n:relay]].', 'Take the elapsed time apart with **Hours**, **Minutes**, **Seconds** and **Milliseconds** (numbers, on the right edge), the same pins as [[n:clock]].'],
     pitfalls: ['It counts simulation time, not the wall clock: pausing the program pauses the stopwatch, and Stop → Run starts it over.', '**Lap** is ignored while the stopwatch is stopped.', 'Its outputs change every tick, about 20 times a second, while it counts.', 'With **Show milliseconds** off only the Time text loses its milliseconds. The four time pins stay exact.'],
     up: ['switch', 'keys', 'threshold', 'pulse'], down: ['projector', 'text', 'threshold', 'meter'], alias: 'chronometer count up elapsed lap split measure duration race',
-    settings: { autostart: 'Leave on to time from the moment the program runs.', millis: 'On by default. Turn off to show whole seconds in the Time text; the **Hour**, **Minute**, **Seconds** and **Milliseconds** pins stay exact.', limit: 'Seconds. 0 means no limit.' },
+    settings: { autostart: 'Leave on to time from the moment the program runs.', millis: 'On by default. Turn off to show whole seconds in the Time text; the **Hours**, **Minutes**, **Seconds** and **Milliseconds** pins stay exact.', limit: 'Typed as you would say it: `30 s`, `1h 30m`. A plain number is seconds. 0 means no limit.' },
   },
   by: {
     when: 'You want to credit the author of a program.',
@@ -547,6 +547,40 @@ for (const q of QUANTITIES) {
     },
   };
 }
+
+// Time is typed as a sentence and takes apart into hours, minutes and seconds, so its guide differs from the other quantities.
+Object.assign(GUIDE['qty-time'], {
+  when: 'You want a span of time written the way you say it (2 hrs 40 min), want it as text, as one number or taken apart into hours, minutes and seconds, or want to feed one time to many modules.',
+  steps: [
+    'Add **Time** and type its **Duration** as you would say it: `2 h 40 min`, `1h30m`, `90 s`, `1:30:00`, `2.5 hours`, `1d 4h`. A plain number is seconds.',
+    'Read it from **Hours**, **Minutes**, **Seconds** and **Milliseconds** (numbers, on the right edge) to show a clock face or react to one part of it.',
+    'Connect **Quantity** (text, such as `2h 40min`) to any time setting: a [[n:timer]] **Duration** pin, a [[n:delay]], a [[n:pulse]] period. Those pins read the text in any unit.',
+    'Connect **SI value** (seconds) to [[n:compare]], [[n:math]] or [[n:threshold]] to calculate with it.',
+    'To split a running time, wire a [[n:timer]] or [[n:stopwatch]] **Time** text into the **Quantity** pin of a Time module.',
+  ],
+  tips: [
+    '**Show as** chooses how Quantity and Amount are written: *h · min · s* (the default, `2h 40min`) or a single unit (s, min, h, d, a). With a single unit the SI prefix applies too, so Prefix m and Unit s is milliseconds.',
+    'Hours, Minutes, Seconds and Milliseconds always come out, whatever Show as says. **Hours** counts whole hours and is not wrapped at 24: a day and two hours is 26.',
+    'Duration, Prefix and Show as also have setting pins on the left edge, so a signal can change them while the program runs.',
+    'Text on the Quantity input is read as spoken time (`2 hrs 40 min`, `1:30:00`, `250ms`) and also as any prefixed second (`3ks`, `5μs`). A plain number is seconds with *h · min · s*, and an amount in the chosen unit otherwise.',
+    'After a unit, a lone number means the next smaller one: `2h 40` is 2 hours 40 minutes.',
+  ],
+  pitfalls: [
+    'A time is never negative. A negative or unreadable time raises an error that names the problem.',
+    'In spoken text **m** means minutes and **ms** milliseconds. To say months, write the days.',
+    'A year (**a** or **y**) is 365.25 days, as in the unit table.',
+    'Programs saved before this change held an Amount, Prefix and Unit. They open as the same time, in the same unit.',
+  ],
+  settings: {
+    span: 'Typed as you would say it: `2 h 40 min`, `1h30m`, `90 s`, `1:30:00`. A plain number is seconds. The inspector reads it back and has +1 min, +1 h buttons.',
+    prefix: 'Only for a single unit: none is ×1, auto chooses the best fit, the others are the 24 SI prefixes. Ignored with *h · min · s*.',
+    unit: 'h · min · s writes the time as `2h 40min`. The others write one number in s, min, h, d or a.',
+  },
+  options: {
+    prefix: GUIDE['qty-time'].options?.prefix ?? {},
+    unit: { hms: 'Quantity reads `2h 40min`; Amount is the total in seconds.', s: 'Seconds.', min: 'Minutes.', h: 'Hours.', d: 'Days.', a: 'Years (365.25 days).' },
+  },
+});
 
 /* ───── Base Data: the six basic data types ───── */
 Object.assign(GUIDE, {

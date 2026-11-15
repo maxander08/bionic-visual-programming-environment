@@ -133,8 +133,9 @@ describe('quantities: the section', () => {
   it('every module has Amount, Prefix and Unit setting pins that offer all 24 prefixes', () => {
     for (const m of qmods) {
       const d = getDef(m.type, undefined, defaultParams(m))!;
-      expect(d.paramPins!.map((p) => p.param), m.type).toEqual(['amount', 'prefix', 'unit']);
-      expect(d.paramPins!.map((p) => p.type)).toEqual(['num', 'text', 'text']);
+      // Time is typed as “2 h 40 min”: its first setting is a Duration, and its pin takes text as well as numbers.
+      expect(d.paramPins!.map((p) => p.param), m.type).toEqual([m.type === 'qty-time' ? 'span' : 'amount', 'prefix', 'unit']);
+      expect(d.paramPins!.map((p) => p.type)).toEqual([m.type === 'qty-time' ? 'any' : 'num', 'text', 'text']);
       const prefix = paramDefsOf(m, {}).find((p) => p.key === 'prefix')!;
       expect(prefix.kind === 'select' && SPEC_PREFIXES.every((s) => prefix.options.some((o) => o.value === s))).toBe(true);
     }
@@ -230,5 +231,74 @@ describe('quantities: running', () => {
     const d = getDef('qty-length', undefined, {})!;
     const r = resolveParams(d, { amount: 1, prefix: 'x', unit: 'furlong' });
     expect(r).toMatchObject({ prefix: 'none', unit: 'm' });
+  });
+});
+
+describe('quantities: Time is a duration you can say', () => {
+  const t = (params: Params, ms = 100) => run([['t', 'qty-time', params]], [], ms);
+
+  it('takes 2 hrs 40 min and writes it the same way', () => {
+    const e = t({ span: 9600 });
+    expect(e.out('t', 'quantity')).toBe('2h 40min');
+    expect(e.out('t', 'amount')).toBe(9600);
+    expect(e.out('t', 'unit')).toBe('s');
+    expect(e.out('t', 'base')).toBe(9600);
+  });
+
+  it('has Hours, Minutes, Seconds and Milliseconds output pins that split the time', () => {
+    const d = getDef('qty-time', undefined, {})!;
+    expect(d.outputs.map((p) => p.id)).toEqual(['quantity', 'amount', 'unit', 'base', 'hour', 'minute', 'second', 'millisecond']);
+    expect(d.outputs.filter((p) => ['hour', 'minute', 'second', 'millisecond'].includes(p.id)).map((p) => p.label)).toEqual(['Hours', 'Minutes', 'Seconds', 'Milliseconds']);
+    const e = t({ span: 2 * 3600 + 40 * 60 + 5.25 });
+    expect([e.out('t', 'hour'), e.out('t', 'minute'), e.out('t', 'second'), e.out('t', 'millisecond')]).toEqual([2, 40, 5, 250]);
+    const long = t({ span: 26 * 3600 + 61 });
+    expect([long.out('t', 'hour'), long.out('t', 'minute'), long.out('t', 'second')]).toEqual([26, 1, 1]);
+  });
+
+  it('reads spoken text on its Quantity pin, and prefixed units too', () => {
+    const say = (text: string, params: Params = {}) => run([['c', 'constant', { kind: 'text', value: text }], ['t', 'qty-time', params]], [['c', 'out', 't', 'in']]);
+    const a = say('2 hrs 40 min');
+    expect(a.out('t', 'base')).toBe(9600);
+    expect(a.out('t', 'quantity')).toBe('2h 40min');
+    expect([a.out('t', 'hour'), a.out('t', 'minute'), a.out('t', 'second')]).toEqual([2, 40, 0]);
+    expect(say('1:30:00').out('t', 'base')).toBe(5400);
+    expect(say('250ms').out('t', 'base')).toBe(0.25);
+    expect(say('3ks').out('t', 'base')).toBe(3000);
+    expect(say('90min', { unit: 'h' }).out('t', 'quantity')).toBe('1.5h');
+    // a plain number is seconds with h · min · s, and the chosen unit otherwise
+    expect(run([['n', 'constant', { value: '90' }], ['t', 'qty-time']], [['n', 'out', 't', 'in']]).out('t', 'quantity')).toBe('1min 30s');
+    expect(run([['n', 'constant', { value: '90' }], ['t', 'qty-time', { unit: 'min' }]], [['n', 'out', 't', 'in']]).out('t', 'base')).toBe(5400);
+  });
+
+  it('refuses text that is not a time, and a negative time', () => {
+    const bad = (value: string) => run([['c', 'constant', { kind: 'text', value }], ['t', 'qty-time']], [['c', 'out', 't', 'in']]).nodes.get('t')!.status;
+    expect(bad('2 apples').level).toBe('error');
+    expect(bad('5kg').message).toMatch(/mass/);
+    expect(bad('-5 min').level).toBe('error');
+  });
+
+  it('keeps a program saved with Amount, Prefix and Unit: same time, same unit', () => {
+    const e = t({ amount: 1.5, prefix: 'k', unit: 'min' });
+    expect(e.out('t', 'base')).toBe(1.5 * 60 * 1000);
+    expect(resolveParams(MODULES.find((m) => m.type === 'qty-time')!, { amount: 90, unit: 'min' })).toMatchObject({ span: 5400, unit: 'min' });
+    // Existing span takes precedence if a stray amount is also present.
+    expect(resolveParams(MODULES.find((m) => m.type === 'qty-time')!, { span: 120, amount: 90, unit: 'min' })).toMatchObject({ span: 120, unit: 'min' });
+  });
+
+  it('handles huge spans without float64 remainder noise or overflow', () => {
+    const e = t({ span: 1e40 });
+    expect(e.out('t', 'quantity')).toBe('1e+40s');
+    expect(e.out('t', 'base')).toBe(1e40);
+    expect([e.out('t', 'minute'), e.out('t', 'second'), e.out('t', 'millisecond')]).toEqual([0, 0, 0]);
+    expect(Number.isFinite(e.out('t', 'hour') as number)).toBe(true);
+  });
+
+  it('feeds a time setting: Quantity text drives a Timer Duration pin (including SI prefixes)', () => {
+    const e = run([['c', 'constant', { kind: 'text', value: '2 h 40 min' }], ['t', 'timer', { autostart: false }]], [['c', 'out', 't', 'p:duration']], 100);
+    expect(e.out('t', 'remaining')).toBe(9600);
+    expect([e.out('t', 'hour'), e.out('t', 'minute'), e.out('t', 'second')]).toEqual([2, 40, 0]);
+    const si = run([['q', 'qty-time', { span: 3000, prefix: 'k', unit: 's' }], ['t', 'timer', { autostart: false }]], [['q', 'quantity', 't', 'p:duration']], 100);
+    expect(si.out('q', 'quantity')).toBe('3ks');
+    expect(si.out('t', 'remaining')).toBe(3000);
   });
 });

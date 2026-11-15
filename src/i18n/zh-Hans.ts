@@ -10,5 +10,6 @@ import { files } from './hans/files';
 import { actors } from './hans/actors';
 import { numfmt } from './hans/numfmt';
 import { exact } from './hans/exact';
+import { time } from './hans/time';
 
-export const zhHans: Record<string, string> = { ...actors, ...numfmt, ...exact, ...files, ...nodes, ...content, ...docs, ...extra, ...ui, ...faces, ...docsUi };
+export const zhHans: Record<string, string> = { ...actors, ...time, ...numfmt, ...exact, ...files, ...nodes, ...content, ...docs, ...extra, ...ui, ...faces, ...docsUi };

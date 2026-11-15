@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useState, useSyncExternalStore, type ReactElement } from 'react';
+import { memo, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactElement } from 'react';
 import type { CompoundDef, Edge, ModuleDef, NodeInst, ParamDef } from '../core/types';
 import { SETTING_PREFIX, getDef, nodeTitle, paramDefsOf, portList } from '../core/registry';
 import { packageById } from '../core/packages';
@@ -7,6 +7,7 @@ import { describe, fmtNum } from '../core/util';
 import { fromNumber, packDec, toPlain, type Dec } from '../core/decimal';
 import { add, cmp, fromInt, mul, toDec } from '../core/decmath';
 import { findCity, fmtOffset, readClock } from '../core/worldclock';
+import { formatBase, formatDuration, fromBaseUnit, parseDuration, round6, toBaseUnit, unitWord, type TimeBase } from '../core/duration';
 import { engine, getDiagnostics, useDiagVersion, useNodeVer } from '../runtime/session';
 import { getSensorState, sensorVersion, subscribeSensors } from '../runtime/sensors';
 import { audio, notificationState, requestNotifications, vibrationSupported } from '../runtime/outputs';
@@ -18,7 +19,7 @@ import { ExactValuePanel, FileConverterPanel, ProjectorPanel, UnitConverterPanel
 import { FILE_KIND_BY_TYPE } from '../core/files';
 import { tr, trFace } from '../i18n';
 
-function NumberField({ p, value, onChange }: { p: Extract<ParamDef, { kind: 'number' }>; value: unknown; onChange: (v: number | string) => void }) {
+function NumberField({ id, p, value, onChange }: { id?: string; p: Extract<ParamDef, { kind: 'number' }>; value: unknown; onChange: (v: number | string) => void }) {
   const shown = (v: unknown) => (typeof v === 'string' ? v : String(v));
   const [text, setText] = useState(shown(value));
   // What is being typed (0.10, 1e3) stays while it still means the value; only a change from outside replaces it.
@@ -46,9 +47,82 @@ function NumberField({ p, value, onChange }: { p: Extract<ParamDef, { kind: 'num
     <div className="num-field">
       {sliderOk && <input type="range" min={p.min} max={p.max} step={p.step} value={Number.isFinite(num) ? num : p.default} aria-label={p.label} onChange={(e) => onChange(Number(e.target.value))} />}
       <div className="num-box">
-        <input type="text" inputMode="decimal" value={text} aria-label={tr('{label} value', { label: p.label })} onChange={(e) => commit(e.target.value)} onBlur={() => setText(shown(value))}
+        <input id={id} type="text" inputMode="decimal" value={text} aria-label={tr('{label} value', { label: p.label })} onChange={(e) => commit(e.target.value)} onBlur={() => setText(shown(value))}
           onKeyDown={(e) => { if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); nudge(e.key === 'ArrowUp' ? 1 : -1, e.shiftKey); } }} />
         {p.unit && <span className="unit">{p.unit}</span>}
+      </div>
+    </div>
+  );
+}
+
+type NumberDef = Extract<ParamDef, { kind: 'number' }>;
+
+/** Quick adjustments offered under a time field, in the setting's own unit. */
+const NUDGES: Record<TimeBase, number[]> = {
+  s: [1, 10, 60, 600, 3600],
+  ms: [10, 100, 1000, 10000, 60000],
+};
+
+/**
+ * A time setting. It is typed the way people say it (2 h 40 min, 1h30m, 90 s, 1:30:00, 2.5 hours) and held as a plain
+ * number in the setting's own unit, so everything that reads the setting keeps working.
+ */
+function DurationField({ id, p, base, value, onChange }: { id?: string; p: NumberDef; base: TimeBase; value: unknown; onChange: (v: number) => void }) {
+  const lang = useStore((s) => s.settings.language);
+  const prevLang = useRef(lang);
+  const num = Number.isFinite(Number(value)) ? Number(value) : p.default;
+  const show = (v: number) => formatBase(v, base);
+  const [text, setText] = useState(() => show(num));
+  const [error, setError] = useState('');
+  const [note, setNote] = useState('');
+  // What is being typed stays while it still means the value; a change from outside or a language switch reformats it.
+  useEffect(() => {
+    const langChanged = prevLang.current !== lang;
+    prevLang.current = lang;
+    setText((cur) => {
+      const r = parseDuration(cur, base);
+      if (!langChanged && r.ok && Math.abs(toBaseUnit(r.seconds, base) - num) < 1e-9) return cur;
+      if (langChanged && !r.ok) {
+        setError(cur.trim() ? tr(r.error) : tr('Type a time, for example 2 h 40 min.'));
+        setNote('');
+        return cur;
+      }
+      if (langChanged) { setError(''); setNote(''); }
+      return show(num);
+    });
+  }, [num, base, lang]); // eslint-disable-line react-hooks/exhaustive-deps
+  const clamp = (v: number) => Math.min(p.max, Math.max(p.min, v));
+  const commit = (t: string) => {
+    setText(t);
+    if (t.trim() === '') { setError(tr('Type a time, for example 2 h 40 min.')); setNote(''); return; }
+    const r = parseDuration(t, base);
+    if (!r.ok) { setError(tr(r.error)); setNote(''); return; }
+    const raw = toBaseUnit(r.seconds, base);
+    const v = clamp(raw);
+    setError('');
+    setNote(v !== raw ? tr('Held to the allowed {side}: {value}.', { side: raw < p.min ? tr('minimum') : tr('maximum'), value: show(v) }) : '');
+    onChange(v);
+  };
+  const setExact = (v: number) => { const c = clamp(v); setError(''); setNote(''); setText(show(c)); onChange(c); };
+  const step = (by: number) => setExact(round6(num + by));
+  const sliderOk = p.max - p.min <= 100000;
+  const nudges = NUDGES[base].filter((by) => by <= p.max);
+  const seconds = fromBaseUnit(num, base);
+  return (
+    <div className="num-field dur-field">
+      {sliderOk && <input type="range" min={p.min} max={p.max} step={p.step} value={num} aria-label={p.label} onChange={(e) => setExact(Number(e.target.value))} />}
+      <div className={`num-box ${error ? 'bad' : ''}`}>
+        <input id={id} type="text" value={text} spellCheck={false} autoComplete="off" aria-invalid={!!error} aria-label={tr('{label} value', { label: p.label })}
+          placeholder={tr('2 h 40 min, 90 s, 1:30:00')}
+          onChange={(e) => commit(e.target.value)} onBlur={() => { setText(show(num)); setError(''); setNote(''); }}
+          onKeyDown={(e) => { if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); step((e.key === 'ArrowUp' ? 1 : -1) * p.step * (e.shiftKey ? 10 : 1)); } if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+      </div>
+      {error
+        ? <p className="dur-msg bad" role="alert">{error}</p>
+        : <p className="dur-msg">{note || <>= <b>{formatDuration(seconds)}</b> · {fmtNum(num)} {unitWord(base)}</>}</p>}
+      <div className="dur-chips" role="group" aria-label={tr('Adjust {label}', { label: p.label })}>
+        {nudges.map((by) => <button key={by} type="button" className="btn sm" disabled={num >= p.max} onMouseDown={(e) => e.preventDefault()} onClick={() => step(by)}>+{formatBase(by, base)}</button>)}
+        <button type="button" className="btn sm" disabled={num <= p.min} onMouseDown={(e) => e.preventDefault()} onClick={() => setExact(p.min)} title={tr('Set to zero (or the smallest allowed time)')}>{tr('Clear')}</button>
       </div>
     </div>
   );
@@ -63,7 +137,7 @@ function ParamRow({ p, value, onChange, onAction, driven }: { p: ParamDef; value
   const id = `f-${p.key}`;
   let control: ReactElement;
   switch (p.kind) {
-    case 'number': control = <NumberField p={p} value={value} onChange={onChange} />; break;
+    case 'number': control = p.time ? <DurationField id={id} p={p} base={p.time} value={value} onChange={onChange} /> : <NumberField id={id} p={p} value={value} onChange={onChange} />; break;
     case 'select': control = (
       <select id={id} value={String(value)} onChange={(e) => onChange(e.target.value)}>{p.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select>
     ); break;
@@ -80,7 +154,7 @@ function ParamRow({ p, value, onChange, onAction, driven }: { p: ParamDef; value
     ); break;
     case 'action': control = <button className="btn" onClick={() => onAction?.(p.command)}>{p.label}</button>; break;
   }
-  const meta = p.kind === 'number' ? tr('Range {min} to {max} · default {def}{unit}', { min: fmtNum(p.min), max: fmtNum(p.max), def: fmtNum(p.default), unit: p.unit ? ' ' + p.unit : '' }) : p.kind === 'select' ? tr('Default: {value}', { value: String(p.options.find((o) => o.value === p.default)?.label) }) : p.kind === 'bool' ? tr('Default: {value}', { value: p.default ? tr('on') : tr('off') }) : undefined;
+  const meta = p.kind === 'number' && p.time ? tr('Range {min} to {max} · default {def}', { min: formatBase(p.min, p.time), max: formatBase(p.max, p.time), def: formatBase(p.default, p.time) }) : p.kind === 'number' ? tr('Range {min} to {max} · default {def}{unit}', { min: fmtNum(p.min), max: fmtNum(p.max), def: fmtNum(p.default), unit: p.unit ? ' ' + p.unit : '' }) : p.kind === 'select' ? tr('Default: {value}', { value: String(p.options.find((o) => o.value === p.default)?.label) }) : p.kind === 'bool' ? tr('Default: {value}', { value: p.default ? tr('on') : tr('off') }) : undefined;
   return (
     <div className={`field ${p.kind === 'bool' ? 'inline' : ''}`}>
       <label htmlFor={id}>{p.kind === 'action' ? tr("Action") : p.label}</label>
@@ -388,7 +462,7 @@ function EdgePanel({ id }: { id: string }) {
       </header>
       <Section title={tr("Signal processing")}>
         <ParamRow p={{ key: 'weight', label: tr("Strength weight"), kind: 'number', min: 0, max: 4, step: 0.05, default: 1, doc: tr("Multiplies the strength of every signal on this connection. 0 silences it; Attention, Hypernerve and Reward read strength.") }} value={edge.weight} onChange={(v) => st.setEdge(id, { weight: Number(v) }, 'w')} />
-        <ParamRow p={{ key: 'delay', label: tr("Propagation delay"), kind: 'number', min: 0, max: 5000, step: 10, default: 0, unit: 'ms', doc: tr("Simulation milliseconds each signal waits on this connection. Delayed connections also make feedback loops legal.") }} value={edge.delay} onChange={(v) => st.setEdge(id, { delay: Number(v) }, 'd')} />
+        <ParamRow p={{ key: 'delay', label: tr("Propagation delay"), kind: 'number', min: 0, max: 86400000, step: 10, default: 0, unit: 'ms', time: 'ms', doc: tr("Simulation milliseconds each signal waits on this connection. Delayed connections also make feedback loops legal.") }} value={edge.delay} onChange={(v) => st.setEdge(id, { delay: Number(v) }, 'd')} />
         <ParamRow p={{ key: 'enabled', label: tr("Enabled"), kind: 'bool', default: true, doc: tr("Disabled connections carry nothing and are drawn dashed.") }} value={edge.enabled} onChange={(v) => st.setEdge(id, { enabled: !!v })} />
       </Section>
       <Section title={tr("Live signal")}>

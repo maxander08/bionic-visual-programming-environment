@@ -552,3 +552,19 @@ html .ns-tip { background: var(--k-ink); color: #15130f; border: 0; border-radiu
 }
 html.rm .g-typing i { animation: none; opacity: .7; }
 html.rm .g-mic.live { animation: none; }
+
+/* Time settings: typed as “2 h 40 min”, with a plain-words read-back and quick adjustments. */
+.dur-field { display: flex; flex-direction: column; align-items: stretch; gap: 6px; }
+.dur-field input[type="range"] { flex: none; width: 100%; }
+.dur-field .num-box { display: flex; width: 100%; padding-right: 0; }
+.dur-field .num-box input[type="text"] { flex: 1; min-width: 0; text-align: left; padding: 5px 8px !important; font-variant-numeric: tabular-nums; }
+.dur-field .num-box.bad, .dur-field .num-box.bad:hover, .dur-field .num-box.bad:focus-within { border-color: var(--k-err); }
+.dur-field .num-box.bad:has(input:focus-visible) { box-shadow: 0 0 0 1px var(--k-err); }
+.dur-field .dur-msg { margin: 0; font-size: 11.5px; color: var(--k-ink-2); line-height: 1.35; overflow-wrap: anywhere; }
+.dur-field .dur-msg b { color: var(--k-ink); font-weight: 500; }
+.dur-field .dur-msg.bad { color: var(--k-err); }
+.dur-field .dur-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.dur-field .dur-chips .btn.sm { padding: 0 7px; font-variant-numeric: tabular-nums; }
+@media (pointer: coarse) {
+  .dur-field .dur-chips .btn.sm { padding: 0 10px; }
+}

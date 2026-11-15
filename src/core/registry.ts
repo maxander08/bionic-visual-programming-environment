@@ -16,6 +16,8 @@ import { txt } from './modules/kit';
 import { clamp, fmtNum, numText } from './util';
 import { fromNumber, isDec, packDec, toNumber, toPlain, type Dec } from './decimal';
 import { cmp, toDec } from './decmath';
+import { formatBase, parseDuration, toBaseUnit } from './duration';
+import { parseQuantity } from './quantities';
 
 const info: ModuleDef[] = [
   {
@@ -57,18 +59,20 @@ export const PIN_SPACING = 24;
 const edgeNeed = (n: number) => (n <= 1 ? 0 : Math.ceil(((n + 1) * PIN_SPACING) / GRID) * GRID);
 
 const PIN_TYPE: Record<'number' | 'select' | 'text' | 'bool', PortType> = { number: 'num', select: 'text', text: 'text', bool: 'bool' };
+const pinType = (p: ParamDef): PortType => (p.kind === 'number' && p.time ? 'any' : PIN_TYPE[p.kind as 'number']);
 
 const joinText = (...parts: string[]) => parts.filter(Boolean).join(getLang() === 'en' ? ' ' : '');
 
 function settingPin(p: ParamDef): PortDef | null {
   if (p.kind === 'action' || p.hidden || p.pin === false) return null;
   const hint =
-    p.kind === 'number' ? tr('Number from {min} to {max}{unit}; values outside are clamped.', { min: fmtNum(p.min), max: fmtNum(p.max), unit: p.unit ? ' ' + p.unit : '' })
+    p.kind === 'number' && p.time ? tr('A time: text such as 2h 40min or 1:30:00, or a number of {unit}. Values from {min} to {max} are kept; others are clamped.', { unit: p.time === 'ms' ? tr('milliseconds') : tr('seconds'), min: formatBase(p.min, p.time), max: formatBase(p.max, p.time) })
+    : p.kind === 'number' ? tr('Number from {min} to {max}{unit}; values outside are clamped.', { min: fmtNum(p.min), max: fmtNum(p.max), unit: p.unit ? ' ' + p.unit : '' })
     : p.kind === 'bool' ? tr('True or false.')
     : p.kind === 'select' ? tr('Text, one of: {list}.', { list: p.options.map((o) => o.value).join(', ') })
     : '';
   return {
-    id: SETTING_PREFIX + p.key, label: p.label, type: PIN_TYPE[p.kind], optional: true, param: p.key,
+    id: SETTING_PREFIX + p.key, label: p.label, type: pinType(p), optional: true, param: p.key,
     doc: joinText(tr('Setting “{label}”. While connected, its signal replaces the value set in the inspector.', { label: p.label }), p.doc, hint),
   };
 }
@@ -169,7 +173,8 @@ export function defaultParams(def: ModuleDef, params: Params = {}): Params {
 }
 
 /** Validate and fill a parameter set against its schema. Unknown keys are dropped (except `def` on compounds). */
-export function resolveParams(def: ModuleDef, raw: Params): Params {
+export function resolveParams(def: ModuleDef, rawParams: Params): Params {
+  const raw = def.migrate ? def.migrate(rawParams) : rawParams;
   const out: Params = {};
   const defs = paramDefsOf(def, raw);
   // Dynamic schemas depend on their selector, so resolve the selector first.
@@ -187,7 +192,23 @@ export function resolveParams(def: ModuleDef, raw: Params): Params {
           out[p.key] = typeof packed === 'number' ? packed : toPlain(packed);
           break;
         }
-        const x = typeof v === 'number' ? v : isDec(v) ? toNumber(v) : Number(v);
+        // A time setting also takes text such as “2h 40min” (or SI-prefixed time like “3ks”), whatever unit the setting is held in.
+        let x: number;
+        if (p.time && typeof v === 'string') {
+          const timed = parseDuration(v, p.time);
+          if (timed.ok) {
+            const u = toBaseUnit(timed.seconds, p.time);
+            x = Number.isFinite(u) ? u : p.max;
+          } else {
+            const q = parseQuantity(v, 'time');
+            if (q.ok && q.q && q.q.group === 'time' && q.q.base >= 0) {
+              const u = toBaseUnit(q.q.base, p.time);
+              x = Number.isFinite(u) ? u : p.max;
+            } else x = NaN;
+          }
+        } else {
+          x = typeof v === 'number' ? v : isDec(v) ? toNumber(v) : Number(v);
+        }
         out[p.key] = Number.isFinite(x) && v !== '' && v !== null ? clamp(x, p.min, p.max) : p.default;
         break;
       }

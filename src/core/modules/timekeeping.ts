@@ -35,7 +35,7 @@ export const timer: ModuleDef = {
     out('count', 'Completions', 'num', 'How many times the countdown has reached zero since the program started.', 'right'),
   ],
   params: [
-    num('duration', 'Duration', 60, 0.1, 359999, 0.1, 'How long the countdown lasts. It follows this setting while the timer is waiting; a countdown that is already running keeps its length until it restarts.', 's'),
+    num('duration', 'Duration', 60, 0.1, 8640000, 0.1, 'How long the countdown lasts. Type it the way you say it: 2 h 40 min, 1h30m, 90 s, 1:30:00 or 2.5 hours; a plain number is seconds. It follows this setting while the timer is waiting; a countdown that is already running keeps its length until it restarts.', 's'),
     bol('autostart', 'Auto start', true, 'Begin counting down as soon as the program runs. Turn it off to wait for the Start pin or the START button.'),
     bol('repeat', 'Repeat', false, 'When the countdown ends, start it again at once instead of stopping.'),
     bol('millis', 'Show milliseconds', true, 'Add milliseconds to the Time output (04:59.250). Without them the text rounds up, so it reads 00:01 until the very end. The Hour, Minute, Seconds and Milliseconds pins are always exact.'),
@@ -123,7 +123,7 @@ export const stopwatch: ModuleDef = {
   params: [
     bol('autostart', 'Auto start', true, 'Begin counting as soon as the program runs. Turn it off to wait for the Start pin or the START / STOP button.'),
     bol('millis', 'Show milliseconds', true, 'Add milliseconds to the Time output (01:05.250). The Hour, Minute, Seconds and Milliseconds pins are always exact.'),
-    num('limit', 'Stop at', 0, 0, 359999, 1, 'The stopwatch stops by itself when it reaches this many seconds. 0 means no limit.', 's'),
+    num('limit', 'Stop at', 0, 0, 8640000, 1, 'The stopwatch stops by itself when it reaches this time, typed as 2 h 40 min, 90 s or 1:30:00 (a plain number is seconds). 0 means no limit.', 's'),
     act('toggleNow', 'START / STOP', 'toggle', 'Start the stopwatch, or stop it when it is running.'),
     act('lapNow', 'LAP', 'lap', 'Record a lap now.'),
     act('resetNow', 'RESET', 'reset', 'Stop, set to zero and forget the laps.'),
@@ -196,7 +196,7 @@ export const alarm: ModuleDef = {
     txt('time', 'Time', '07:30', 'Time of day to ring, by the clock of the chosen city (or of this device). Write 07:30, 19:45:30, 19:45:30.250 (with milliseconds) or 7:30 pm.', { maxLength: 16, placeholder: 'e.g. 07:30:00.000 or 7:30 pm' }),
     sel('repeat', 'Repeat', 'daily', REPEAT, 'Which days the alarm rings. “Once” rings the next time the time is reached and then stays quiet until a setting changes.'),
     txt('city', 'City', '', 'Optional. A city whose clock sets the alarm, as in the World Clock module. Leave it empty to use this device’s time zone.', { maxLength: 80, placeholder: 'This device (leave empty)', suggest: cityLabels }),
-    num('ring', 'Ring time', 10, 1, 3600, 1, 'How long Ringing stays true when nobody dismisses the alarm. It is counted in simulation time.', 's'),
+    num('ring', 'Ring time', 10, 1, 86400, 1, 'How long Ringing stays true when nobody dismisses the alarm, typed as 2 min, 90 s or 1 h (a plain number is seconds). It is counted in simulation time.', 's'),
     act('testNow', 'TEST RING', 'test', 'Ring right now to try what the alarm drives.'),
     act('snoozeNow', 'SNOOZE', 'snooze', 'Silence the alarm; it rings again in 5 minutes.'),
     act('dismissNow', 'DISMISS', 'dismiss', 'Silence the alarm.'),

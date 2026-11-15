@@ -32,7 +32,7 @@ interface ParamBase {
   pinSide?: Side;
 }
 export type ParamDef =
-  | (ParamBase & { kind: 'number'; min: number; max: number; step: number; default: number; unit?: string; /** The setting may hold any number of digits (kept as text when a double cannot hold them). Read it with ctx.dec(). */ exact?: boolean })
+  | (ParamBase & { kind: 'number'; min: number; max: number; step: number; default: number; unit?: string; /** A duration: shown and typed as “2 h 40 min”, held as a plain number in this unit (seconds or milliseconds). */ time?: 's' | 'ms'; /** The setting may hold any number of digits (kept as text when a double cannot hold them). Read it with ctx.dec(). */ exact?: boolean })
   | (ParamBase & { kind: 'select'; options: SelectOption[]; default: string })
   | (ParamBase & { kind: 'text'; default: string; multiline?: boolean; maxLength?: number; placeholder?: string; /** Autocomplete suggestions offered by the inspector. The value is still free text. */ suggest?: () => string[] })
   | (ParamBase & { kind: 'bool'; default: boolean })
@@ -207,6 +207,8 @@ export interface ModuleDef {
   outputs: PortDef[];
   params: ParamDef[];
   dynamicParams?: (p: Params) => ParamDef[];
+  /** Rewrites settings saved by an older version of the module into the current ones, before they are validated. */
+  migrate?: (raw: Params) => Params;
   /** Module holds state or time: feedback loops through it are legal. */
   delaying?: boolean;
   /** Evaluate once on start even without input (sources/constants). */

@@ -103,4 +103,11 @@ describe('GUI layer isolation and stacking invariants', () => {
     expect(/\.g-foot-row:empty\s*\{\s*display:\s*none\s*;?\s*\}/.test(goslingCss)).toBe(true);
     expect(/\.g-foot-row\s*\{\s*margin:\s*4px\s+0\s+0\s*;?\s*\}/.test(gui)).toBe(true);
   });
+
+  it('gives .dur-field full-width stretched layout, left-aligned input, and weight 500 read-back', () => {
+    expect(/\.dur-field\s*\{[^}]*align-items:\s*stretch/.test(gui)).toBe(true);
+    expect(/\.dur-field\s+\.num-box\s*\{[^}]*width:\s*100%/.test(gui)).toBe(true);
+    expect(/\.dur-field\s+\.num-box\s+input\[type="text"\]\s*\{[^}]*text-align:\s*left/.test(gui)).toBe(true);
+    expect(/\.dur-field\s+\.dur-msg\s+b\s*\{[^}]*font-weight:\s*500/.test(gui)).toBe(true);
+  });
 });

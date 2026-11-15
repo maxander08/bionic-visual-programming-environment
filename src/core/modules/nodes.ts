@@ -6,6 +6,7 @@ import { DEFAULT_PRECISION, MAX_PRECISION, DecError, needDec, toDec } from '../d
 import { FUNCTION_NAMES, compileExpr, splitEquations, type EquationData } from '../equation';
 import { readNumber } from '../basedata';
 import { bol, dnum, inp, num, out, sel, txt } from './kit';
+import { formatBase } from '../duration';
 
 // Numbers are exact decimals here: nothing is rounded to a fixed number of places (that is the Number Formatter's job).
 // Results leave as a plain number when a double holds them exactly, and as an exact decimal when it takes more digits (see packDec).
@@ -60,9 +61,9 @@ export const nodes: ModuleDef[] = [
     doc: { summary: 'A seeded pseudo-random number source.', runtime: 'Draws uniformly between min and max every 1/rate seconds of simulation time. The same seed always yields the same sequence after Stop → Run.' },
   },
   {
-    ...chipBase, type: 'pulse', name: 'Pulse', caption: 'Pulse', glyph: '⏸', chip: (p) => `${fmtNum(Number(p.period))} ms`,
+    ...chipBase, type: 'pulse', name: 'Pulse', caption: 'Pulse', glyph: '⏸', chip: (p) => formatBase(Number(p.period), 'ms', { compact: true }),
     inputs: [], outputs: [out('out', 'Pulse', 'bool', 'True for the pulse width, then false.'), out('count', 'Count', 'num', 'Pulses emitted so far.', 'right')], source: true, delaying: true,
-    params: [num('period', 'Period', 1000, 20, 600000, 10, 'Time between pulse starts.', 'ms'), num('width', 'Width', 100, 1, 600000, 10, 'How long the pulse stays true (capped below the period).', 'ms'), num('offset', 'Offset', 0, 0, 600000, 10, 'Time of the first pulse.', 'ms'), num('max', 'Max pulses', 0, 0, 100000, 1, '0 means unlimited.')],
+    params: [num('period', 'Period', 1000, 20, 86400000, 10, 'Time between pulse starts.', 'ms'), num('width', 'Width', 100, 1, 86400000, 10, 'How long the pulse stays true (capped below the period).', 'ms'), num('offset', 'Offset', 0, 0, 86400000, 10, 'Time of the first pulse.', 'ms'), num('max', 'Max pulses', 0, 0, 100000, 1, '0 means unlimited.')],
     run(c) {
       const s = c.state, period = c.num('period'), width = Math.min(c.num('width'), period - 1);
       if (s.next === undefined) { s.next = c.num('offset'); s.high = false; s.count = 0; c.emit('out', false); c.emit('count', 0); }
@@ -176,9 +177,9 @@ export const nodes: ModuleDef[] = [
     doc: { summary: 'Passes a signal only while the gate is open.', runtime: 'When open, input changes are forwarded. When closed nothing is emitted and the output keeps its last value. Opening the gate forwards the current input.' },
   },
   {
-    ...chipBase, type: 'inductor', name: 'Smooth', caption: 'Inductor', glyph: 'Ω', chip: (p) => `${fmtNum(Number(p.tau))} ms`, delaying: true,
+    ...chipBase, type: 'inductor', name: 'Smooth', caption: 'Inductor', glyph: 'Ω', chip: (p) => formatBase(Number(p.tau), 'ms', { compact: true }), delaying: true,
     inputs: [inp('in', 'Input', 'num', 'Target value.')], outputs: [out('out', 'Output', 'num', 'Low-pass filtered value.')],
-    params: [num('tau', 'Time constant', 500, 1, 600000, 10, 'Time to cover about 63% of the distance to the input.', 'ms')],
+    params: [num('tau', 'Time constant', 500, 1, 86400000, 10, 'Time to cover about 63% of the distance to the input.', 'ms')],
     run(c) {
       const s = c.state, target = n(c.get('in'));
       s.y ??= 0;
@@ -246,9 +247,9 @@ export const nodes: ModuleDef[] = [
     doc: { summary: 'Merges up to three inputs.', runtime: 'Only connected inputs that have a signal take part. Numeric modes are exact (a mean that never ends is worked out to 50 significant digits) and reject non-numeric values with a warning.' },
   },
   {
-    ...chipBase, type: 'delay', name: 'Delay', caption: 'Delay', glyph: '⧖', chip: (p) => `${fmtNum(Number(p.ms))} ms`, delaying: true,
+    ...chipBase, type: 'delay', name: 'Delay', caption: 'Delay', glyph: '⧖', chip: (p) => formatBase(Number(p.ms), 'ms', { compact: true }), delaying: true,
     inputs: [IN_ANY('Signal to delay.')], outputs: [OUT_ANY],
-    params: [num('ms', 'Delay', 500, 0, 600000, 10, 'How long each value is delayed, in simulation time.', 'ms'), sel('mode', 'Mode', 'shift', [['shift', 'Shift every value'], ['settle', 'Settle (emit after quiet)']], 'Shift keeps every value in order. Settle forgets intermediate values and emits only after the input has been quiet for the delay.')],
+    params: [num('ms', 'Delay', 500, 0, 86400000, 10, 'How long each value is delayed, in simulation time.', 'ms'), sel('mode', 'Mode', 'shift', [['shift', 'Shift every value'], ['settle', 'Settle (emit after quiet)']], 'Shift keeps every value in order. Settle forgets intermediate values and emits only after the input has been quiet for the delay.')],
     run(c) {
       const s = c.state;
       if (c.reason === 'input' || c.changed('in')) {

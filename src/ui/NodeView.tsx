@@ -1,6 +1,7 @@
 import { memo, useEffect, useRef, type ReactElement } from 'react';
 import type { ModuleDef, NodeInst } from '../core/types';
 import { SIZES } from '../core/types';
+import { localizeDuration } from '../core/duration';
 import { SETTING_PREFIX, defaultParams, nodeSize, nodeTitle, portSide } from '../core/registry';
 import { clamp, fmtNum, isImage, toText } from '../core/util';
 import { engine, useNodeVer } from '../runtime/session';
@@ -64,7 +65,8 @@ function QuantityFace({ text, sub, dim }: { text: string; sub: string; dim?: boo
   const m = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)(.*)$/.exec(text);
   const amount = m ? m[1] : text;
   const unit = m ? m[2] : '';
-  const n = text.length;
+  // Full-width CJK glyphs are roughly twice as wide as Latin digits/letters; weight them so Chinese durations shrink to fit.
+  const n = [...text].reduce((w, ch) => w + (/[\u3000-\u9fff\uff00-\uffef]/.test(ch) ? 1.9 : 1), 0);
   return (
     <div className={`qty ${dim ? 'idle' : ''}`}>
       <div className={`qty-val ${n > 14 ? 'n3' : n > 9 ? 'n2' : ''}`} title={text}><span className="qa">{amount}</span><span className="qu">{unit}</span></div>
@@ -337,7 +339,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
       body = <QuantityFace text={shown} sub={numFmtSub(String(view.mode ?? params.mode), Number(view.n ?? params.n))} dim={view.text === undefined} />;
       break;
     }
-    default: body = fileKind ? <FileFace node={node} kind={fileKind} ro={ro} /> : def.family === 'quantity' ? <QuantityFace text={String(view.text ?? def.chip?.(params) ?? '')} sub={tr(String(view.sub ?? ''))} dim={view.text === undefined} /> : null;
+    default: body = fileKind ? <FileFace node={node} kind={fileKind} ro={ro} /> : def.family === 'quantity' ? <QuantityFace text={def.type === 'qty-time' ? localizeDuration(String(view.text ?? def.chip?.(params) ?? '')) : String(view.text ?? def.chip?.(params) ?? '')} sub={tr(String(view.sub ?? ''))} dim={view.text === undefined} /> : null;
   }
 
   // Base Data chips show the value they last emitted, so a converted Input shows as what it became.

@@ -4,7 +4,9 @@ import {
   GROUP_BY_ID, PREFIXES, QUANTITIES, UNIT_BY_SYM, autoPrefix, fmtAmount, fmtQuantity, fromBase, parseQuantity, tidy, toBase,
   type QuantitySpec,
 } from '../quantities';
-import { inp, num, out, sel } from './kit';
+import { formatDuration, parseDuration } from '../duration';
+import { splitDuration } from '../timekeeping';
+import { inp, num, out, sel, timeParts } from './kit';
 
 // The Quantities section. A quantity is an amount of something written <amount><unit>, like 2.5km or 101.325kPa.
 // One module per kind of quantity (Time, Length, Pressure …). Each holds an amount, an SI prefix and a unit, and every
@@ -104,4 +106,113 @@ function make(spec: QuantitySpec): ModuleDef {
   };
 }
 
-export const quantities: ModuleDef[] = QUANTITIES.map(make);
+// ---- Time ------------------------------------------------------------------------------------------------------
+// Time is the one quantity people say in several units at once: 2 hours 40 minutes, not 2.6667 h. So its amount is a
+// duration typed as “2 h 40 min”, it is shown that way, and Hours, Minutes, Seconds and Milliseconds come out as separate pins.
+
+const HMS = 'hms';
+const NUMBER_TEXT = /^\s*\+?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?\s*$/i;
+const MAX_SPAN = 1e40;
+
+function makeTime(spec: QuantitySpec): ModuleDef {
+  const grp = GROUP_BY_ID.get(spec.group)!;
+  const unitNames = spec.units.map((s) => `${s} (${UNIT_BY_SYM.get(s)!.name})`).join(', ');
+  const unitOptions: [string, string][] = [[HMS, 'h · min · s (as you say it)'], ...spec.units.map((s) => [s, `${s} · ${UNIT_BY_SYM.get(s)!.name}`] as [string, string])];
+  const read = (seconds: number, mode: string, prefix: string) => (mode === HMS ? tidy(seconds) : tidy(fromBase(seconds, prefix, mode)));
+
+  return {
+    type: 'qty-time', name: 'Time', caption: 'Time', category: 'Quantities', family: 'quantity', size: 'small',
+    glyph: 'h:m', source: true,
+    keywords: `quantity unit si prefix amount measure ${spec.words} hours minutes seconds milliseconds hrs min sec hms duration span ${spec.units.join(' ')}`,
+    chip: (p) => (String(p.unit) === HMS ? formatDuration(Number(p.span), { compact: true }) : fmtQuantity(tidy(fromBase(Number(p.span), symbolOf(String(p.prefix)), String(p.unit))), symbolOf(String(p.prefix)), String(p.unit))),
+    inputs: [
+      inp('in', 'Quantity', 'any', 'A time to take in: text such as 2 hrs 40 min, 1h30m, 1:30:00 or 250ms, or a plain number (seconds, or the unit chosen here). It replaces Duration while connected.', 'top', true),
+    ],
+    outputs: [
+      out('quantity', 'Quantity', 'text', 'The time as text you can read and feed to any time setting or Time module: 2h 40min (or 9600s when a single unit is chosen).'),
+      out('amount', 'Amount', 'num', 'The whole time as one number in the unit chosen under Show as. With “h · min · s” it is the total in seconds.'),
+      out('unit', 'Unit', 'text', 'The unit of Amount, with its prefix: s with “h · min · s”.'),
+      out('base', 'SI value', 'num', `The same time in ${grp.baseName} (${grp.base}), the coherent SI unit. Use it to compare or calculate with quantities written in different units.`, 'right'),
+      ...timeParts('time'),
+    ],
+    params: [
+      { key: 'span', label: 'Duration', kind: 'number', default: 1, min: 0, max: MAX_SPAN, step: 1, unit: 's', time: 's',
+        doc: 'How long, typed the way you say it: 2 h 40 min, 1h30m, 90 s, 1:30:00, 2.5 hours, 1d 4h. A plain number is seconds.' },
+      sel('prefix', 'Prefix', NONE, PREFIX_OPTIONS, 'SI prefix for a single unit (m + s = milliseconds). It has no effect with “h · min · s”. “auto” picks the step of 1000 that keeps the amount between 1 and 999.'),
+      sel('unit', 'Show as', HMS, unitOptions, `How Quantity and Amount are written: as hours, minutes and seconds together (2h 40min), or in one unit: ${unitNames}. Hours, Minutes, Seconds and Milliseconds always come out as separate pins whatever this says.`),
+    ],
+    // Older programs held an Amount in a Prefix and Unit: keep that time, written the way it was.
+    migrate(raw) {
+      if (raw.span !== undefined || raw.amount === undefined) return raw; // `amount` is not a setting any more, so only an older program carries it
+      const x = Number(raw.amount);
+      const unit = typeof raw.unit === 'string' && UNIT_BY_SYM.get(raw.unit)?.group === 'time' ? raw.unit : 's';
+      const prefix = typeof raw.prefix === 'string' && raw.prefix !== AUTO ? symbolOf(raw.prefix) : '';
+      const seconds = toBase(x, prefix, unit);
+      return { ...raw, span: Number.isFinite(seconds) ? Math.min(MAX_SPAN, Math.max(0, seconds)) : 1, unit };
+    },
+    run(c) {
+      const mode = c.str('unit');
+      const choice = c.str('prefix');
+      const unit = mode === HMS ? 's' : mode;
+      let prefix = mode === HMS ? '' : symbolOf(choice);
+      let seconds: number;
+      if (c.has('in')) {
+        const v = c.get('in');
+        if (typeof v === 'string' && !NUMBER_TEXT.test(v)) {
+          const r = parseDuration(v, 's');
+          if (r.ok) seconds = r.seconds;
+          else {
+            // Prefixed units the spoken form does not cover (ks, μs, ns): the general quantity reader knows them.
+            const q = parseQuantity(v, 'time');
+            if (q.ok && q.q && q.q.group === 'time') seconds = q.q.base;
+            else if (q.ok && q.q) return c.fail(`${q.q.prefix}${q.q.unit} is a unit of ${qname(q.q.group).toLowerCase()}, not time. This module takes ${spec.units.join(', ')} (with any prefix).`);
+            else return c.fail(r.error);
+          }
+        } else {
+          const x = toNum(v);
+          if (!Number.isFinite(x)) return c.fail('The Quantity pin needs a time such as 2h 40min, or a number.');
+          seconds = toBase(x, prefix, unit);
+        }
+      } else seconds = c.num('span');
+      if (!Number.isFinite(seconds)) return c.fail('That time is too large to hold.');
+      if (seconds < 0) return c.fail('A time cannot be negative.');
+      if (mode !== HMS && choice === AUTO) prefix = autoPrefix(fromBase(seconds, '', unit));
+      const amount = read(seconds, mode, prefix);
+      const symbol = prefix + unit;
+      const text = mode === HMS ? formatDuration(seconds, { compact: true, plain: true }) : fmtQuantity(amount, prefix, unit);
+      const si = tidy(seconds);
+      const parts = seconds * 1000 <= Number.MAX_SAFE_INTEGER
+        ? splitDuration(Math.round(seconds * 1000))
+        : {
+          hour: Math.floor(seconds / 3600),
+          minute: seconds < 1e15 ? Math.floor((seconds % 3600) / 60) : 0,
+          second: seconds < 1e15 ? Math.floor(seconds % 60) : 0,
+          millisecond: 0,
+        };
+      c.emit('quantity', text);
+      c.emit('amount', amount);
+      c.emit('unit', symbol);
+      c.emit('base', si);
+      c.emit('hour', parts.hour);
+      c.emit('minute', parts.minute);
+      c.emit('second', parts.second);
+      c.emit('millisecond', parts.millisecond);
+      c.view({ text, symbol, sub: mode === HMS ? `= ${fmtAmount(si)} s` : symbol === grp.base ? UNIT_BY_SYM.get(unit)!.name : `= ${fmtAmount(si)} ${grp.base}`, amount: fmtAmount(amount) });
+    },
+    doc: {
+      summary: 'Holds a span of time written the way you say it, such as 2 hrs 40 min, and gives it out as text, as one number and as separate hours, minutes and seconds.',
+      runtime: 'Duration is typed as a sentence (2 h 40 min, 1h30m, 90 s, 1:30:00, 1.5 hours); a plain number is seconds. Show as chooses how Quantity and Amount are written: h · min · s (the default, 2h 40min) or a single unit with an optional SI prefix. Hours, Minutes, Seconds and Milliseconds are always separate outputs, split from the whole time (hours are not wrapped at 24), and SI value is the total in seconds. When the Quantity pin carries a signal it replaces Duration: text such as 2h 40min or 250ms, or a number in the unit chosen here (seconds with h · min · s). Wire Quantity into any time setting (a Timer\'s Duration, a Delay, a Pulse period) to set it from here.',
+      errors: [
+        'A Quantity input that is not a time (text such as 5km, or text with a stray word) raises an error that names the problem.',
+        'A negative time raises an error: a span of time is never below zero.',
+      ],
+      examples: [
+        'Time Quantity → Timer Duration pin: a countdown of exactly 2h 40min.',
+        'Time Hours, Minutes and Seconds → three Projectors: a readable clock face.',
+        'Timer Time → Time Quantity pin: split a running countdown into hours, minutes and seconds.',
+      ],
+    },
+  };
+}
+
+export const quantities: ModuleDef[] = QUANTITIES.map((q) => (q.id === 'time' ? makeTime(q) : make(q)));

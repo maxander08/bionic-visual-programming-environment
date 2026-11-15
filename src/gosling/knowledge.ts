@@ -1,5 +1,7 @@
 // Gosling's knowledge of the site: the module catalogue, its settings and pins, and the documentation index.
 // Everything here is derived from the same registry the editor uses, so it can never drift out of date.
+import { parseDuration, toBaseUnit } from '../core/duration';
+import { parseQuantity } from '../core/quantities';
 import { MODULES, paramDefsOf, defaultParams } from '../core/registry';
 import type { ModuleDef, ParamDef, Params } from '../core/types';
 import { fmtNum } from '../core/util';
@@ -135,6 +137,20 @@ export function coerceParam(p: ParamDef, raw: unknown): { ok: true; value: unkno
   if (p.kind === 'number') {
     if (typeof raw === 'number') return Number.isFinite(raw) ? { ok: true, value: raw } : { ok: false, why: `“${p.label}” needs a number.` };
     const s = String(raw).trim().toLowerCase();
+    // A time setting takes it the way people say it: “2 hours 40 minutes”, “1h30m”, “1:30:00” (or SI-prefixed “3ks”).
+    if (p.time) {
+      const d = parseDuration(s, p.time);
+      if (d.ok) {
+        const u = toBaseUnit(d.seconds, p.time);
+        return Number.isFinite(u) ? { ok: true, value: u } : { ok: false, why: `“${p.label}” is too large.` };
+      }
+      const q = parseQuantity(String(raw).trim(), 'time');
+      if (q.ok && q.q && q.q.group === 'time' && q.q.base >= 0) {
+        const u = toBaseUnit(q.q.base, p.time);
+        return Number.isFinite(u) ? { ok: true, value: u } : { ok: false, why: `“${p.label}” is too large.` };
+      }
+      return { ok: false, why: `“${p.label}” needs a time such as 2 h 40 min (I got “${String(raw)}”).` };
+    }
     const m = s.match(/^(-?\d*\.?\d+(?:e[-+]?\d+)?)\s*([a-z%°]*)$/);
     if (!m) return { ok: false, why: `“${p.label}” needs a number (I got “${String(raw)}”).` };
     let v = Number(m[1]);

@@ -23,7 +23,7 @@ const DUR_WORDS: Record<string, number> = {
   one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
   fifteen: 15, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60,
 };
-const unitSecs = (u: string) => (/^(ms|milli)/.test(u) ? 0.001 : /^h/.test(u) ? 3600 : /^m/.test(u) ? 60 : 1);
+const unitSecs = (u: string) => (/^(ms|milli)/.test(u) ? 0.001 : /^w/.test(u) ? 604800 : /^d/.test(u) ? 86400 : /^h/.test(u) ? 3600 : /^m/.test(u) ? 60 : 1);
 
 /** “90 seconds”, “5 minutes”, “1 hour 30 minutes”, “2m30s”, “1.5 h”, “half a second”, “an hour” → seconds. */
 export function durationOf(text: string): number | null {
@@ -37,12 +37,12 @@ export function durationOf(text: string): number | null {
       return ' ';
     });
   };
-  take(/(\d+(?:\.\d+)?)\s+and\s+a\s+half\s+(hours?|hrs?|minutes?|mins?|seconds?|secs?)(?![a-z])/g, (m) => (Number(m[1]) + 0.5) * unitSecs(m[2]));
-  take(/\bhalf\s+(?:an?\s+)?(hours?|hrs?|minutes?|mins?|seconds?|secs?)(?![a-z])/g, (m) => 0.5 * unitSecs(m[1]));
+  take(/(\d+(?:\.\d+)?)\s+and\s+a\s+half\s+(weeks?|wks?|days?|hours?|hrs?|minutes?|mins?|seconds?|secs?)(?![a-z])/g, (m) => (Number(m[1]) + 0.5) * unitSecs(m[2]));
+  take(/\bhalf\s+(?:an?\s+)?(weeks?|wks?|days?|hours?|hrs?|minutes?|mins?|seconds?|secs?)(?![a-z])/g, (m) => 0.5 * unitSecs(m[1]));
   take(/\bquarter\s+(?:of\s+)?(?:an?\s+)?(hours?|hrs?|minutes?|mins?)(?![a-z])/g, (m) => 0.25 * unitSecs(m[1]));
-  take(/(\d+(?:\.\d+)?)\s*(milliseconds?|millis|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h)(?![a-z])/g, (m) => Number(m[1]) * unitSecs(m[2]));
-  take(/\b(one|two|three|four|five|six|seven|eight|nine|ten|fifteen|twenty|thirty|forty|fifty|sixty)\s+(milliseconds?|millis|seconds?|secs?|minutes?|mins?|hours?|hrs?)(?![a-z])/g, (m) => (DUR_WORDS[m[1]] ?? 0) * unitSecs(m[2]));
-  take(/\b(?:a|an)\s+(hours?|hrs?|minutes?|mins?)(?![a-z])/g, (m) => unitSecs(m[1]));
+  take(/(\d+(?:\.\d+)?)\s*(milliseconds?|millis|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|weeks?|wks?)(?![a-z])/g, (m) => Number(m[1]) * unitSecs(m[2]));
+  take(/\b(one|two|three|four|five|six|seven|eight|nine|ten|fifteen|twenty|thirty|forty|fifty|sixty)\s+(milliseconds?|millis|seconds?|secs?|minutes?|mins?|hours?|hrs?|days?|weeks?|wks?)(?![a-z])/g, (m) => (DUR_WORDS[m[1]] ?? 0) * unitSecs(m[2]));
+  take(/\b(?:a|an)\s+(weeks?|wks?|days?|hours?|hrs?|minutes?|mins?)(?![a-z])/g, (m) => unitSecs(m[1]));
   return any ? total : null;
 }
 

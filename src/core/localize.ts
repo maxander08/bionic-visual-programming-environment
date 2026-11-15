@@ -10,7 +10,7 @@ const paramCache = new Map<Lang, WeakMap<ParamDef, ParamDef>>();
 
 // Modules whose chip is built from the app's own vocabulary (option names, fixed words, units), so every word of it can be
 // translated. The chips of Constant, String, Character, Array, Send Event… show what the user typed and stay as typed.
-const VOCAB_CHIPS = new Set(['pulse', 'invert', 'math', 'register', 'relay', 'inductor', 'threshold', 'compare', 'combine', 'delay', 'counter', 'sequence', 'branch', 'plastic', 'hyponerve', 'hypernerve', 'firing', 'envelope', 'nap', 'wave']);
+const VOCAB_CHIPS = new Set(['invert', 'math', 'register', 'relay', 'threshold', 'compare', 'combine', 'counter', 'sequence', 'branch', 'plastic', 'hyponerve', 'hypernerve', 'firing', 'envelope', 'nap', 'wave']);
 
 const port = (p: PortDef): PortDef => ({ ...p, label: tr(p.label), doc: tr(p.doc) });
 
