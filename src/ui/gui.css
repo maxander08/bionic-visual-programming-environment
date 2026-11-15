@@ -441,6 +441,7 @@ html .ns-tip { background: var(--k-ink); color: #15130f; border: 0; border-radiu
 .g-ic:hover { background: var(--k-3); color: var(--k-ink); }
 .g-ic.on { background: var(--k-3); color: var(--k-ink); box-shadow: inset 0 -1px 0 var(--k-accent); }
 .g-body { padding: 16px 14px 8px; gap: 16px; }
+.g-row:not(.user) .g-bubble { flex: 1; min-width: 0; }
 .g-bubble { border-radius: 0; background: none; border: 0; border-left: 1px solid var(--k-rule-2); padding: 1px 0 1px 12px; color: var(--k-ink); }
 .g-bubble.user { background: var(--k-2); border: 0; border-left: 2px solid var(--k-accent); color: var(--k-ink); border-radius: 0; padding: 8px 12px; max-width: 86%; }
 .g-bubble.warn { border-left-color: var(--k-warn); }
@@ -454,6 +455,7 @@ html .ns-tip { background: var(--k-ink); color: #15130f; border: 0; border-radiu
 .g-acts code { background: var(--k-2); border-color: var(--k-rule); }
 .g-link { border-radius: var(--k-r); border-color: var(--k-rule-2); color: var(--k-ink-2); }
 .g-link:hover { color: var(--k-ink); border-color: var(--k-ink-3); }
+.g-foot-row { margin: 4px 0 0; }
 .g-via { color: var(--k-ink-3); }
 .g-say { border-radius: var(--k-r); color: var(--k-ink-3); }
 .g-say:hover { background: var(--k-3); color: var(--k-ink); }
@@ -540,6 +542,8 @@ html .ns-tip { background: var(--k-ink); color: #15130f; border: 0; border-radiu
   .toggle i { width: 18px; height: 18px; top: 3px; left: 3px; }
   .toggle.on i { transform: translateX(18px); }
   .g-ic { width: 36px; height: 36px; }
+  .g-foot-row { min-height: 28px; }
+  .g-say { width: 28px; height: 28px; }
   .g-mic, .g-send { width: 40px; height: 40px; }
 }
 @media (prefers-reduced-motion: reduce) {

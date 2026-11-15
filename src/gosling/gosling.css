@@ -55,10 +55,13 @@
 .g-docs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .g-link { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 3px 8px; border-radius: 999px; background: none; border: 1px solid var(--hair2, #2c2c30); color: var(--dim, #8d8d8d); }
 .g-link:hover { color: var(--acc, #2fd9cf); border-color: #1d5a55; }
-.g-foot-row { display: contents; }
-.g-via { display: block; margin-top: 6px; font-size: 11px; color: var(--dim, #8d8d8d); }
+/* Footer row sits in normal flow under the message content, so the read-aloud button never covers text. */
+.g-foot-row { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-height: 22px; margin: 4px -6px -5px 0; }
+.g-foot-row:empty { display: none; }
+.g-foot-row .g-via { margin: 0 auto 0 0; }
+.g-via { display: block; font-size: 11px; color: var(--dim, #8d8d8d); }
 .g-bubble { position: relative; }
-.g-say { position: absolute; right: 5px; bottom: 5px; margin: 0; width: 22px; height: 22px; display: grid; place-items: center; background: none; border: 0; border-radius: 6px; color: var(--dim, #8d8d8d); opacity: 0; transition: opacity var(--dur-micro, 140ms); }
+.g-say { flex: none; position: static; margin: 0; width: 22px; height: 22px; display: grid; place-items: center; background: none; border: 0; border-radius: 6px; color: var(--dim, #8d8d8d); opacity: 0; transition: opacity var(--dur-micro, 140ms); }
 .g-bubble:hover .g-say, .g-say:focus-visible { opacity: 1; }
 .g-say:hover { background: var(--hover, #18181a); color: var(--acc, #2fd9cf); }
 @media (hover: none) { .g-say { opacity: .7; } }

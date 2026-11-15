@@ -96,4 +96,11 @@ describe('GUI layer isolation and stacking invariants', () => {
     expect(/(^|[\r\n}])\s*\.ghost\s*\{/.test(indexCss)).toBe(false);
     expect(/\.ghosts\s+\.ghost\s*\{/.test(indexCss)).toBe(true);
   });
+
+  it('keeps Gosling read-aloud footer in normal flow with non-negative margins in gui.css', () => {
+    const goslingCss = readFileSync(join(SRC, 'gosling', 'gosling.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(/\.g-say\s*\{[^}]*position:\s*static/.test(goslingCss)).toBe(true);
+    expect(/\.g-foot-row:empty\s*\{\s*display:\s*none\s*;?\s*\}/.test(goslingCss)).toBe(true);
+    expect(/\.g-foot-row\s*\{\s*margin:\s*4px\s+0\s+0\s*;?\s*\}/.test(gui)).toBe(true);
+  });
 });
