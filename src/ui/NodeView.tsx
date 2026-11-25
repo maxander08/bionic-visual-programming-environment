@@ -145,8 +145,11 @@ export function ImageCanvas({ img }: { img: unknown }) {
 function Meter({ hist, auto }: { hist: number[]; auto: boolean }) {
   if (!hist || hist.length < 2) return <svg className="art" viewBox="0 0 100 40" aria-hidden="true"><line x1="0" y1="20" x2="100" y2="20" stroke="currentColor" opacity=".25" strokeWidth="1" /></svg>;
   let lo = 0, hi = 1;
-  if (auto) { lo = Math.min(...hist); hi = Math.max(...hist); if (hi - lo < 1e-9) { lo -= 0.5; hi += 0.5; } }
-  const pts = hist.map((v, i) => `${(i / (hist.length - 1)) * 100},${36 - ((clamp(v, lo, hi) - lo) / (hi - lo)) * 32}`).join(' ');
+  // An unchanging signal is drawn half way up. Widening the range by ±0.5 cannot do this for very large values
+  // (at 2^53 and above, v ± 0.5 is v again, so the range stays empty and every point became NaN).
+  let flat = false;
+  if (auto) { lo = Math.min(...hist); hi = Math.max(...hist); if (lo === hi || hi - lo < 1e-9) { flat = true; lo -= 0.5; hi += 0.5; } }
+  const pts = hist.map((v, i) => `${(i / (hist.length - 1)) * 100},${flat ? 20 : 36 - ((clamp(v, lo, hi) - lo) / (hi - lo)) * 32}`).join(' ');
   return <svg className="art meter" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><polyline points={pts} fill="none" stroke="currentColor" strokeWidth="1.4" vectorEffect="non-scaling-stroke" strokeLinejoin="round" /></svg>;
 }
 
