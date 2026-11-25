@@ -5,7 +5,7 @@ import { FILE_KIND_BY_ID, isFileDescriptor, type FileKindId } from '../files';
 import { SOURCE_KINDS, formatLabel, formatsOf, isKindId, requestConversion, routeLabel, targetsOf } from '../convert';
 import { PREFIXES, autoPrefix, fmtQuantity } from '../quantities';
 import { CONV_BY_SYM, CONV_GROUPS, CONV_GROUP_BY_ID, cFromBase, cToBase, ignoresPrefix, parseConv, tidy } from '../units';
-import { bol, inp, num, out, sel, txt } from './kit';
+import { bol, details, inp, num, out, sel, txt } from './kit';
 
 // The Actors section: modules that carry out one predefined job. Like every module they keep their settings in the inspector and
 // show each of them as a setting pin on the node (the registry derives the pins from the parameter list), so a signal can choose
@@ -36,6 +36,7 @@ function fileConverterParams(p: Params): ParamDef[] {
       'The file type of the result, as its extension. The choices depend on “Convert to”.'),
     txt('name', 'Result name', '', 'Name of the new file without its extension. Empty keeps the name of the incoming file.', { maxLength: 80, placeholder: 'same as the source' }),
     num('quality', 'Picture quality', 0.92, 0.05, 1, 0.01, 'How much detail JPEG and WebP pictures keep, and the pictures drawn into a PDF (1 is best, 0.05 is smallest). Ignored by every other format.'),
+    details('the name of the file being converted'),
   ];
 }
 
@@ -117,6 +118,7 @@ function unitConverterParams(p: Params): ParamDef[] {
     sel('fromPrefix', 'From prefix', NONE, FROM_PREFIXES, 'SI prefix of the “From” unit, a power of ten placed in front of it: k + m is the kilometre. Units such as ft, lb and psi are not scaled by prefixes, so it is ignored for them.'),
     sel('to', 'To unit', g.units[1] ?? g.units[0], choices, 'The unit to convert into. The choices are the units of the chosen kind of quantity.'),
     sel('toPrefix', 'To prefix', NONE, TO_PREFIXES, 'SI prefix of the “To” unit. “auto” picks the step of 1000 that keeps the result between 1 and 999. Ignored for units that take no prefix.'),
+    details('the quantity that was converted'),
   ];
 }
 
@@ -214,6 +216,7 @@ const numberFormatter: ModuleDef = {
     sel('rounding', 'Rounding', 'nearest', NF_ROUNDING, 'How a number that does not fit is rounded. It decides what 2.5 and −2.5 become at 0 places, and whether any leftover digit pushes the last kept digit up.'),
     bol('trim', 'Trim trailing zeros', false, 'Off: 3.1 at 3 places is 3.100. On: it is 3.1. Applies to every format, including the mantissa of scientific and engineering notation.'),
     sel('style', 'Exponent style', 'e', [['e', 'e-notation (1.5e+3)'], ['x10', 'Times ten (1.5 × 10³)']], 'How the power of ten is written in scientific and engineering notation. Ignored by the other formats.'),
+    details('how the number is being formatted'),
   ],
   run(c) {
     const viaPin = c.has('in');

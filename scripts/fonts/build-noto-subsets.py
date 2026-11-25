@@ -9,8 +9,11 @@ These are the ONLY fonts the interface is allowed to use for Chinese text. They 
 (400-700) subsets of the official Noto Sans SC / Noto Sans TC (SIL OFL 1.1) that contain:
 
   * every CJK character found anywhere in src/ (all translations, labels, docs),
-  * SC: the full GB2312 set (6,763 hanzi) · TC: Big5 level 1 + 2 common hanzi (5,401 + punctuation),
+  * SC: the full GB2312 set (6,763 hanzi) · TC: all of Big5, level 1 + level 2 (13,000+ hanzi, so every traditional character in everyday use is covered) + punctuation,
   * CJK punctuation and full-width forms.
+
+Both faces sit in every Chinese font stack (ui/typography.css), the face of the current language first, so a character that one
+face does not hold is drawn, character by character, by the other Noto face and never by a system font.
 
 Usage:
     pip install fonttools brotli
@@ -96,7 +99,7 @@ def main() -> None:
             paths[n] = dest
     src = chars_in_source()
     build(paths["SC"], src | codec_hanzi("gb2312", range(0xB0, 0xF8)), os.path.join(OUT, "NotoSansSC-subset.woff2"))
-    build(paths["TC"], src | codec_hanzi("big5", range(0xA4, 0xC7)), os.path.join(OUT, "NotoSansTC-subset.woff2"))
+    build(paths["TC"], src | codec_hanzi("big5", range(0xA4, 0xFA)), os.path.join(OUT, "NotoSansTC-subset.woff2"))
 
 
 if __name__ == "__main__":

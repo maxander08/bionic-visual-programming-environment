@@ -37,7 +37,11 @@ it('files can be dropped on a node, on empty workspace, and clicked', async () =
   let id = '';
   await act(async () => { id = st().addNodeAt('file-text', 120, 120)!; });
   expect(nodeEl(id).querySelector('.file-face')).toBeTruthy();
+  expect(nodeEl(id).textContent).not.toContain('.MD .TXT .RTF');
+  await act(async () => { st().setNodeParams(id, { details: true }); });
   expect(nodeEl(id).textContent).toContain('.MD .TXT .RTF');
+  await act(async () => { st().setNodeParams(id, { details: false }); });
+  expect(nodeEl(id).textContent).not.toContain('.MD .TXT .RTF');
 
   // 1. a text file dropped on the node is read and stored
   await act(async () => { drop(nodeEl(id), [new File(['hello\nworld'], 'notes.txt', { type: 'text/plain' })]); await wait(50); });

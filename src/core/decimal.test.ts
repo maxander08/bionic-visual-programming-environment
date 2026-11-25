@@ -122,7 +122,7 @@ describe('Number Formatter actor', () => {
     const d = getDef('actor-numfmt')!;
     expect(d.category).toBe('Actors');
     const keys = paramDefsOf(d, {}).map((p) => p.key);
-    expect(keys).toEqual(['value', 'mode', 'n', 'rounding', 'trim', 'style']);
+    expect(keys).toEqual(['value', 'mode', 'n', 'rounding', 'trim', 'style', 'details']);
     expect(d.paramPins!.map((p) => p.param)).toEqual(keys);
   });
   it('formats its Value setting', () => {

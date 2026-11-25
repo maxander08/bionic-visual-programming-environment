@@ -138,7 +138,7 @@ function rawCompoundDef(cd: CompoundDef): ModuleDef {
     const inner = cd.graph.nodes[e.nodeId];
     const idef = inner && BY_TYPE.get(inner.type);
     const pd = idef && paramDefsOf(idef, inner.params).find((p) => p.key === e.param);
-    if (pd) exposed.push({ ...pd, key: e.key, label: e.label || pd.label, default: inner.params[e.param] ?? (pd as any).default } as ParamDef);
+    if (pd) exposed.push({ ...pd, key: e.key, label: e.label || tr(pd.label), default: inner.params[e.param] ?? (pd as any).default } as ParamDef);
   }
   return {
     ...compoundShell,

@@ -64,7 +64,7 @@ const QTY_NUM_SPLIT = /([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+|\s*×\s*10[⁻⁰¹
 const QTY_NUM_EXACT = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+|\s*×\s*10[⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)?$/i;
 
 /** The face of a Quantities module: <amount><unit> in large type, and the SI value (or the unit's name) underneath. */
-function QuantityFace({ text, sub, dim }: { text: string; sub: string; dim?: boolean }) {
+function QuantityFace({ text, sub, dim, hideSub }: { text: string; sub: string; dim?: boolean; hideSub?: boolean }) {
   // Split the whole text into number / unit runs so that every number is one colour and every unit another. A compound
   // time such as "1min 11s" has two amounts and two units; matching only the first amount left the second number
   // (and everything after the first one) in the unit colour.
@@ -78,7 +78,7 @@ function QuantityFace({ text, sub, dim }: { text: string; sub: string; dim?: boo
       <div className={`qty-val ${n > 12 ? 'n3' : n > 9 ? 'n2' : ''}`} title={text}>{hasNum
         ? parts.map((s, i) => (isNum(s) ? <span key={i} className="qa">{s}</span> : <span key={i} className="qu">{s}</span>))
         : <span className="qa">{text}</span>}</div>
-      <div className="qty-sub clamp1" title={sub}>{sub || ' '}</div>
+      {!hideSub && <div className="qty-sub clamp1" title={sub}>{sub || ' '}</div>}
     </div>
   );
 }
@@ -95,12 +95,12 @@ function numFmtSub(mode: string, n: number): string {
 }
 
 /** The face of the File Converter: the route (IMG → PDF), the file it is working on, and what state it is in. */
-function ConverterFace({ route, name, state, size }: { route: string; name: string; state: string; size?: number }) {
+function ConverterFace({ route, name, state, size, more }: { route: string; name: string; state: string; size?: number; more?: boolean }) {
   const label = state === 'working' ? tr('Converting…') : state === 'done' ? fmtBytes(size ?? 0) : state === 'error' ? tr('Error') : tr('Waiting for a file');
   return (
     <div className={`actor ac-${state}`}>
       <div className="ac-route" title={route}>{route}</div>
-      <div className="ac-name clamp1" title={name}>{name || ' '}</div>
+      {more && <div className="ac-name clamp1" title={name}>{name || ' '}</div>}
       {state === 'working' ? <div className="ac-bar" aria-hidden="true"><i /></div> : <div className="ac-state">{label}</div>}
     </div>
   );
@@ -163,6 +163,7 @@ interface Props {
 
 function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
   useStore((s) => s.settings.language); // memoised view: re-render when the language changes
+  const pinLabels = useStore((s) => s.settings.pinLabels !== false); // names of the setting pins, shown while the module is highlighted
   const rid = prefix + node.id;
   const ver = useNodeVer(rid);
   const rt = engine.nodes.get(rid);
@@ -171,6 +172,8 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
   // Settings in effect: what a connected setting pin is driving, otherwise what the inspector says.
   const params = rt?.driven ? rt.live : node.params;
   const pinned = (key: string) => rt?.inputs[SETTING_PREFIX + key] !== undefined;
+  // “Show details” (a setting with its own setting pin): the secondary lines of a Timekeeping, Files or Actors face.
+  const more = params.details === true;
   const size = nodeSize(def);
   const chip = def.size === 'chip';
   const col = FAMILY_VAR[def.family];
@@ -298,30 +301,30 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
       <div className={`clock ${view.day === false ? 'night' : ''}`}>
         <div className={`clock-time ${String(view.time ?? '').length > 12 ? 'long' : ''}`}>{view.time !== undefined ? fmtClockTime(String(view.time)) : '--:--'}</div>
         <div className="clock-city clamp1">{trPlace(String(view.city ?? String(params.city ?? '').split(',')[0]))}</div>
-        <div className="clock-date clamp1">{view.date ? fmtClockDate(String(view.date)) : ''}</div>
-        <div className="clock-zone clamp1">{view.offset ?? ''}</div>
+        {more && <div className="clock-date clamp1">{view.date ? fmtClockDate(String(view.date)) : ''}</div>}
+        {more && <div className="clock-zone clamp1">{view.offset ?? ''}</div>}
       </div>
     ); break;
     case 'timer': body = (
       <div className={`tk ${view.state ?? 'idle'}`}>
         <div className={`tk-time ${String(view.time ?? '').length > 9 ? 'long' : ''}`}>{view.time ?? '--:--.---'}</div>
-        <div className="tk-bar" aria-hidden="true"><i style={{ width: `${clamp(Number(view.progress) || 0, 0, 1) * 100}%` }} /></div>
-        <div className="tk-state">{tr(TK_STATE[view.state ?? 'idle'])}{Number(view.count) > 0 ? ` · ${view.count}×` : ''}</div>
+        {more && <div className="tk-bar" aria-hidden="true"><i style={{ width: `${clamp(Number(view.progress) || 0, 0, 1) * 100}%` }} /></div>}
+        <div className="tk-state">{tr(TK_STATE[view.state ?? 'idle'])}{more && Number(view.count) > 0 ? ` · ${view.count}×` : ''}</div>
       </div>
     ); break;
     case 'alarm': body = (
       <div className={`tk ${view.state ?? ''}`}>
         <div className={`tk-time ${String(view.time ?? '').length > 9 ? 'long' : ''}`}>{view.time !== undefined ? fmtClockTime(String(view.time)) : '--:--:--.---'}</div>
         <div className="tk-state">{tr(TK_STATE[view.state ?? 'armed'])}</div>
-        <div className="tk-sub clamp1">{view.countdown ? fmtCountdown(String(view.countdown)) : ' '}</div>
-        <div className="tk-sub clamp1">{trPlace(String(view.place ?? String(params.city ?? '').split(',')[0]))}</div>
+        {more && <div className="tk-sub clamp1">{view.countdown ? fmtCountdown(String(view.countdown)) : ' '}</div>}
+        {more && <div className="tk-sub clamp1">{trPlace(String(view.place ?? String(params.city ?? '').split(',')[0]))}</div>}
       </div>
     ); break;
     case 'stopwatch': body = (
       <div className={`tk ${view.state ?? 'stopped'}`}>
         <div className={`tk-time ${String(view.time ?? '').length > 9 ? 'long' : ''}`}>{view.time ?? '00:00.000'}</div>
         <div className="tk-state">{tr(TK_STATE[view.state ?? 'stopped'])}</div>
-        <div className="tk-sub clamp1">{Number(view.laps) > 0 ? tr('Lap {n} · {t}', { n: String(view.laps), t: String(view.lap) }) : ' '}</div>
+        {more && <div className="tk-sub clamp1">{Number(view.laps) > 0 ? tr('Lap {n} · {t}', { n: String(view.laps), t: String(view.lap) }) : ' '}</div>}
       </div>
     ); break;
     case 'comment': body = <div className="text-body note clamp3">{shownDefault('text', String(params.text ?? ''))}</div>; break;
@@ -337,17 +340,17 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
     case 'state': body = <><Art kind="cycle" level={0.7} extra={Math.max(0, Number(out('index')) || 0)} /><div className="state-name clamp1">{view.state ?? ''}</div></>; break;
     case 'compound': body = <Art kind="grid" level={0.4} />; break;
     case 'actor-fileconv': body = (
-      <ConverterFace route={String(view.route ?? routeLabel(params.from as FileKindId, params.to as FileKindId, String(params.format)))} name={String(view.name ?? '')} state={String(view.state ?? 'idle')} size={Number(view.size) || 0} />
+      <ConverterFace route={String(view.route ?? routeLabel(params.from as FileKindId, params.to as FileKindId, String(params.format)))} name={String(view.name ?? '')} state={String(view.state ?? 'idle')} size={Number(view.size) || 0} more={more} />
     ); break;
     case 'actor-unitconv': body = (
-      <QuantityFace text={String(view.text ?? `${fmtNum(Number(params.amount), 6)}${params.from}`)} sub={view.src !== undefined ? `← ${view.src}` : ''} dim={view.text === undefined} />
+      <QuantityFace text={String(view.text ?? `${fmtNum(Number(params.amount), 6)}${params.from}`)} sub={view.src !== undefined ? `← ${view.src}` : ''} dim={view.text === undefined} hideSub={!more} />
     ); break;
     case 'actor-numfmt': {
       const shown = typeof view.text === 'string' ? view.text : (formatText(String(params.value), params)?.text ?? String(params.value));
-      body = <QuantityFace text={shown} sub={numFmtSub(String(view.mode ?? params.mode), Number(view.n ?? params.n))} dim={view.text === undefined} />;
+      body = <QuantityFace text={shown} sub={numFmtSub(String(view.mode ?? params.mode), Number(view.n ?? params.n))} dim={view.text === undefined} hideSub={!more} />;
       break;
     }
-    default: body = fileKind ? <FileFace node={node} kind={fileKind} ro={ro} /> : def.family === 'quantity' ? <QuantityFace text={def.type === 'qty-time' ? localizeDuration(String(view.text ?? def.chip?.(params) ?? '')) : String(view.text ?? def.chip?.(params) ?? '')} sub={tr(String(view.sub ?? ''))} dim={view.text === undefined} /> : null;
+    default: body = fileKind ? <FileFace node={node} kind={fileKind} ro={ro} more={more} /> : def.family === 'quantity' ? <QuantityFace text={def.type === 'qty-time' ? localizeDuration(String(view.text ?? def.chip?.(params) ?? '')) : String(view.text ?? def.chip?.(params) ?? '')} sub={tr(String(view.sub ?? ''))} dim={view.text === undefined} /> : null;
   }
 
   // Base Data chips show the value they last emitted, so a converted Input shows as what it became.
@@ -363,7 +366,10 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
       const group = list.filter((q) => portSide(q, dir) === side);
       const f = (group.indexOf(p) + 1) / (group.length + 1);
       const pos: React.CSSProperties = side === 'top' || side === 'bottom' ? { left: `${f * 100}%` } : { top: `${f * 100}%` };
-      return <i key={dir + p.id} className={`port ${side} ${connected.has(`${dir}:${p.id}`) ? 'on' : ''}`} data-pk={`${dir}:${p.id}`} style={pos} aria-hidden="true" />;
+      const portDot = <i key={dir + p.id} className={`port ${side} ${connected.has(`${dir}:${p.id}`) ? 'on' : ''}`} data-pk={`${dir}:${p.id}`} style={pos} aria-hidden="true" />;
+      // A setting pin also carries its name, drawn next to it while the module is hovered or selected (Workspace settings → Setting pin names).
+      if (dir !== 'in' || !p.param || !pinLabels) return portDot;
+      return [portDot, <span key={`${dir}${p.id}:label`} className={`pin-label ${side} ${connected.has(`${dir}:${p.id}`) ? 'on' : ''}`} style={pos} aria-hidden="true">{p.label || p.param}</span>];
     });
   };
 
@@ -417,15 +423,15 @@ export function PreviewNode({ def, scale = 0.78 }: { def: ModuleDef; scale?: num
   else if (def.type === 'color') body = <div className="hsv"><div><span>H</span><span>S</span><span>V</span></div><i style={{ background: '#0a7aff' }} /></div>;
   else if (def.type === 'projector') body = <i className="grad" />;
   else if (def.type === 'actor-fileconv') body = <ConverterFace route="IMG → PDF" name="photo.png" state="done" size={48210} />;
-  else if (def.type === 'actor-unitconv') body = <QuantityFace text="3.28084ft" sub="← 1m" />;
-  else if (def.type === 'actor-numfmt') body = <QuantityFace text="1.235e+3" sub={numFmtSub('sci', 4)} />;
+  else if (def.type === 'actor-unitconv') body = <QuantityFace text="3.28084ft" sub="" hideSub />;
+  else if (def.type === 'actor-numfmt') body = <QuantityFace text="1.235e+3" sub="" hideSub />;
   else if (def.type === 'meter') body = <svg className="art meter" viewBox="0 0 100 40" preserveAspectRatio="none"><polyline points="0,22 20,22 30,8 38,34 46,22 60,18 100,22" fill="none" stroke="currentColor" strokeWidth="1.4" vectorEffect="non-scaling-stroke" /></svg>;
   else if (def.type === 'image') body = <i className="grad dark" />;
   else if (def.type === 'motion') body = <div className="cross"><i /><b /></div>;
   else if (def.type === 'comment') body = <div className="text-body note">{tr("Note")}</div>;
   else if (def.type === 'clock') body = <div className="clock"><div className="clock-time">12:00</div><div className="clock-city">Tokyo</div></div>;
-  else if (def.type === 'timer') body = <div className="tk"><div className="tk-time">05:00.000</div><div className="tk-bar"><i style={{ width: '40%' }} /></div><div className="tk-state">{tr("Running")}</div></div>;
-  else if (def.type === 'alarm') body = <div className="tk"><div className="tk-time long">07:30:00.000</div><div className="tk-state">{tr("Armed")}</div><div className="tk-sub">in 08:12:00.250</div></div>;
+  else if (def.type === 'timer') body = <div className="tk"><div className="tk-time">05:00.000</div><div className="tk-state">{tr("Running")}</div></div>;
+  else if (def.type === 'alarm') body = <div className="tk"><div className="tk-time long">07:30:00.000</div><div className="tk-state">{tr("Armed")}</div></div>;
   else if (def.type === 'stopwatch') body = <div className="tk"><div className="tk-time">01:23.400</div><div className="tk-state">{tr("Running")}</div></div>;
   else if (FILE_KIND_BY_TYPE.has(def.type)) body = <FilePreview kind={FILE_KIND_BY_TYPE.get(def.type)!} />;
   else if (def.family === 'quantity') body = <QuantityFace text={def.type === 'qty-time' ? localizeDuration(def.chip?.(defaultParams(def)) ?? '') : (def.chip?.(defaultParams(def)) ?? '')} sub="" />;

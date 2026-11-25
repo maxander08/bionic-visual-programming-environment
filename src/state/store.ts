@@ -7,12 +7,12 @@ import { autosave, settingsStore, storageAvailable, userLibrary } from './storag
 import { detectLang, langInfo, normalizeLang, setActiveLang, tr, type Lang } from '../i18n';
 
 export interface Snapshot { graph: Graph; compounds: Record<string, CompoundDef>; name: string }
-export interface Settings { snap: boolean; motion: 'system' | 'reduced' | 'full'; minimap: boolean; tickMs: number; speed: number; language: Lang }
+export interface Settings { snap: boolean; motion: 'system' | 'reduced' | 'full'; minimap: boolean; /** Show the name of every setting pin while its module is highlighted. */ pinLabels: boolean; tickMs: number; speed: number; language: Lang }
 export type DialogKind = null | 'templates' | 'projects' | 'share' | 'docs' | 'settings' | 'compound' | 'meter' | 'projector' | 'confirm' | 'group';
 export interface Toast { id: number; msg: string; kind: 'info' | 'error' | 'ok' }
 export interface ConfirmArg { title: string; body: string; confirm: string; danger?: boolean; onConfirm: () => void }
 
-export const DEFAULT_SETTINGS: Settings = { snap: true, motion: 'system', minimap: true, tickMs: 50, speed: 1, language: detectLang() };
+export const DEFAULT_SETTINGS: Settings = { snap: true, motion: 'system', minimap: true, pinLabels: false, tickMs: 50, speed: 1, language: detectLang() };
 
 interface State {
   project: Project;

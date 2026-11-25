@@ -32,12 +32,10 @@ describe('Chinese typography policy', () => {
     expect(css.match(/font-display: block/g)?.length).toBe(2);
   });
 
-  it('puts the matching Noto face in every stack (ui, code, node) for each Chinese mode', () => {
+  it('puts both Noto faces in every stack, with the matching language first', () => {
     for (const kind of ['ui', 'code', 'font']) {
-      expect(css).toMatch(new RegExp(`--${kind}-sc:[^;]*"Noto Sans SC"`));
-      expect(css).toMatch(new RegExp(`--${kind}-tc:[^;]*"Noto Sans TC"`));
-      expect(css).not.toMatch(new RegExp(`--${kind}-sc:[^;]*"Noto Sans TC"`));
-      expect(css).not.toMatch(new RegExp(`--${kind}-tc:[^;]*"Noto Sans SC"`));
+      expect(css).toMatch(new RegExp(`--${kind}-sc:[^;]*"Noto Sans SC"[^;]*"Noto Sans TC"`));
+      expect(css).toMatch(new RegExp(`--${kind}-tc:[^;]*"Noto Sans TC"[^;]*"Noto Sans SC"`));
     }
   });
 

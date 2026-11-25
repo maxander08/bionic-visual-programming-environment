@@ -48,8 +48,9 @@ describe('Timekeeping section', () => {
     const text = MODULES.find((m) => m.type === 'text')!;
     for (const t of TYPES) {
       expect(MODULES.find((m) => m.type === t)!.size).toBe(text.size);
-      // The Timer has ten output pins, one more than a square edge holds: it grows by one pin row (12 px) and no more.
-      expect(nodeSize(getDef(t)!)).toEqual(t === 'timer' ? { w: SIZES[text.size].w, h: SIZES[text.size].h + 12 } : SIZES[text.size]);
+      // Timer's output pins and Alarm/Clock's five setting pins need one extra 12 px row.
+      const grows = ['timer', 'alarm', 'clock'].includes(t);
+      expect(nodeSize(getDef(t)!)).toEqual(grows ? { w: SIZES[text.size].w, h: SIZES[text.size].h + 12 } : SIZES[text.size]);
     }
   });
   it('splits a duration into hour, minute, second and millisecond', () => {

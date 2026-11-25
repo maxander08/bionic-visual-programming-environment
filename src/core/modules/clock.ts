@@ -1,6 +1,6 @@
 import type { ModuleDef } from '../types';
 import { COUNTRY_COUNT, cityLabels, findCity, fmtOffset, readClock } from '../worldclock';
-import { bol, out, sel, txt } from './kit';
+import { bol, details, out, sel, txt } from './kit';
 
 /** World Clock: the current local time in any of the 30 most populous cities of every country. */
 export const worldClock: ModuleDef = {
@@ -21,6 +21,7 @@ export const worldClock: ModuleDef = {
     sel('format', 'Format', '24h', [['24h', '24-hour (14:30)'], ['12h', '12-hour (2:30 PM)']], 'How the Time output is written. Hour is always 0–23.'),
     bol('seconds', 'Show seconds', true, 'Include seconds in the Time output.'),
     bol('millis', 'Show milliseconds', true, 'Add milliseconds after the seconds (14:30:05.123). Only applies while Show seconds is on.'),
+    details('the date and the UTC offset'),
   ],
   source: true,
   run(c) {

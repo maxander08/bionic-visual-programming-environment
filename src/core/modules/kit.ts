@@ -15,6 +15,12 @@ export const txt = (key: string, label: string, def: string, doc: string, o: { m
   key, label, kind: 'text', default: def, doc, multiline: o.multiline, hidden: o.hidden, maxLength: o.maxLength ?? 2000, placeholder: o.placeholder, suggest: o.suggest,
 });
 export const bol = (key: string, label: string, def: boolean, doc: string): ParamDef => ({ key, label, kind: 'bool', default: def, doc });
+/**
+ * “Show details”: a setting (so it also has a setting pin) that adds the secondary lines to the node's face. A module's face
+ * shows only what matters at a glance; a signal on this pin, or the switch in the inspector, brings the rest out.
+ * `what` names the extra lines, as in “the date and UTC offset”.
+ */
+export const details = (what: string): ParamDef => bol('details', 'Show details', false, `Also show ${what} on the node. Off keeps the node's face short; the same information is always available from the module's output pins and the inspector.`);
 export const act = (key: string, label: string, command: string, doc: string): ParamDef => ({ key, label, kind: 'action', command, doc });
 
 export const inp = (id: string, label: string, type: PortType, doc: string, side: Side = 'top', optional = false): PortDef => ({ id, label, type, doc, side, optional });

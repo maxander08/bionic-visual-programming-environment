@@ -115,12 +115,17 @@ describe('World Clock module', () => {
     for (let i = 1; i < xs.length; i++) expect(xs[i] - xs[i - 1]).toBeGreaterThanOrEqual(PIN_SPACING);
     expect(xs[xs.length - 1]).toBeLessThan(nodeSize(d).w);
   });
-  it('puts the Milliseconds pin on the right edge, level with the four setting pins on the left', () => {
+  it('puts the Milliseconds pin on the right and the five setting pins on the left', () => {
     const d = getDef('clock')!;
     const ms = d.outputs.find((p) => p.id === 'millisecond')!;
     expect(ms.type).toBe('num');
     expect(ms.side).toBe('right');
-    expect(d.outputs.filter((p) => p.side === 'right').length).toBe(d.paramPins!.filter((p) => p.side === 'left').length);
+    const left = d.paramPins!.filter((p) => p.side === 'left');
+    expect(left.map((p) => p.id)).toEqual(['p:city', 'p:format', 'p:seconds', 'p:millis', 'p:details']);
+    const node = { id: 'n', type: 'clock', x: 0, y: 0, params: {} };
+    const ys = left.map((p) => portPosition(node, d, p.id, 'in')!.y);
+    for (let i = 1; i < ys.length; i++) expect(ys[i] - ys[i - 1]).toBeGreaterThanOrEqual(PIN_SPACING);
+    expect(ys[ys.length - 1]).toBeLessThan(nodeSize(d).h);
   });
   function run(params: Record<string, unknown>) {
     const g = addNode(emptyGraph(), 'clock', 0, 0, params, undefined, 'c').graph;

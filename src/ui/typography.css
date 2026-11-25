@@ -11,6 +11,10 @@
    current language. font-display is `block`: text waits for the (inlined) font instead of flashing a
    system face.
 
+   INTERCHANGEABLE: both faces sit in every Chinese stack, the face of the current language first. A character the first
+   face does not hold (Traditional characters typed while the interface is Simplified, and the other way round) is taken,
+   character by character, from the other Noto face instead of a system font.
+
    Loaded last (see main.tsx) so it wins over index.css / docs.css / shell.css.
    ========================================================================== */
 
@@ -34,14 +38,14 @@
 
 :root {
   /* Interface (proportional) */
-  --ui-sc: "Instrument Sans", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
-  --ui-tc: "Instrument Sans", "Noto Sans TC", ui-sans-serif, system-ui, sans-serif;
+  --ui-sc: "Instrument Sans", "Noto Sans SC", "Noto Sans TC", ui-sans-serif, system-ui, sans-serif;
+  --ui-tc: "Instrument Sans", "Noto Sans TC", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
   /* Readouts, codes, ids (monospaced Latin) */
-  --code-sc: "Commit Mono", "NS Fallback Mono", "Noto Sans SC", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --code-tc: "Commit Mono", "NS Fallback Mono", "Noto Sans TC", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --code-sc: "Commit Mono", "NS Fallback Mono", "Noto Sans SC", "Noto Sans TC", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --code-tc: "Commit Mono", "NS Fallback Mono", "Noto Sans TC", "Noto Sans SC", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   /* Nodes (every node face, port label, node setting) */
-  --font-sc: "TT Autonomous", "NS Fallback Mono", "Noto Sans SC", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --font-tc: "TT Autonomous", "NS Fallback Mono", "Noto Sans TC", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-sc: "TT Autonomous", "NS Fallback Mono", "Noto Sans SC", "Noto Sans TC", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-tc: "TT Autonomous", "NS Fallback Mono", "Noto Sans TC", "Noto Sans SC", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   /* Default = Simplified (also used in English mode, where Chinese only appears in the language names) */
   --ui: var(--ui-sc);
@@ -84,3 +88,7 @@ button, input, select, textarea, option, optgroup { font-family: inherit; }
 }
 .ns-tip.on { opacity: 1; transform: none; }
 .ns-tip:lang(zh-Hans), .ns-tip:lang(zh-Hant) { line-height: 1.6; }
+
+/* Setting pin names: Instrument Sans, or the Noto Sans face(s) for Chinese (--ui), never the node's own stack. */
+.node .pin-label { font-family: var(--ui); }
+.node .pin-label:lang(zh-Hans), .node .pin-label:lang(zh-Hant) { line-height: 1.35; }

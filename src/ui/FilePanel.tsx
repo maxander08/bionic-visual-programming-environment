@@ -66,7 +66,7 @@ function usePicker(nodeId: string, kind: FileKind) {
 const extText = (kind: FileKind) => (kind.exts.length ? extList(kind).join(' ') : tr('any other file'));
 
 /** What the node shows: a drop target when empty, the file's name, type and size (or a picture of it) when full. */
-export function FileFace({ node, kind, ro }: { node: NodeInst; kind: FileKind; ro: boolean }) {
+export function FileFace({ node, kind, ro, more = false }: { node: NodeInst; kind: FileKind; ro: boolean; more?: boolean }) {
   useFiles();
   const picker = usePicker(node.id, kind);
   const id = String(node.params.fileId ?? '');
@@ -85,7 +85,7 @@ export function FileFace({ node, kind, ro }: { node: NodeInst; kind: FileKind; r
       <>
         <svg className="ff-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z M14 3v4h4 M12 17v-6 M9.5 13.5 12 11l2.5 2.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" /></svg>
         <span className="ff-hint clamp2">{tr('Drop a file or click')}</span>
-        <span className="ff-exts clamp2">{extText(kind)}</span>
+        {more && <span className="ff-exts clamp2">{extText(kind)}</span>}
       </>
     );
   } else if (loading) {
@@ -97,7 +97,7 @@ export function FileFace({ node, kind, ro }: { node: NodeInst; kind: FileKind; r
       <>
         {info?.image ? <span className="ff-thumb"><Thumb img={info.image} /></span> : <span className="ff-badge">{ext ? '.' + ext : '—'}</span>}
         <span className="ff-name clamp1" title={name}>{name}</span>
-        <span className="ff-meta">{[ext, fmtBytes(size)].filter(Boolean).join(' · ')}</span>
+        {more && <span className="ff-meta">{[ext, fmtBytes(size)].filter(Boolean).join(' · ')}</span>}
       </>
     );
   }

@@ -39,8 +39,8 @@ describe('Actors in the library', () => {
       expect(d.paramPins!.map((p) => p.param)).toEqual(keys);
       for (const k of keys) expect(d.inputs.some((p) => p.id === `p:${k}` && p.optional)).toBe(true);
     }
-    expect(getDef('actor-fileconv')!.paramPins!.map((p) => p.id)).toEqual(['p:from', 'p:to', 'p:format', 'p:name', 'p:quality']);
-    expect(getDef('actor-unitconv')!.paramPins!.map((p) => p.id)).toEqual(['p:group', 'p:amount', 'p:from', 'p:fromPrefix', 'p:to', 'p:toPrefix']);
+    expect(getDef('actor-fileconv')!.paramPins!.map((p) => p.id)).toEqual(['p:from', 'p:to', 'p:format', 'p:name', 'p:quality', 'p:details']);
+    expect(getDef('actor-unitconv')!.paramPins!.map((p) => p.id)).toEqual(['p:group', 'p:amount', 'p:from', 'p:fromPrefix', 'p:to', 'p:toPrefix', 'p:details']);
   });
 });
 

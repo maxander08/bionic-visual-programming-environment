@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { Engine } from './engine';
 import { addNode, connect, emptyGraph, flatten } from './graph';
-import { CATEGORIES, MODULES, getDef } from './registry';
+import { CATEGORIES, MODULES, getDef, nodeSize } from './registry';
 import { FILE_KINDS, accepts, acceptAttr, classify, extOf, fmtBytes, fmtDuration, setFileInfo, type FileInfo } from './files';
-import type { Graph, Params } from './types';
+import { SIZES, type Graph, type Params } from './types';
 
 const NAMES = ['Document', 'Text', 'PDF', 'Audio', 'Video', 'Image', 'Spreadsheet', 'Presentation', 'Executable', 'Web', 'Compressed', 'Font', 'Miscellaneous'];
 
@@ -69,12 +69,13 @@ describe('Files: the thirteen nodes', () => {
     expect(fmtDuration(3725)).toBe('1:02:05');
   });
 
-  it('have no setting pins and keep their pins within the node edges', () => {
+  it('have a Show details setting pin and keep their pins within the node edges', () => {
     for (const m of MODULES.filter((x) => x.category === 'Files')) {
       const d = getDef(m.type)!;
-      expect(d.paramPins ?? [], m.type).toHaveLength(0);
-      expect(d.inputs, m.type).toHaveLength(0);
-      expect(d.dim, m.type).toBeUndefined();
+      expect(d.paramPins?.map((p) => p.id), m.type).toEqual(['p:details']);
+      expect(d.paramPins?.[0], m.type).toMatchObject({ param: 'details', optional: true });
+      expect(d.inputs.map((p) => p.id), m.type).toEqual(['p:details']);
+      expect(nodeSize(d), m.type).toEqual(SIZES[m.size]);
       const per = (s: string) => d.outputs.filter((p) => (p.side ?? 'bottom') === s).length;
       expect(per('bottom') + 1, m.type).toBeLessThanOrEqual(6); // 6 × 24 px fits the 144 px edge
       expect(per('right') + 1, m.type).toBeLessThanOrEqual(5); // 5 × 24 px fits the 132 px edge

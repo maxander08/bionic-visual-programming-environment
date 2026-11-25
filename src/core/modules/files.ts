@@ -1,6 +1,6 @@
 import type { Ctx, ModuleDef, PortDef } from '../types';
 import { FILE_KINDS, descriptorOf, fileState, getFileInfo, type FileKind, type FileKindId } from '../files';
-import { out, txt } from './kit';
+import { details, out, txt } from './kit';
 
 // The Files section: twelve nodes, each holding one file of its kind. You put the file in by dragging it onto the node or by
 // clicking the node (the inspector has the same controls). Only the file's name, size and type are saved in the program; the file
@@ -8,6 +8,7 @@ import { out, txt } from './kit';
 
 const hidden = (key: string, label: string, doc: string) => txt(key, label, '', doc, { hidden: true, maxLength: 300 });
 const PARAMS = [
+  details('the file’s type and size, and the kinds of file it takes'),
   hidden('fileId', 'File id', 'Key of the file kept in this browser.'),
   hidden('fileName', 'File name', 'Name of the file in this node.'),
   hidden('fileExt', 'File extension', 'Extension of the file in this node.'),
