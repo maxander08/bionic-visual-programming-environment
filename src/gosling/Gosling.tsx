@@ -7,24 +7,6 @@ import { loadVoices, speechLang, synthesisSupported, voicesFor } from './voice';
 import { speakMessage, useGoslingVoice, voiceErrorText, type VoicePhase } from './useVoice';
 import './gosling.css';
 
-/** Gosling's face: a round gosling chick in the site's teal frame. */
-export function GoslingMark({ size = 28 }: { size?: number }) {
-  return (
-    <svg className="g-mark" width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
-      <rect x="1" y="1" width="30" height="30" rx="9" fill="#071413" stroke="#2fd9cf" strokeWidth="1.4" />
-      <path d="M16 6c1.2-1.9 3-2 3.6-.8-.9.1-1.6.7-1.8 1.7z" fill="#f4d35e" />
-      <circle cx="16" cy="15.5" r="8.4" fill="#f6dd7a" />
-      <ellipse cx="16" cy="23.4" rx="6.2" ry="3.6" fill="#f0c94f" />
-      <circle cx="12.4" cy="14" r="1.5" fill="#101010" />
-      <circle cx="19.6" cy="14" r="1.5" fill="#101010" />
-      <circle cx="12.9" cy="13.5" r=".5" fill="#fff" />
-      <circle cx="20.1" cy="13.5" r=".5" fill="#fff" />
-      <path d="M13.2 17.2c.9-1 4.7-1 5.6 0 .3.4 0 1.3-1 1.9-1 .6-3.6.6-4.6 0-1-.6-1.3-1.5-.99-1.9z" fill="#ff8a3d" />
-      <path d="M14.2 17.9h3.6" stroke="#c9601c" strokeWidth=".7" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 /** Toolbar button. */
 export function GoslingButton() {
   useStore((s) => s.settings.language);
@@ -33,8 +15,8 @@ export function GoslingButton() {
   const tip = tr('Gosling, your copilot (Ctrl/⌘+J)');
   return (
     <button type="button" className={`tb-btn g-tb${open ? ' on' : ''}`} onClick={toggle} aria-pressed={open} aria-label={tip} title={tip}>
-      <GoslingMark size={18} />
       <span className="tb-text g-tb-text">Gosling</span>
+      <span className="g-tb-short" aria-hidden="true">G</span>
     </button>
   );
 }
@@ -69,7 +51,7 @@ function VoiceDock({ phase, interim, muted, onTap, onMute, onEnd }: { phase: Voi
         </button>
         <button type="button" className="g-orb" onClick={onTap} aria-label={label}>
           <span className="g-ring" /><span className="g-ring r2" /><span className="g-ring r3" />
-          <span className="g-orb-core"><GoslingMark size={46} /></span>
+          <span className="g-orb-core" />
           <span className="g-bars" aria-hidden="true"><i /><i /><i /><i /><i /></span>
         </button>
         <button type="button" className="g-ic g-vbtn" onClick={onEnd} aria-label={tr('Back to typing')} title={tr('Back to typing')}><VIcon name="keyboard" size={17} /></button>
@@ -128,7 +110,6 @@ function Bubble({ m, onSay }: { m: Msg; onSay(text: string): void }) {
   if (m.role === 'user') return <div className="g-row user"><div className="g-bubble user"><p>{m.text}</p></div></div>;
   return (
     <div className="g-row">
-      <GoslingMark size={22} />
       <div className={`g-bubble${m.error ? ' warn' : ''}`}>
         <Rich text={m.text} />
         {m.actions?.length ? (
@@ -291,7 +272,6 @@ export function Gosling() {
     <aside ref={panel} className="g-panel" style={style} role="dialog" aria-label={tr('Gosling, your Nicque copilot')}
       onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setOpen(false); } }}>
       <header className="g-head" onPointerDown={startDrag}>
-        <GoslingMark size={32} />
         <div className="g-title">
           <b>Gosling</b>
           <span><i className={`g-dot ${run}`} />{tr('{n} modules · {e} wires · {state}', { n: nodeCount, e: edgeCount, state: tr(run) })}</span>
@@ -306,7 +286,7 @@ export function Gosling() {
         <>
           <div className="g-body" ref={scroller} aria-live="polite">
             {msgs.map((m) => <Bubble key={m.id} m={m} onSay={v.sayMessage} />)}
-            {busy && <div className="g-row"><GoslingMark size={22} /><div className="g-bubble"><span className="g-typing" aria-label={tr('Gosling is thinking')}><i /><i /><i /></span></div></div>}
+            {busy && <div className="g-row"><div className="g-bubble"><span className="g-typing" aria-label={tr('Gosling is thinking')}><i /><i /><i /></span></div></div>}
           </div>
           {v.error && (
             <div className="g-err" role="alert">

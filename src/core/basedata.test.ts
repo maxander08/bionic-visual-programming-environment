@@ -7,7 +7,7 @@ import { GUIDE } from '../ui/docs/nodeGuide';
 import * as bd from './basedata';
 import { toText } from './util';
 
-const TYPES = ['integer', 'decimal', 'string', 'character', 'boolean', 'array'];
+const TYPES = ['integer', 'decimal', 'string', 'character', 'boolean', 'array', 'vector', 'matrix'];
 
 function build(nodes: [string, string, Params?][], wires: [string, string, string, string][] = []) {
   let g: Graph = emptyGraph();
@@ -25,7 +25,7 @@ function build(nodes: [string, string, Params?][], wires: [string, string, strin
 const status = (e: Engine, id: string) => e.nodes.get(id)!.status;
 
 describe('Base Data section', () => {
-  it('has the six basic data types in a category and family of its own', () => {
+  it('has the basic data types in a category and family of its own', () => {
     const list = MODULES.filter((m) => m.category === 'Base Data');
     expect(list.map((m) => m.type)).toEqual(TYPES);
     for (const m of list) { expect(m.family).toBe('data'); expect(m.source).toBe(true); }

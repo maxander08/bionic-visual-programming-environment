@@ -260,3 +260,27 @@ export function portPosition(node: NodeInst, def: ModuleDef, portId: string, dir
 export function nodeTitle(def: ModuleDef, params: Params): string {
   return def.title ? def.title(params) : def.name;
 }
+
+/** Shorter wording for module names that do not fit on the node's title row. Display only: the module's name is unchanged. */
+const FACE_NAMES: Record<string, string> = {
+  'actor-numfmt': 'Formatter',
+  'qty-kinematic': 'Kin. viscosity',
+  'qty-dynamic': 'Dyn. viscosity',
+  'qty-field': 'Magnetic field',
+  'qty-catalytic': 'Cat. activity',
+  'qty-density': 'Flux density',
+  'qty-rotation': 'Rotation speed',
+  'qty-luminous': 'Intensity',
+  'qty-substance': 'Sub. amount',
+  'qty-current': 'Current',
+};
+
+/** The title drawn on the module itself (workspace and library): the short wording where there is one, in English. */
+export function faceTitle(def: ModuleDef, params: Params): string {
+  return faceName(def) ?? nodeTitle(def, params);
+}
+
+/** The short wording for a module's name, or undefined when the full name fits. */
+export function faceName(def: ModuleDef): string | undefined {
+  return getLang() === 'en' ? FACE_NAMES[def.type] : undefined;
+}

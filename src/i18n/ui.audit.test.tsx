@@ -8,6 +8,7 @@ import fs from 'fs';
 import App from '../App';
 import { useStore } from '../state/store';
 import { MODULES } from '../core/registry';
+import { DEFAULT_SYMBOLS } from '../core/baseconv';
 import { stop } from '../runtime/session';
 
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
@@ -95,7 +96,8 @@ it.each(['zh-Hans', 'zh-Hant'] as const)('%s: the whole interface is translated'
   fs.writeFileSync(`/tmp/ui-leftovers-${lang}.txt`, lines.join('\n'));
   // Documentation article prose is long-form content that is still English-only; it is reported in the file above, not asserted.
   // Asserted: every short interface label (not docs prose, not sentence-length port descriptions, not default project names).
-  const labels = lines.filter((l) => { if (/←  docs:/.test(l)) return false; const s: string = JSON.parse(l.split('  ←  ')[0]); return s.length <= 40 && !/[.。]$/.test(s) && !/[\u3400-\u9fff]/.test(s) && s !== 'Untitled program' && !DATA_VALUES.test(s) && !FORMAT_LIST.test(s) && !ROUTE_LABEL.test(s); });
+  // DEFAULT_SYMBOLS is the Base Converter's literal digit alphabet, not English interface text to translate.
+  const labels = lines.filter((l) => { if (/←  docs:/.test(l)) return false; const s: string = JSON.parse(l.split('  ←  ')[0]); return s.length <= 40 && !/[.。]$/.test(s) && !/[\u3400-\u9fff]/.test(s) && s !== 'Untitled program' && s !== DEFAULT_SYMBOLS && !DATA_VALUES.test(s) && !FORMAT_LIST.test(s) && !ROUTE_LABEL.test(s); });
   expect(labels.slice(0, 60).join('\n')).toBe('');
 }, 600000);
 

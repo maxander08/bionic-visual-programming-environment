@@ -1,6 +1,7 @@
 import type { ModuleDef, ParamDef, Params } from '../types';
-import { toNum, toText } from '../util';
-import { decFromValue, formatDec, formatOptionsOf, packDec, parseDec } from '../decimal';
+import { toExactText, toNum, toText } from '../util';
+import { decFromValue, formatDec, formatOptionsOf, isDec, packDec, parseDec, toPlain } from '../decimal';
+import { DEFAULT_SYMBOLS, MAX_BASE, MAX_FRACTION_DIGITS, checkSymbols, countDigits, formatBased, parseBased } from '../baseconv';
 import { FILE_KIND_BY_ID, isFileDescriptor, type FileKindId } from '../files';
 import { SOURCE_KINDS, formatLabel, formatsOf, isKindId, requestConversion, routeLabel, targetsOf } from '../convert';
 import { PREFIXES, autoPrefix, fmtQuantity } from '../quantities';
@@ -249,4 +250,71 @@ const numberFormatter: ModuleDef = {
   },
 };
 
-export const actors: ModuleDef[] = [fileConverter, unitConverter, numberFormatter];
+// ---- Base Converter --------------------------------------------------------------------------------------------------------
+
+/** What arrives on the Number pin, as digits to read in the From base. A number is read by the digits it is written with. */
+function digitsOf(v: unknown): string | undefined {
+  if (typeof v === 'string') return v;
+  if (typeof v === 'number' || isDec(v)) {
+    const t = toExactText(v);
+    if (/e/i.test(t)) { const r = parseDec(t); return r.ok ? toPlain(r.dec) : t; }
+    return t;
+  }
+  return undefined;
+}
+
+const baseConverter: ModuleDef = {
+  type: 'actor-baseconv', name: 'Base Converter', caption: 'Base Converter', category: 'Actors', family: 'actor', glyph: 'BASE', size: 'square', source: true,
+  keywords: 'base converter radix binary octal decimal hexadecimal hex number system numeral positional unary tally base36 base40 convert digits symbols',
+  inputs: [inp('in', 'Number', 'any', 'The number to convert, written in the From base. A number is read by the digits it is written with (101 is the digits 1, 0, 1). Text keeps every digit. It replaces Value while connected.', 'top', true)],
+  outputs: [
+    out('text', 'Converted', 'text', 'The number written in the To base, with the chosen Symbols, for example FF, 11111111 or -2A.8.', 'bottom'),
+    out('number', 'Decimal value', 'num', 'The same number as an ordinary decimal number, with every digit it needs (up to 20 after the point).', 'bottom'),
+    out('digits', 'Digits', 'num', 'How many digits the converted number has. The sign and the point are not counted.', 'right'),
+  ],
+  params: [
+    txt('value', 'Value', '255', 'The number to convert, written in the From base: it may have a sign, a point and any number of digits (FF.8, -101.01). Used when the Number pin has no signal.', { maxLength: 5000, placeholder: 'Digits written in the From base' }),
+    num('from', 'From base', 10, 1, MAX_BASE, 1, 'The base the Value is written in, from 1 to 40. Base 1 is tally marks (111 is three); 2 is binary, 8 octal, 10 decimal, 16 hexadecimal.'),
+    num('to', 'To base', 16, 1, MAX_BASE, 1, 'The base to write the number in, from 1 to 40. Base 1 is tally marks, written with the second symbol, and zero with the first.'),
+    num('precision', 'Fraction digits', 12, 0, MAX_FRACTION_DIGITS, 1, 'How many digits to keep after the point in the To base. The last one is rounded to the nearest, and zeros at the end are dropped. 0 gives a whole number.'),
+    txt('symbols', 'Symbols', DEFAULT_SYMBOLS, 'The characters used as digits, in order: the first one is zero, the next is one, and so on. The default is 0-9, A-Z and then a, b, c, d, which writes every base up to 40. Edit it to use your own symbols; it needs at least as many characters as the larger base, all different. The characters - + . _ and spaces cannot be used.', { maxLength: 64, placeholder: DEFAULT_SYMBOLS }),
+    details('the bases being converted'),
+  ],
+  run(c) {
+    const from = Math.round(c.num('from')), to = Math.round(c.num('to'));
+    const symbols = c.str('symbols');
+    const bad = checkSymbols(symbols, Math.max(from, to, 2));
+    if (bad) { c.view({ state: 'error' }); return c.fail(bad); }
+    const viaPin = c.has('in');
+    const src = viaPin ? digitsOf(c.get('in')) : c.str('value');
+    if (src === undefined) { c.view({ state: 'error' }); return c.fail('This is not a number, so it cannot be converted.'); }
+    const read = parseBased(src, from, symbols);
+    if (!read.ok) { c.view({ state: 'error' }); return c.fail(read.error); }
+    const written = formatBased(read.value, to, symbols, c.num('precision'));
+    if (!written.ok) { c.view({ state: 'error' }); return c.fail(written.error); }
+    if (to === 1 && written.value.rounded) c.warn('Base 1 writes whole numbers only: the fraction was rounded.');
+    const dec = formatBased(read.value, 10, '0123456789', 20);
+    const dv = dec.ok ? parseDec(dec.value.text) : undefined;
+    c.emit('text', written.value.text);
+    c.emit('number', dv && dv.ok ? packDec(dv.dec) : undefined);
+    c.emit('digits', countDigits(written.value.text));
+    c.view({ text: written.value.text, from, to });
+  },
+  doc: {
+    summary: 'Writes a number in a different base, from base 1 (tally marks) to base 40, with symbols you can choose.',
+    runtime: 'Reads the number on the Number pin (or the Value setting) as digits in the From base and writes it in the To base. Whole numbers of any size are converted exactly; digits after the point are rounded to Fraction digits places. The default symbols are 0-9, A-Z and a-d (40 in all): bases up to 16 read as usual (FF), and in bases up to 36 letters are read in either case. Edit Symbols to use other characters. Base 1 is tally marks: a number is that many marks (the second symbol), and zero is the first symbol. Every setting is also a pin on the left, so signals can choose the bases while the program runs.',
+    errors: [
+      'A digit that does not exist in the From base (for example 2 in binary, or a letter beyond the base) raises an error that lists the digits.',
+      'Symbols with too few characters for the larger base, with a repeated symbol, or with - + . _ or a space among the digits raises an error.',
+      'A fraction in base 1 is not possible on input and is rounded on output (with a warning).',
+    ],
+    examples: [
+      'Constant 255 → Base Converter (From 10, To 16) → Projector: FF.',
+      'Base Converter (From 2, To 10) with Value 101101: 45.',
+      'Base Converter (To 40) → Projector: a long number in a few characters.',
+      'Switch → Base Converter To base pin: flip between binary and hexadecimal while the program runs.',
+    ],
+  },
+};
+
+export const actors: ModuleDef[] = [fileConverter, unitConverter, numberFormatter, baseConverter];

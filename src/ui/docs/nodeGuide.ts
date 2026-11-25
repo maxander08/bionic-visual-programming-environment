@@ -746,6 +746,50 @@ Object.assign(GUIDE, {
     },
     options: { as: { auto: 'Numbers, true/false and text, each read as it looks.', number: 'Every item must be a number.', text: 'Every item stays text.' } },
   },
+  vector: {
+    when: 'You need a list of numbers that belongs together as one thing: a point on a plane, a direction in space, the readings of a sensor.',
+    steps: [
+      'Add **Vector** and type the **Items**: 1, 2, 3, or a JSON list such as [1, 2, 3].',
+      'Connect **Dimension** to anything that takes a number to know how many numbers it holds.',
+      'Connect **Magnitude** to read the length of the vector as an arrow.',
+      'Set **Index** to choose one number for the **Item** output. 0 is the first; −1 is the last.',
+    ],
+    tips: [
+      'Turn **Normalize** on to get a vector of length 1 that points the same way (3, 4 becomes 0.6, 0.8).',
+      'A list wired into **Input** replaces the stored items, so an [[n:array]] can feed a Vector. A single number becomes a vector of one.',
+      'Items, Index and Normalize all have setting pins on the top edge, so a signal can walk through the vector.',
+    ],
+    pitfalls: [
+      'Every item must be a number. “1, two, 3” raises an error.',
+      'A vector is flat: a list inside the list is an error. Use a [[n:matrix]] for rows of numbers.',
+      'An Index outside the vector raises a warning and leaves the Item output empty.',
+    ],
+    up: ['array', 'string', 'constant', 'random'], down: ['projector', 'array', 'matrix', 'meter'],
+    alias: 'vector list numbers coordinates components magnitude length norm unit direction point 2d 3d base data type vct',
+    settings: { items: 'The numbers, separated by commas, semicolons or spaces, or a JSON list.', index: 'Which number goes on Item. Negative counts from the end.', normalize: 'Scale to a magnitude of 1.' },
+  },
+  matrix: {
+    when: 'You need a grid of numbers in rows and columns, of any size: a table of readings, an image kernel, a transformation.',
+    steps: [
+      'Add **Matrix** and type the **Values**, one row at a time: 1, 2; 3, 4 (commas between the numbers, semicolons or new lines between the rows).',
+      'Connect **Rows** and **Columns** to anything that takes a number to read the size of the grid.',
+      'Set **Row** and **Column** to choose one number for the **Item** output. 0 is the first; −1 is the last.',
+      'Turn **Transpose** on to swap rows and columns.',
+    ],
+    tips: [
+      'A JSON list of rows such as [[1, 2], [3, 4]] works too, and so does a list of lists arriving on **Input**.',
+      'A flat list on Input becomes a single row, and a single number a 1 × 1 matrix.',
+      'Values, Transpose, Row and Column all have setting pins on the top edge.',
+    ],
+    pitfalls: [
+      'Every row needs the same number of columns: 1, 2; 3 raises an error.',
+      'Every item must be a number.',
+      'A Row or Column outside the grid raises a warning and leaves the Item output empty.',
+    ],
+    up: ['array', 'vector', 'string', 'constant'], down: ['projector', 'array', 'vector', 'meter'],
+    alias: 'matrix grid table rows columns array 2d tensor transpose dimension numbers base data type mtx',
+    settings: { values: 'The numbers, a row at a time.', transpose: 'Swap rows and columns.', row: 'The row of the Item. Negative counts from the end.', col: 'The column of the Item. Negative counts from the end.' },
+  },
 } satisfies Record<string, NodeGuide>);
 
 
@@ -871,6 +915,39 @@ GUIDE['actor-numfmt'] = {
       away: 'Any leftover digit pushes the number away from zero: 2.1 → 3, −2.1 → −3.',
     },
     style: { e: 'The letter e and a signed exponent: 1.5e+3.', x10: 'Times ten to a superscript power: 1.5 × 10³.' },
+  },
+};
+
+GUIDE['actor-baseconv'] = {
+  when: 'You need a number written in another base: binary, octal or hexadecimal for a machine, base 36 or 40 for a short code, or tally marks in base 1.',
+  steps: [
+    'Add **Base Converter** from the **Actors** section.',
+    'Set **From base** (the base your number is written in) and **To base**, each from 1 to 40.',
+    'Type the **Value** in the inspector, or connect a number or text to the **Number** pin.',
+    'Read the result on **Converted**, as ordinary decimal on **Decimal value**, or count its digits on **Digits**. Connect **Converted** to a [[n:projector]] to see it.',
+  ],
+  tips: [
+    'The default **Symbols** are 0-9, A-Z and then a, b, c, d: forty in all, so every base up to 40 can be written. Edit them to use your own characters.',
+    'Whole numbers of any size are converted exactly. Fractions are rounded to **Fraction digits** places in the new base.',
+    'In bases up to 36 letters can be typed in either case: *ff* and *FF* are the same number.',
+    'Base 1 is tally marks: 5 is 11111 (the second symbol, five times) and zero is the first symbol.',
+    'Every setting is also a pin on the left, so a signal can choose the bases while the program runs.',
+  ],
+  pitfalls: [
+    'A digit that does not exist in the From base (a 2 in binary) raises an error that lists the digits.',
+    'A number arriving on the Number pin is read by the digits it is written with: 101 is the digits 1, 0, 1 in the From base, not one hundred and one.',
+    'The Symbols need at least as many different characters as the larger base. The characters - + . _ and the space cannot be digits.',
+    'Base 1 has no decimal point: a fraction is an error on input and is rounded on output.',
+  ],
+  up: ['decimal', 'integer', 'constant', 'string'],
+  down: ['projector', 'text', 'string', 'compare'],
+  alias: 'base converter radix binary octal decimal hexadecimal hex number system numeral positional unary tally base36 base40 convert digits symbols',
+  settings: {
+    value: 'Used when nothing is connected to the Number pin. Written in the From base.',
+    from: 'The base of the Value, 1 to 40.',
+    to: 'The base to write the result in, 1 to 40.',
+    precision: 'Digits kept after the point in the new base; the last one is rounded.',
+    symbols: 'The characters used as digits, in order: the first is zero.',
   },
 };
 

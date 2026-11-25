@@ -12,5 +12,6 @@ import { numfmt } from './hans/numfmt';
 import { exact } from './hans/exact';
 import { time } from './hans/time';
 import { pinnames } from './hans/pinnames';
+import { newModules } from './hans/newmodules';
 
-export const zhHans: Record<string, string> = { ...actors, ...time, ...pinnames, ...numfmt, ...exact, ...files, ...nodes, ...content, ...docs, ...extra, ...ui, ...faces, ...docsUi };
+export const zhHans: Record<string, string> = { ...newModules, ...actors, ...time, ...pinnames, ...numfmt, ...exact, ...files, ...nodes, ...content, ...docs, ...extra, ...ui, ...faces, ...docsUi };

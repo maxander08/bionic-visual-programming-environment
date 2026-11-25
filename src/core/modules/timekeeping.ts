@@ -24,6 +24,7 @@ export const timer: ModuleDef = {
     inp('start', 'Start', 'any', 'A truthy arrival starts the countdown, resumes it when paused, or restarts it once it has finished.', 'top', true),
     inp('pause', 'Pause', 'any', 'While true the countdown is held. Release it and the countdown goes on from where it stopped.', 'top', true),
     inp('reset', 'Reset', 'any', 'A truthy arrival stops the timer and sets it back to the full duration.', 'top', true),
+    inp('toggle', 'Pause / Resume', 'any', 'A truthy arrival holds a running countdown, or lets a held one go on: the same as the PAUSE / RESUME button.', 'top', true),
   ],
   outputs: [
     out('time', 'Time', 'text', 'Time left as MM:SS.mmm (HH:MM:SS.mmm from one hour), counting down. The Show milliseconds setting can drop the milliseconds from this text.'),
@@ -57,7 +58,7 @@ export const timer: ModuleDef = {
       s.phase = 'idle'; s.dur = dur; s.left = dur; s.pulseUntil = -1;
     } else {
       if (s.phase === 'idle' && s.dur !== dur) { s.dur = dur; s.left = dur; }
-      if (cmd === 'pause') { if (s.phase === 'running') s.phase = 'paused'; else if (s.phase === 'paused') s.phase = 'running'; }
+      if (cmd === 'pause' || pressed(c, 'toggle')) { if (s.phase === 'running') s.phase = 'paused'; else if (s.phase === 'paused') s.phase = 'running'; }
       if (pressed(c, 'start') || cmd === 'start') {
         if (s.phase === 'idle' || s.phase === 'paused') s.phase = 'running';
         else if (s.phase === 'done') { s.phase = 'running'; s.dur = dur; s.left = dur; }
@@ -112,6 +113,7 @@ export const stopwatch: ModuleDef = {
     inp('stop', 'Stop', 'any', 'A truthy arrival stops the stopwatch and keeps the time reached.', 'top', true),
     inp('lap', 'Lap', 'any', 'A truthy arrival records a lap while the stopwatch is running: the time since the previous lap (or the start).', 'top', true),
     inp('reset', 'Reset', 'any', 'A truthy arrival stops the stopwatch, sets it to zero and forgets the laps.', 'top', true),
+    inp('toggle', 'Start / Stop', 'any', 'A truthy arrival starts the stopwatch, or stops it when it is running: the same as the START / STOP button.', 'top', true),
   ],
   outputs: [
     out('time', 'Time', 'text', 'Elapsed time as MM:SS.mmm (HH:MM:SS.mmm from one hour). The Show milliseconds setting can drop the milliseconds from this text.'),
@@ -143,8 +145,9 @@ export const stopwatch: ModuleDef = {
       s.phase = 'stopped'; s.ms = 0; s.laps = 0; s.mark = 0; s.last = undefined; s.hit = false;
     } else {
       if ((pressed(c, 'lap') || cmd === 'lap') && s.phase === 'running') { s.last = s.ms - s.mark; s.mark = s.ms; s.laps++; }
-      if (pressed(c, 'stop') || (cmd === 'toggle' && s.phase === 'running')) s.phase = 'stopped';
-      else if ((pressed(c, 'start') || cmd === 'toggle') && s.phase === 'stopped') {
+      const toggle = cmd === 'toggle' || pressed(c, 'toggle');
+      if (pressed(c, 'stop') || (toggle && s.phase === 'running')) s.phase = 'stopped';
+      else if ((pressed(c, 'start') || toggle) && s.phase === 'stopped') {
         if (s.hit || (limit > 0 && s.ms >= limit)) { s.ms = 0; s.laps = 0; s.mark = 0; s.last = undefined; s.hit = false; }
         s.phase = 'running';
       }
@@ -185,6 +188,7 @@ export const alarm: ModuleDef = {
   inputs: [
     inp('dismiss', 'Dismiss', 'any', 'A truthy arrival silences a ringing alarm and cancels a pending snooze.', 'top', true),
     inp('snooze', 'Snooze', 'any', 'A truthy arrival silences a ringing alarm; it rings again 5 minutes later.', 'top', true),
+    inp('test', 'Test ring', 'any', 'A truthy arrival rings the alarm right now, to try what it drives: the same as the TEST RING button.', 'top', true),
   ],
   outputs: [
     out('ringing', 'Ringing', 'bool', 'True while the alarm is ringing: from the alarm time until the Ring time has passed or it is dismissed or snoozed.'),
@@ -241,7 +245,7 @@ export const alarm: ModuleDef = {
     if (s.snoozeAt !== undefined && now >= s.snoozeAt) startRing();
 
     const cmd = c.command;
-    if (cmd === 'test') startRing();
+    if (cmd === 'test' || pressed(c, 'test')) startRing();
     if (pressed(c, 'dismiss') || cmd === 'dismiss') { s.ringing = false; s.snoozeAt = undefined; }
     if ((pressed(c, 'snooze') || cmd === 'snooze') && s.ringing) { s.ringing = false; s.snoozeAt = now + SNOOZE_MS; }
 

@@ -7,6 +7,7 @@ import {
   INT_MAX, INT_MIN, MAX_ITEMS, applyCase, caseChar, chars, clampInt, codePointOf, fmtCodePoint, fmtInt, fmtItem, fmtList, itemAt,
   parseItems, quote, readBool, roundInt, validCodePoint, wordsFor,
 } from '../basedata';
+import { chipMatrix, dims, fmtMatrix, fmtVector, indexOf, magnitude, parseMatrix, parseVector, toMatrix, toVector, transpose } from '../linalg';
 import { bol, inp, num, out, sel, txt } from './kit';
 
 // The Base Data section: the six basic data types. Each module holds one value of its type, converts whatever arrives on
@@ -258,4 +259,104 @@ export const baseData: ModuleDef[] = [
       examples: ['Array Length → Compare: act when a list is long enough.', 'Array Item → Projector: show one value from the list.', 'String → Array (Separator “,”): split a line of text into items.'],
     },
   },
+
+  /* ───── Vector ───── */
+  {
+    ...base, type: 'vector', name: 'Vector', caption: 'Vector', glyph: 'Vct',
+    keywords: 'vector list of numbers coordinates components magnitude length norm unit direction point 2d 3d array',
+    chip: (p) => { const r = parseVector(String(p.items)); return r.ok ? fmtVector(p.normalize ? normalized(r.value) : r.value) : String(p.items); },
+    inputs: [IN('A list of numbers, text such as 1, 2, 3, or a single number (a vector of one).')],
+    outputs: [
+      out('out', 'Vector', 'data', 'The whole vector, as a list of numbers.'),
+      out('length', 'Dimension', 'num', 'How many numbers the vector holds: 2 for a point on a plane, 3 for a point in space.'),
+      out('magnitude', 'Magnitude', 'num', 'The length of the vector as an arrow: the square root of the sum of the squares of its numbers.'),
+      out('item', 'Item', 'num', 'The number at the chosen Index. Nothing is emitted when the index is outside the vector.'),
+      out('text', 'Text', 'text', 'The vector written as text, for example [1, 2, 3].'),
+    ],
+    params: [
+      txt('items', 'Items', '1, 2, 3', 'The numbers of the vector, in order, separated by commas, semicolons or spaces, or a JSON list such as [1, 2, 3]. Any number of numbers.', { multiline: true, maxLength: 4000, placeholder: '1, 2, 3' }),
+      num('index', 'Index', 0, -9999, 9999, 1, 'Which number to put on the Item output. 0 is the first; a negative index counts from the end, so −1 is the last.'),
+      bol('normalize', 'Normalize', false, 'Scale the vector to a magnitude of 1, keeping its direction (a unit vector). A vector of zeros stays as it is.'),
+    ],
+    run(c) {
+      const r = c.has('in') ? toVector(c.get('in')) : parseVector(c.str('items'));
+      if (!r.ok) return c.fail(r.error);
+      let v = r.value;
+      if (c.bool('normalize')) {
+        if (magnitude(v) === 0) { if (v.length) c.warn('A vector of zeros has no direction, so it cannot be normalized and is kept as it is.'); } else v = normalized(v);
+      }
+      c.emit('out', v);
+      c.emit('length', v.length);
+      c.emit('magnitude', magnitude(v));
+      const at = indexOf(v.length, c.num('index'));
+      if (at !== undefined) c.emit('item', v[at]);
+      else {
+        c.emit('item', undefined);
+        if (v.length === 0) c.warn('The vector is empty, so there is no item to read.');
+        else c.warn(`Index ${c.num('index')} is outside the vector, which has ${v.length} number${v.length === 1 ? '' : 's'}.`);
+      }
+      c.emit('text', fmtVector(v));
+      c.view({ chip: fmtVector(v) });
+    },
+    doc: {
+      summary: 'A vector: an ordered list of numbers such as [1, 2, 3], of any size. Gives its size, its magnitude and one of its numbers.',
+      runtime: 'Emits the vector as a list of numbers, its Dimension (how many numbers), its Magnitude, the Item at Index and the vector as text. A list or text arriving on the Input pin replaces the stored items; a single number becomes a vector of one. With Normalize on, the vector is scaled to a magnitude of 1. A vector holds at most 10 000 numbers.',
+      errors: ['An item that is not a number (for example “abc”) raises an error.', 'A list inside the list raises an error: use a Matrix for rows.', 'An Index outside the vector raises a warning and leaves the Item output empty.'],
+      examples: ['Vector Magnitude → Projector: the length of an arrow.', 'Vector (Normalize on) → Projector: the direction of 3, 4 as 0.6, 0.8.', 'Vector Item (Index 0) → Meter: follow the first coordinate.'],
+    },
+  },
+
+  /* ───── Matrix ───── */
+  {
+    ...base, type: 'matrix', name: 'Matrix', caption: 'Matrix', glyph: 'Mtx',
+    keywords: 'matrix grid table rows columns array 2d tensor transpose dimension determinant numbers',
+    chip: (p) => { const r = parseMatrix(String(p.values)); return r.ok ? chipMatrix(p.transpose ? transpose(r.value) : r.value) : String(p.values); },
+    inputs: [IN('A list of lists of numbers, text such as 1, 2; 3, 4, a flat list (one row) or a single number (a 1 × 1 matrix).')],
+    outputs: [
+      out('out', 'Matrix', 'data', 'The whole matrix, as a list of rows, each a list of numbers.'),
+      out('rows', 'Rows', 'num', 'How many rows the matrix has.'),
+      out('cols', 'Columns', 'num', 'How many columns the matrix has.'),
+      out('item', 'Item', 'num', 'The number at the chosen Row and Column. Nothing is emitted when that place is outside the matrix.'),
+      out('text', 'Text', 'text', 'The matrix written as text, for example [[1, 2], [3, 4]].'),
+    ],
+    params: [
+      txt('values', 'Values', '1, 2; 3, 4', 'The numbers of the matrix. Write a row at a time: separate the numbers of a row with commas or spaces and the rows with semicolons or new lines (1, 2; 3, 4), or write a JSON list of rows such as [[1, 2], [3, 4]]. Any number of rows and columns, as long as every row is equally long.', { multiline: true, maxLength: 8000, placeholder: '1, 2; 3, 4' }),
+      bol('transpose', 'Transpose', false, 'Swap rows and columns, so that a 2 × 3 matrix becomes 3 × 2.'),
+      num('row', 'Row', 0, -9999, 9999, 1, 'The row of the number to put on the Item output. 0 is the first; a negative index counts from the end, so −1 is the last.'),
+      num('col', 'Column', 0, -9999, 9999, 1, 'The column of the number to put on the Item output. 0 is the first; a negative index counts from the end, so −1 is the last.'),
+    ],
+    run(c) {
+      const r = c.has('in') ? toMatrix(c.get('in')) : parseMatrix(c.str('values'));
+      if (!r.ok) return c.fail(r.error);
+      const m = c.bool('transpose') ? transpose(r.value) : r.value;
+      const { rows, cols } = dims(m);
+      c.emit('out', m);
+      c.emit('rows', rows);
+      c.emit('cols', cols);
+      const ri = indexOf(rows, c.num('row')), ci = indexOf(cols, c.num('col'));
+      if (ri !== undefined && ci !== undefined) c.emit('item', m[ri][ci]);
+      else {
+        c.emit('item', undefined);
+        if (rows === 0 || cols === 0) c.warn('The matrix is empty, so there is no item to read.');
+        else c.warn(`Row ${c.num('row')}, column ${c.num('col')} is outside the matrix, which is ${rows} × ${cols}.`);
+      }
+      c.emit('text', fmtMatrix(m));
+      c.view({ chip: chipMatrix(m) });
+    },
+    doc: {
+      summary: 'A matrix: a grid of numbers in rows and columns, of any size, such as [[1, 2], [3, 4]]. Gives its size and one of its numbers.',
+      runtime: 'Emits the matrix as a list of rows, its number of Rows and Columns, the Item at Row and Column and the matrix as text. A list of lists or text arriving on the Input pin replaces the stored values; a flat list becomes a single row and a number a 1 × 1 matrix. With Transpose on, rows and columns are swapped. A matrix holds at most 10 000 numbers.',
+      errors: ['A row with a different number of columns than the others raises an error.', 'An item that is not a number raises an error.', 'A Row or Column outside the matrix raises a warning and leaves the Item output empty.'],
+      examples: ['Matrix Rows and Columns → Projector: the size of a grid.', 'Matrix (Transpose on) → Projector: a 2 × 3 matrix shown as 3 × 2.', 'Matrix Item (Row 1, Column 0) → Meter: follow one cell.'],
+    },
+  },
 ];
+
+function normalized(v: number[]): number[] {
+  const scale = v.reduce((max, x) => Math.max(max, Math.abs(x)), 0);
+  if (scale === 0) return v;
+  // Scale first: the true magnitude may exceed the largest representable number, even for finite components.
+  const scaled = v.map((x) => x / scale);
+  const m = magnitude(scaled);
+  return scaled.map((x) => x / m + 0);
+}

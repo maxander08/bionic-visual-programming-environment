@@ -2,7 +2,7 @@ import { memo, useEffect, useRef, type ReactElement } from 'react';
 import type { ModuleDef, NodeInst } from '../core/types';
 import { SIZES } from '../core/types';
 import { localizeDuration } from '../core/duration';
-import { SETTING_PREFIX, defaultParams, nodeSize, nodeTitle, portSide } from '../core/registry';
+import { SETTING_PREFIX, defaultParams, faceName, faceTitle, nodeSize, portSide } from '../core/registry';
 import { clamp, fmtNum, isImage, toText } from '../core/util';
 import { engine, useNodeVer } from '../runtime/session';
 import { getSensorState, subscribeSensors, sensorVersion } from '../runtime/sensors';
@@ -64,7 +64,7 @@ const QTY_NUM_SPLIT = /([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+|\s*×\s*10[⁻⁰¹
 const QTY_NUM_EXACT = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+|\s*×\s*10[⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)?$/i;
 
 /** The face of a Quantities module: <amount><unit> in large type, and the SI value (or the unit's name) underneath. */
-function QuantityFace({ text, sub, dim, hideSub }: { text: string; sub: string; dim?: boolean; hideSub?: boolean }) {
+function QuantityFace({ text, sub, dim, hideSub, plain }: { text: string; sub: string; dim?: boolean; hideSub?: boolean; plain?: boolean }) {
   // Split the whole text into number / unit runs so that every number is one colour and every unit another. A compound
   // time such as "1min 11s" has two amounts and two units; matching only the first amount left the second number
   // (and everything after the first one) in the unit colour.
@@ -75,7 +75,7 @@ function QuantityFace({ text, sub, dim, hideSub }: { text: string; sub: string; 
   const n = [...text].reduce((w, ch) => w + (/[\u3000-\u9fff\uff00-\uffef]/.test(ch) ? 1.9 : 1), 0);
   return (
     <div className={`qty ${dim ? 'idle' : ''}`}>
-      <div className={`qty-val ${n > 12 ? 'n3' : n > 9 ? 'n2' : ''}`} title={text}>{hasNum
+      <div className={`qty-val ${n > 12 ? 'n3' : n > 9 ? 'n2' : ''}`} title={text}>{hasNum && !plain
         ? parts.map((s, i) => (isNum(s) ? <span key={i} className="qa">{s}</span> : <span key={i} className="qu">{s}</span>))
         : <span className="qa">{text}</span>}</div>
       {!hideSub && <div className="qty-sub clamp1" title={sub}>{sub || ' '}</div>}
@@ -195,7 +195,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
   const level = status.level !== 'ok' ? status.level : upstream ? 'warn' : 'ok';
   const msg = status.level !== 'ok' ? tr(status.message) : upstream ? tr('Waiting: upstream module “{name}” failed.', { name: upstream }) : '';
   const out = (p: string) => rt?.outputs[p]?.v;
-  const title = nodeTitle(def, params);
+  const title = faceTitle(def, params);
   const connected = new Set(conn ? conn.split(',') : []);
 
   const live = sensorKey(def.type, params) && sensor?.state === 'live';
@@ -350,6 +350,9 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
       body = <QuantityFace text={shown} sub={numFmtSub(String(view.mode ?? params.mode), Number(view.n ?? params.n))} dim={view.text === undefined} hideSub={!more} />;
       break;
     }
+    case 'actor-baseconv': body = (
+      <QuantityFace text={String(view.text ?? params.value)} sub={tr('Base {a} → {b}', { a: Number(view.from ?? params.from), b: Number(view.to ?? params.to) })} dim={view.text === undefined} hideSub={!more} plain />
+    ); break;
     default: body = fileKind ? <FileFace node={node} kind={fileKind} ro={ro} more={more} /> : def.family === 'quantity' ? <QuantityFace text={def.type === 'qty-time' ? localizeDuration(String(view.text ?? def.chip?.(params) ?? '')) : String(view.text ?? def.chip?.(params) ?? '')} sub={tr(String(view.sub ?? ''))} dim={view.text === undefined} /> : null;
   }
 
@@ -367,9 +370,10 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
       const f = (group.indexOf(p) + 1) / (group.length + 1);
       const pos: React.CSSProperties = side === 'top' || side === 'bottom' ? { left: `${f * 100}%` } : { top: `${f * 100}%` };
       const portDot = <i key={dir + p.id} className={`port ${side} ${connected.has(`${dir}:${p.id}`) ? 'on' : ''}`} data-pk={`${dir}:${p.id}`} style={pos} aria-hidden="true" />;
-      // A setting pin also carries its name, drawn next to it while the module is hovered or selected (Workspace settings → Setting pin names).
-      if (dir !== 'in' || !p.param || !pinLabels) return portDot;
-      return [portDot, <span key={`${dir}${p.id}:label`} className={`pin-label ${side} ${connected.has(`${dir}:${p.id}`) ? 'on' : ''}`} style={pos} aria-hidden="true">{p.label || p.param}</span>];
+      // Every pin carries its name, drawn next to it while the module is hovered or selected (Workspace settings → Setting pin names).
+      // The name's outline is dashed for an input pin and solid for an output pin.
+      if (!pinLabels) return portDot;
+      return [portDot, <span key={`${dir}${p.id}:label`} className={`pin-label ${side} ${dir === 'in' ? 'is-in' : 'is-out'} ${connected.has(`${dir}:${p.id}`) ? 'on' : ''}`} style={pos} aria-hidden="true">{p.label || p.param || p.id}</span>];
     });
   };
 
@@ -425,6 +429,7 @@ export function PreviewNode({ def, scale = 0.78 }: { def: ModuleDef; scale?: num
   else if (def.type === 'actor-fileconv') body = <ConverterFace route="IMG → PDF" name="photo.png" state="done" size={48210} />;
   else if (def.type === 'actor-unitconv') body = <QuantityFace text="3.28084ft" sub="" hideSub />;
   else if (def.type === 'actor-numfmt') body = <QuantityFace text="1.235e+3" sub="" hideSub />;
+  else if (def.type === 'actor-baseconv') body = <QuantityFace text="FF" sub="" hideSub plain />;
   else if (def.type === 'meter') body = <svg className="art meter" viewBox="0 0 100 40" preserveAspectRatio="none"><polyline points="0,22 20,22 30,8 38,34 46,22 60,18 100,22" fill="none" stroke="currentColor" strokeWidth="1.4" vectorEffect="non-scaling-stroke" /></svg>;
   else if (def.type === 'image') body = <i className="grad dark" />;
   else if (def.type === 'motion') body = <div className="cross"><i /><b /></div>;
@@ -443,7 +448,7 @@ export function PreviewNode({ def, scale = 0.78 }: { def: ModuleDef; scale?: num
           <div className="chip-row"><span className="chip-glyph">{def.glyph}</span></div>
         ) : (
           <>
-            <div className="node-title">{(def.type === 'vision' || def.type === 'hearing') && <span className="dot live" />}<span className="t">{def.name}</span></div>
+            <div className="node-title">{(def.type === 'vision' || def.type === 'hearing') && <span className="dot live" />}<span className="t">{faceName(def) ?? def.name}</span></div>
             <div className="node-body">{body}</div>
           </>
         )}
