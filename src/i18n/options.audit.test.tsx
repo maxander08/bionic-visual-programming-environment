@@ -25,6 +25,7 @@ document.body.appendChild(host);
 const DATA_FACES: Record<string, RegExp> = {
   string: /^"?hello"?$/i, info: /^hello$/, event: /^go$/, boolean: /^(true|false|yes|no|on|off)$/, equation: /^sin\(x\)$/,
   setlanguage: /^English$/, // a language's own name is always written in that language
+  map: /^© OpenStreetMap contributors$/, // required source attribution; the contributor name stays in its official form in every language
 };
 // Files nodes show the file formats they take (.DOCX .DOC): format names are Latin in every language.
 for (const k of FILE_KINDS) DATA_FACES[k.type] = /^[.A-Z0-9\s]+$/;

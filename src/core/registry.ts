@@ -4,7 +4,7 @@ import { sensors } from './modules/sensors';
 import { nuclei } from './modules/nuclei';
 import { nodes } from './modules/nodes';
 import { baseData } from './modules/basedata';
-import { behaviors } from './modules/behavior';
+import { behaviors, places } from './modules/behavior';
 import { timekeeping } from './modules/timekeeping';
 import { quantities } from './modules/quantities';
 import { files } from './modules/files';
@@ -40,7 +40,7 @@ const compoundShell: ModuleDef = {
   doc: { summary: 'A reusable subsystem: a group of modules wrapped with defined inputs, outputs and exposed settings.', runtime: 'At run time the compound is expanded into its inner modules. Open it to inspect the inner graph.' },
 };
 
-export const MODULES: ModuleDef[] = [...sensors, ...nuclei, ...behaviors, ...nodes, ...baseData, ...timekeeping, ...quantities, ...files, ...actors, ...info, ...workspace];
+export const MODULES: ModuleDef[] = [...sensors, ...nuclei, ...behaviors, ...places, ...nodes, ...baseData, ...timekeeping, ...quantities, ...files, ...actors, ...info, ...workspace];
 const BY_TYPE = new Map(MODULES.map((m) => [m.type, m]));
 /** Library view: the modules with their text in the current language. */
 export const localizedModules = (): ModuleDef[] => MODULES.map(localizeDef);

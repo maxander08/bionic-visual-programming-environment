@@ -1,5 +1,7 @@
 // World Clock support: city lookup and time-zone formatting. Pure functions, no browser objects except Intl.
 import { CITY_DATA } from './data/cities';
+import { COUNTRY_GEO, PLACE_GEO, PLACE_HANS, PLACE_HANT } from './data/places';
+import { getLang } from '../i18n';
 
 export interface City {
   name: string;
@@ -9,10 +11,18 @@ export interface City {
   pop: number;
   /** "Name, Country": the canonical label, also used as the suggestion text. */
   label: string;
+  /** Position of the city (GeoNames), when known. */
+  lat?: number;
+  lon?: number;
+  /** The name in Simplified / Traditional Chinese, when the city has one. */
+  hans?: string;
+  hant?: string;
 }
 
+export interface Country { cc: string; name: string; hans: string; hant: string; lat: number; lon: number }
+
 const fold = (s: string) =>
-  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9\u3400-\u9fff]+/g, ' ').trim();
 
 /** Common alternative spellings that GeoNames lists under a different primary name. */
 const ALIASES: Record<string, string> = {
@@ -27,25 +37,39 @@ const COUNTRY_ALIASES: Record<string, string[]> = { US: ['usa', 'america', 'unit
 let all: City[] | null = null;
 let byName: Map<string, City[]> | null = null;
 let byCountry: Map<string, City[]> | null = null;
+let countryByKey: Map<string, Country> | null = null;
 
 function index() {
   if (all) return;
   all = [];
   byName = new Map();
   byCountry = new Map();
+  countryByKey = new Map();
   for (const [cc, country, rows] of CITY_DATA.c) {
     const list: City[] = [];
-    for (const [name, tz, pop] of rows) {
+    const geo = (PLACE_GEO[cc] ?? '').split(';'), hans = (PLACE_HANS[cc] ?? '').split('|'), hant = (PLACE_HANT[cc] ?? '').split('|');
+    rows.forEach(([name, tz, pop], i) => {
       const city: City = { name, country, cc, tz: CITY_DATA.tz[tz], pop, label: `${name}, ${country}` };
+      const [la, lo] = (geo[i] ?? '').split(',').map(Number);
+      if (geo[i]) { city.lat = la; city.lon = lo; }
+      if (hans[i]) city.hans = hans[i];
+      if (hant[i]) city.hant = hant[i];
       list.push(city);
-      all.push(city);
-      const k = fold(name);
-      const arr = byName.get(k);
-      if (arr) arr.push(city); else byName.set(k, [city]);
+      all!.push(city);
+      for (const n of [name, city.hans, city.hant]) {
+        if (!n) continue;
+        const k = fold(n);
+        const arr = byName!.get(k);
+        if (arr) { if (!arr.includes(city)) arr.push(city); } else byName!.set(k, [city]);
+      }
+    });
+    const g = COUNTRY_GEO[cc];
+    const info: Country = { cc, name: country, hans: g?.[0] ?? '', hant: g?.[1] ?? '', lat: g?.[2] ?? 0, lon: g?.[3] ?? 0 };
+    for (const n of [country, cc, info.hans, info.hant, ...(COUNTRY_ALIASES[cc] ?? [])]) {
+      if (!n) continue;
+      byCountry.set(fold(n), list);
+      countryByKey.set(fold(n), info);
     }
-    byCountry.set(fold(country), list);
-    byCountry.set(fold(cc), list);
-    for (const alt of COUNTRY_ALIASES[cc] ?? []) byCountry.set(alt, list);
   }
   for (const arr of byName.values()) arr.sort((a, b) => b.pop - a.pop);
 }
@@ -58,10 +82,30 @@ export function allCities(): City[] {
 
 export const COUNTRY_COUNT = CITY_DATA.c.length;
 
-let labels: string[] | null = null;
-/** "City, Country" strings for autocompletion, sorted alphabetically. */
+/** A city's name in a language: Chinese when the city has a Chinese name, English otherwise. */
+export const cityName = (c: City, lang: string): string => (lang === 'zh-Hans' ? c.hans : lang === 'zh-Hant' ? c.hant : '') || c.name;
+/** The name of a city's country in a language. */
+export function countryName(c: City, lang: string): string {
+  index();
+  const k = countryByKey!.get(fold(c.cc));
+  return (lang === 'zh-Hans' ? k?.hans : lang === 'zh-Hant' ? k?.hant : '') || c.country;
+}
+/** “Tokyo, Japan”, or “东京, 日本” in Simplified Chinese and “東京, 日本” in Traditional Chinese. */
+export const cityLabel = (c: City, lang: string): string => (lang === 'en' ? c.label : `${cityName(c, lang)}, ${countryName(c, lang)}`);
+
+const labelCache = new Map<string, string[]>();
+/** "City, Country" strings for autocompletion, sorted alphabetically; written in the interface language. */
 export function cityLabels(): string[] {
-  return (labels ??= allCities().map((c) => c.label).sort((a, b) => a.localeCompare(b)));
+  const lang = getLang();
+  let l = labelCache.get(lang);
+  if (!l) labelCache.set(lang, (l = [...new Set(allCities().map((c) => cityLabel(c, lang)))].sort((a, b) => a.localeCompare(b, lang === 'en' ? undefined : lang))));
+  return l;
+}
+
+/** A country by name (English, Simplified or Traditional Chinese), two-letter code or common alias. */
+export function findCountry(query: string): Country | null {
+  index();
+  return countryByKey!.get(fold(query)) ?? null;
 }
 
 /**
@@ -70,7 +114,7 @@ export function cityLabels(): string[] {
  */
 export function findCity(query: string): City | null {
   index();
-  const raw = query.trim();
+  const raw = query.trim().replace(/，/g, ',');
   if (!raw) return null;
   const comma = raw.lastIndexOf(',');
   const namePart = comma >= 0 ? raw.slice(0, comma) : raw;
@@ -84,7 +128,7 @@ export function findCity(query: string): City | null {
     if (!inCountry) return null;
     const k = fold(namePart);
     const want = new Set([k, fold(ALIASES[k] ?? '')]);
-    return inCountry.find((c) => want.has(fold(c.name))) ?? null;
+    return inCountry.find((c) => want.has(fold(c.name)) || (!!c.hans && want.has(fold(c.hans))) || (!!c.hant && want.has(fold(c.hant)))) ?? null;
   }
   const exact = lookup(namePart);
   if (exact.length) return exact[0];

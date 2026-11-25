@@ -1056,3 +1056,27 @@ for (const [type, g] of Object.entries(FILE_GUIDE)) {
     settings: {},
   };
 }
+
+// Map and Globe, and the Projector's Font size.
+const PLACE_STEPS = ['Add the module and type a place into **Default place**, or connect text to **Place**: a city, a country, a province, a district, an address or a landmark, or coordinates such as 35.68, 139.76.', 'Press Run. Cities and countries the program knows appear at once; other places are looked up on OpenStreetMap.', 'Click the expand icon in the node’s corner to open it full size.'];
+Object.assign(GUIDE, {
+  map: {
+    when: 'You want to see exactly where a place is, down to the street.',
+    steps: PLACE_STEPS,
+    tips: ['Leave **Fit to place** on to see all of a country or a city; turn it off and set **Zoom** (16 shows streets and buildings) to look at one spot.', 'In the full-size window drag to move, scroll or double-click to zoom, and use the target button to come back to the place.', 'Connect **Latitude** and **Longitude** to other modules to use the coordinates of whatever the Map found.'],
+    pitfalls: ['The map tiles and the look-up of places that are not built in need an internet connection.', 'A bare name picks the most prominent place with that name; write “Paris, Texas” to pick another.'],
+    up: ['text', 'string', 'constant', 'clock'], down: ['projector', 'globe'], alias: 'location where address street openstreetmap osm navigation gps coordinates latitude longitude place',
+    settings: { place: 'Used while nothing is connected to **Place**. Suggestions list the cities the program knows.', fit: 'On: the zoom follows the size of the place.', zoom: 'Only used when **Fit to place** is off.', marker: 'The pin marks the exact spot; the outline of an area is drawn either way.', style: 'Dark matches the program; Light is the usual OpenStreetMap colouring.', details: 'Adds the name and the coordinates under the map.' },
+    options: { style: { dark: 'Black map with white streets, like the rest of the program.', light: 'The standard OpenStreetMap colours.' } },
+  },
+  globe: {
+    when: 'You want to see where a place is on the planet.',
+    steps: PLACE_STEPS,
+    tips: ['An area such as a country or a province is outlined on the globe as well as marked.', 'In the full-size window drag to turn the globe, scroll to zoom, and double-click to bring a spot to the front.', 'Turn **Auto-rotate** on for a globe that keeps turning slowly.'],
+    pitfalls: ['Places the program does not know (provinces, districts, addresses) are looked up on OpenStreetMap and need an internet connection.'],
+    up: ['text', 'string', 'constant', 'clock'], down: ['projector', 'map'], alias: 'earth world planet sphere continent country location where place coordinates latitude longitude',
+    settings: { place: 'Used while nothing is connected to **Place**. Suggestions list the cities the program knows.', borders: 'Borders are drawn dimmer than coastlines.', grid: 'Latitude and longitude lines every 30 degrees.', marker: 'The marker and the outline of the area.', spin: 'Off keeps the place facing you.', details: 'Adds the name and the coordinates under the globe.' },
+  },
+});
+GUIDE.projector.settings = { ...GUIDE.projector.settings, fontSize: 'In pixels, for numbers and text. 0 keeps the automatic size, which follows the length of the value. A setting pin lets a signal change it while the program runs.' };
+GUIDE.projector.options = { ...GUIDE.projector.options };

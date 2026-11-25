@@ -286,6 +286,13 @@ describe('Meter number display', () => {
       }
     });
 
+    it('scales opposite extreme signs without overflowing the range', async () => {
+      const { hist, points } = await pointsFor('-1e308', '1e308');
+      expect(hist).toEqual([-1e308, 1e308]);
+      expect(points).not.toMatch(/NaN|Infinity/);
+      expect(points!.split(' ').map((p) => Number(p.split(',')[1]))).toEqual([36, 4]);
+    });
+
     it('still draws a flat line with Auto scale off', async () => {
       const { points } = await pointsFor('100000000000000000000', '100000000000000000000' + TAIL, false);
       expect(points).not.toMatch(/NaN|Infinity/);

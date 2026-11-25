@@ -2,6 +2,15 @@ import type { ImageSig, PortType } from './types';
 import { exactText, isDec, isZero, jsonText, packDec, parseDec, toNumber, toPlain } from './decimal';
 
 export const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
+/** Position of v in [lo, hi], without overflowing when finite bounds span from a large negative to a large positive value. */
+export function unitFraction(v: number, lo: number, hi: number): number {
+  if (hi === lo) return 0.5;
+  const bounded = clamp(v, lo, hi);
+  const span = hi - lo;
+  if (Number.isFinite(span)) return (bounded - lo) / span;
+  const scale = Math.max(Math.abs(lo), Math.abs(hi));
+  return (bounded / scale - lo / scale) / (hi / scale - lo / scale);
+}
 export const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 export function mulberry32(seed: number): () => number {

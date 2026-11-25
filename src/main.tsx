@@ -4,6 +4,8 @@ import "./index.css";
 import App from "./App";
 // File Converter actor: registers the browser-side conversion runner.
 import "./runtime/convert";
+// Map and Globe: registers the place look-up (OpenStreetMap Nominatim).
+import "./runtime/geocode";
 // Shell layer: loaded last so it overrides index.css / docs.css for shell selectors only.
 import "./ui/shell.css";
 // GUI layer: the redesigned surrounding interface (dark specimen theme). Scoped to shell containers; never targets nodes, canvas or map.

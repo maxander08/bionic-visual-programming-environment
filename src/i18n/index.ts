@@ -5,6 +5,7 @@
 // no React): the store keeps the chosen language and tells this module through `setActiveLang`.
 import { zhHans } from './zh-Hans';
 import { zhHant } from './zh-Hant';
+import { placeName } from './places';
 
 export type Lang = 'en' | 'zh-Hans' | 'zh-Hant';
 
@@ -138,5 +139,5 @@ export function trFace(s: string): string {
 export function trPlace(name: string): string {
   if (active === 'en' || !name) return name;
   const d = DICTS[active];
-  return d['city:' + name] ?? d[name] ?? name;
+  return d['city:' + name] ?? d[name] ?? placeName(active, name) ?? name;
 }

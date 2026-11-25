@@ -3,13 +3,15 @@ import type { ModuleDef, NodeInst } from '../core/types';
 import { SIZES } from '../core/types';
 import { localizeDuration } from '../core/duration';
 import { SETTING_PREFIX, defaultParams, faceName, faceTitle, nodeSize, portSide } from '../core/registry';
-import { clamp, fmtNum, isImage, toText } from '../core/util';
+import { clamp, fmtNum, isImage, toText, unitFraction } from '../core/util';
 import { engine, useNodeVer } from '../runtime/session';
 import { getSensorState, subscribeSensors, sensorVersion } from '../runtime/sensors';
 import { useSyncExternalStore } from 'react';
 import { useStore } from '../state/store';
 import { Icon } from './icons';
 import { EquationPlot } from './EquationPlot';
+import { GlobeView, MapView } from './PlaceViews';
+import { fmtCoords, placeLabel, type Place } from '../core/geo';
 import { FileFace, FilePreview, Thumb, useFileDrop } from './FilePanel';
 import { FILE_KIND_BY_TYPE, fmtBytes, type FileDescriptor } from '../core/files';
 import { routeLabel } from '../core/convert';
@@ -109,10 +111,11 @@ function ConverterFace({ route, name, state, size, more }: { route: string; name
 /** What the Projector shows on its node: a short look at the value. The expand button opens everything. */
 function ProjectorFace({ view }: { view: Record<string, any> }) {
   const k = view.kind;
+  const fs = Number(view.fontSize) > 0 ? { fontSize: Number(view.fontSize) } : undefined; // the Font size setting; 0 keeps the automatic size
   if (k === 'image') return <ImageCanvas img={view.image} />;
-  if (k === 'number') { const n = String(view.text).length; return <div className={`big n${n > 8 ? 3 : n > 5 ? 2 : 1}`}>{view.text}</div>; }
+  if (k === 'number') { const n = String(view.text).length; return <div className={`big n${n > 8 ? 3 : n > 5 ? 2 : 1}`} style={fs}>{view.text}</div>; }
   if (k === 'plot') return <EquationPlot plot={view.plot} />;
-  if (k === 'text' || k === 'data') return <div className="proj-text pre clamp4">{String(view.text ?? '').slice(0, 360)}</div>;
+  if (k === 'text' || k === 'data') return <div className="proj-text pre clamp4" style={fs}>{String(view.text ?? '').slice(0, 360)}</div>;
   if (k === 'file') {
     const f = view.file as FileDescriptor;
     return (
@@ -149,7 +152,7 @@ function Meter({ hist, auto }: { hist: number[]; auto: boolean }) {
   // (at 2^53 and above, v ± 0.5 is v again, so the range stays empty and every point became NaN).
   let flat = false;
   if (auto) { lo = Math.min(...hist); hi = Math.max(...hist); if (lo === hi || hi - lo < 1e-9) { flat = true; lo -= 0.5; hi += 0.5; } }
-  const pts = hist.map((v, i) => `${(i / (hist.length - 1)) * 100},${flat ? 20 : 36 - ((clamp(v, lo, hi) - lo) / (hi - lo)) * 32}`).join(' ');
+  const pts = hist.map((v, i) => `${(i / (hist.length - 1)) * 100},${flat ? 20 : 36 - unitFraction(v, lo, hi) * 32}`).join(' ');
   return <svg className="art meter" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><polyline points={pts} fill="none" stroke="currentColor" strokeWidth="1.4" vectorEffect="non-scaling-stroke" strokeLinejoin="round" /></svg>;
 }
 
@@ -263,7 +266,28 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
     case 'device': body = <div className="dim-text clamp1">{trFace(String(out('name') ?? ''))}</div>; break;
     case 'keys': body = <div className="dim-text clamp1">{String(out('key') ?? '')}</div>; break;
     case 'text': body = <div className="text-body pre clamp4">{view.text ?? ''}</div>; break;
-    case 'image': body = view.image ? <ImageCanvas img={view.image} /> : <div className="empty" />; break;
+    case 'image':
+      body = (
+        <div className="proj-wrap">
+          {view.image ? <ImageCanvas img={view.image} /> : <div className="empty" />}
+          {!ro && <button className="expand" data-interactive aria-label={tr("Open the image full size")} title={tr("Open the image full size")} onClick={() => useStore.getState().openDialog('image', rid)}><Icon name="expand" /></button>}
+        </div>
+      );
+      break;
+    case 'map': case 'globe': {
+      const pl = view.place as Place | undefined;
+      body = (
+        <div className="place-wrap">
+          {def.type === 'map'
+            ? <MapView place={pl} fit={params.fit !== false} zoom={Number(params.zoom) || 16} marker={params.marker !== false} style={String(params.style ?? 'dark')} />
+            : <GlobeView place={pl} borders={params.borders !== false} grid={params.grid !== false} marker={params.marker !== false} spin={params.spin === true} />}
+          {!pl && view.state === 'loading' && <div className="place-note">{tr('Looking up…')}</div>}
+          {more && pl && <div className="place-cap"><b className="clamp1" title={placeLabel(pl, getLang())}>{placeLabel(pl, getLang())}</b><span className="clamp1">{fmtCoords(pl.lat, pl.lon)}</span></div>}
+          {!ro && <button className="expand" data-interactive aria-label={tr(def.type === 'map' ? "Open the map full size" : "Open the globe full size")} title={tr(def.type === 'map' ? "Open the map full size" : "Open the globe full size")} onClick={() => useStore.getState().openDialog(def.type === 'map' ? 'map' : 'globe', rid)}><Icon name="expand" /></button>}
+        </div>
+      );
+      break;
+    }
     case 'projector':
       body = (
         <div className="proj-wrap">
@@ -278,7 +302,12 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
           <EquationPlot plot={view.plot} />
           {!ro && <button className="expand" data-interactive aria-label={tr("Open graph full size")} onClick={() => useStore.getState().openDialog('meter', rid)}><Icon name="expand" /></button>}
         </div>
-      ) : <div className="meter-wrap"><Meter hist={view.hist} auto={params.auto !== false} /></div>;
+      ) : (
+        <div className="meter-wrap">
+          <Meter hist={view.hist} auto={params.auto !== false} />
+          {!ro && <button className="expand" data-interactive aria-label={tr("Open graph full size")} title={tr("Open graph full size")} onClick={() => useStore.getState().openDialog('meter', rid)}><Icon name="expand" /></button>}
+        </div>
+      );
       break;
     case 'equation':
       body = <div className="text-body eq pre clamp2">{String(params.expr ?? '') || <span className="ph">{"y = sin(x)"}</span>}</div>;
@@ -440,6 +469,8 @@ export function PreviewNode({ def, scale = 0.78 }: { def: ModuleDef; scale?: num
   else if (def.type === 'actor-numfmt') body = <QuantityFace text="1.235e+3" sub="" hideSub />;
   else if (def.type === 'actor-baseconv') body = <QuantityFace text="FF" sub="" hideSub plain />;
   else if (def.type === 'meter') body = <svg className="art meter" viewBox="0 0 100 40" preserveAspectRatio="none"><polyline points="0,22 20,22 30,8 38,34 46,22 60,18 100,22" fill="none" stroke="currentColor" strokeWidth="1.4" vectorEffect="non-scaling-stroke" /></svg>;
+  else if (def.type === 'map') body = <svg className="art" viewBox="0 0 100 70" aria-hidden="true"><g fill="none" stroke="currentColor" strokeWidth="1.2" opacity=".75"><path d="M6 14l30-6 28 8 30-6v46l-30 6-28-8-30 6zM36 8v46M64 16v46" /></g><path d="M50 40c-6-8-9-12-9-16a9 9 0 1 1 18 0c0 4-3 8-9 16z" fill="#fff" /><circle cx="50" cy="24" r="3.2" fill="#000" /></svg>;
+  else if (def.type === 'globe') body = <svg className="art" viewBox="0 0 100 70" aria-hidden="true"><g fill="none" stroke="currentColor" strokeWidth="1.2"><circle cx="50" cy="35" r="30" /><ellipse cx="50" cy="35" rx="13" ry="30" opacity=".5" /><path d="M20 35h60M24 21h52M24 49h52" opacity=".5" /></g><circle cx="58" cy="28" r="3" fill="#fff" /></svg>;
   else if (def.type === 'image') body = <i className="grad dark" />;
   else if (def.type === 'motion') body = <div className="cross"><i /><b /></div>;
   else if (def.type === 'comment') body = <div className="text-body note">{tr("Note")}</div>;

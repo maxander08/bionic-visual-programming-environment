@@ -294,7 +294,7 @@ fieldset.driven { margin: 0; padding: 0; border: 0; min-width: 0; opacity: 0.5; 
 .port { position: absolute; background: #fff; opacity: 0; pointer-events: none; transition: opacity var(--dur-micro), transform var(--dur-instant), background var(--dur-instant); z-index: 2; }
 .port.top, .port.bottom { width: 12px; height: 5px; margin-left: -6px; } .port.top { top: -3.5px; } .port.bottom { bottom: -3.5px; }
 .port.left, .port.right { width: 5px; height: 12px; margin-top: -6px; } .port.left { left: -3.5px; } .port.right { right: -3.5px; }
-.node:hover .port, .node.sel .port { opacity: 0.38; } .port.on, .node:hover .port.on, .node.sel .port.on { opacity: 1; }
+.node:hover .port, .node.sel .port, .node.wire-over .port { opacity: 0.38; } .port.on, .node:hover .port.on, .node.sel .port.on { opacity: 1; }
 /* Setting pin names: shown beside each setting pin while its module is highlighted (hovered, or selected by a tap on touch screens).
    The text is sized in em from one base that follows the zoom a little (--k, set by the canvas), so it stays readable when zoomed out. */
 .pin-label { --pl: calc(10px / clamp(0.65, var(--k, 1), 1.2)); position: absolute; z-index: 4; pointer-events: none; opacity: 0; white-space: nowrap; box-sizing: border-box;
@@ -302,13 +302,13 @@ fieldset.driven { margin: 0; padding: 0; border: 0; min-width: 0; opacity: 0.5; 
   color: #f2f2f2; background: #0b0b0be6; border: 1.5px solid color-mix(in srgb, var(--c) 70%, #000); border-radius: 0.4em; transition: opacity var(--dur-micro); }
 .pin-label.is-in { border-style: dashed; }
 .pin-label.is-out { border-style: solid; }
-.node:hover .pin-label, .node.sel .pin-label { opacity: 1; }
+.node:hover .pin-label, .node.sel .pin-label, .node.wire-over .pin-label { opacity: 1; }
 .pin-label.left { right: calc(100% + 0.8em); transform: translateY(-50%); }
 .pin-label.right { left: calc(100% + 0.8em); transform: translateY(-50%); }
 /* Top and bottom pins sit 24 px apart: their names are turned to run along the edge instead of across their neighbours. */
 .pin-label.top { bottom: calc(100% + 0.8em); margin-left: 0.8em; transform-origin: 0 100%; transform: rotate(-90deg); }
 .pin-label.bottom { top: calc(100% + 0.8em); margin-left: 0.8em; transform-origin: 0 0; transform: rotate(90deg); }
-.node:hover, .node.sel { z-index: 2; }
+.node:hover, .node.sel, .node.wire-over { z-index: 2; }
 .port.cand-ok { opacity: 1 !important; box-shadow: 0 0 0 1.5px var(--acc); } .port.cand-bad { opacity: 0.1 !important; }
 .port.cand-hot { background: var(--acc); transform: scale(1.4); }
 
@@ -440,3 +440,31 @@ fieldset.driven { margin: 0; padding: 0; border: 0; min-width: 0; opacity: 0.5; 
 .pf { width: 100%; height: 100%; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-align: center; }
 .pf .proj-text { font-size: 10.5px; line-height: 1.25; margin-top: 0; color: #2fd9cf; text-align: left; flex: 1 1 0; min-height: 0; overflow: hidden; }
 .pf .ff-name { color: #d7fffb; }
+
+/* Map and Globe: the picture on the node (still) and in the full-size window (draggable). Black, white and thin lines, like every Behavior. */
+.place-wrap { position: relative; width: 100%; height: 100%; border-radius: 6px; overflow: hidden; background: #000; }
+.place-wrap .expand { background: #000b; color: #fff; border: 1px solid #ffffff44; }
+.place-note { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; color: #fffb; pointer-events: none; }
+.place-cap { position: absolute; left: 0; right: 24px; bottom: 0; padding: 3px 6px; background: #000c; font-size: 10.5px; line-height: 1.25; display: flex; flex-direction: column; pointer-events: none; border-radius: 0 4px 0 0; }
+.place-cap span { color: #fffb; font-variant-numeric: tabular-nums; }
+.mapv, .globev { position: relative; width: 100%; height: 100%; overflow: hidden; background: #000; }
+.mapv.live, .globev.live { cursor: grab; touch-action: none; user-select: none; flex: 1 1 auto; min-height: 0; height: auto; } .mapv.live:active, .globev.live:active { cursor: grabbing; }
+.mapv.dark { background: #0b0b0b; } .mapv.light { background: #e8e4dc; }
+.mapv-tiles { position: absolute; inset: 0; }
+.mapv-tiles img { position: absolute; width: 256px; height: 256px; max-width: none; user-select: none; pointer-events: none; }
+.mapv.dark .mapv-tiles img { filter: grayscale(1) invert(1) brightness(0.92) contrast(1.15); }
+.mapv-over { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.mapv-area { fill: rgba(255, 255, 255, 0.12); stroke: #fff; stroke-width: 1.6; stroke-linejoin: round; }
+.mapv-pin { fill: #fff; stroke: #000; stroke-width: 1.3; } .mapv-pin-dot { fill: #000; } .mapv-spot { fill: none; stroke: #fff; stroke-width: 1.4; }
+.mapv.light .mapv-area { fill: rgba(0, 0, 0, 0.08); stroke: #000; }
+.mapv.light .mapv-pin { fill: #111; stroke: #fff; } .mapv.light .mapv-pin-dot { fill: #fff; } .mapv.light .mapv-spot { stroke: #000; }
+.mapv-credit { position: absolute; left: 4px; bottom: 2px; font-size: 9px; color: #fffc; text-shadow: 0 0 3px #000; pointer-events: none; white-space: nowrap; }
+.mapv.live .mapv-credit { pointer-events: auto; }
+.mapv-credit a { color: inherit; text-decoration: underline; text-underline-offset: 1px; }
+.mapv.light .mapv-credit { color: #000b; text-shadow: 0 0 3px #fff; }
+.globev canvas { width: 100%; height: 100%; display: block; }
+.place-ctls { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 4px; z-index: 2; }
+.place-ctl { width: 30px; height: 30px; display: grid; place-items: center; background: #000c; color: #fff; border: 1px solid #ffffff55; border-radius: 6px; padding: 0; }
+.place-ctl:hover:not(:disabled) { background: #262626; border-color: #fff; } .place-ctl:disabled { opacity: 0.4; }
+.place-stage { border: 1px solid var(--hair2, #2a2a2a); border-radius: 10px; overflow: hidden; background: #000; }
+.meter-hist { width: 100%; height: auto; max-height: 62vh; display: block; }

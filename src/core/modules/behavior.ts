@@ -4,7 +4,10 @@ import { isDec, jsonText, setScale, toPlain } from '../decimal';
 import * as D from '../decmath';
 import { toDec } from '../decmath';
 import { isEquation, samplePlot } from '../equation';
-import { bol, inp, num, out, sel, txt } from './kit';
+import { bol, details, inp, num, out, sel, txt } from './kit';
+import { requestPlace, type Place } from '../geo';
+import { cityLabels } from '../worldclock';
+import { getLang } from '../../i18n';
 import { getFileInfo, isFileDescriptor } from '../files';
 
 /** Longest value the Projector keeps for display. Longer values are cut (the view says so). */
@@ -64,8 +67,11 @@ export const behaviors: ModuleDef[] = [
   {
     ...base, type: 'projector', name: 'Projector', caption: 'Projector', glyph: 'projector', family: 'projector', size: 'square', keywords: 'display output large show number text image',
     inputs: [inp('in', 'Input', 'any', 'Any value: numbers, text and images are drawn appropriately.')], outputs: [],
-    params: [sel('format', 'Number format', 'auto', [['auto', 'Automatic'], ['int', 'Integer'], ['fixed2', '2 decimals'], ['percent', 'Percent (×100)']], 'How numbers are shown.')],
-    run(c) { c.view(projectView(c.get('in'), c.str('format'))); },
+    params: [
+      sel('format', 'Number format', 'auto', [['auto', 'Automatic'], ['int', 'Integer'], ['fixed2', '2 decimals'], ['percent', 'Percent (×100)']], 'How numbers are shown.'),
+      num('fontSize', 'Font size', 0, 0, 200, 1, 'Size of numbers and text, in pixels, on the node and in the full-size window. 0 keeps the automatic size, which follows the length of the value.', 'px'),
+    ],
+    run(c) { c.view({ ...projectView(c.get('in'), c.str('format')), fontSize: c.num('fontSize') }); },
     doc: {
       summary: 'The general-purpose display for anything: numbers, text, images, equations, lists and whole files.',
       runtime: 'Chooses a layout from the value type: large number, text, picture, graph, or a file shown by its content (the words of a text, Word, web or CSV file, a picture, the first lines of a presentation). The node itself shows a short preview; the expand button in its corner opens a full-size window that shows everything: all of a long text, scrolling and selectable, a picture at full size, a PDF page by page, audio and video with player controls, a font as a live specimen you can type into with a grid of its characters, a spreadsheet as a table, an archive as a list of what is inside, and for every file a hex dump of its bytes and a Download button. The inspector has the same expand button next to every signal, so any value can be read in full.',
@@ -154,5 +160,69 @@ export const behaviors: ModuleDef[] = [
       c.view({ hex, rgb: [r, gg, b] });
     },
     doc: { summary: 'Generates a color from hue, saturation and value.', runtime: 'HSV → RGB. Outputs a swatch image and its hex text.' },
+  },
+];
+
+/** The shared run() of the Map and the Globe: look the place up (the input pin, else the Default place setting) and show it. */
+function runPlace(c: Parameters<ModuleDef['run']>[0], extra: Record<string, unknown>) {
+  const given = c.has('in') ? toText(c.get('in')).trim() : '';
+  const query = c.has('in') ? given : c.str('place').trim();
+  const r = requestPlace(query, getLang());
+  const clear = () => ['lat', 'lon', 'name'].forEach((p) => c.emit(p, undefined));
+  if (r.status === 'pending') { clear(); c.view({ state: 'loading', query, ...extra }); return; }
+  if (r.status === 'error') { c.view({ state: 'error', query, ...extra }); return c.fail(r.message); }
+  const p: Place = r.place;
+  c.emit('lat', p.lat);
+  c.emit('lon', p.lon);
+  c.emit('name', p.label);
+  c.view({ state: 'ready', query, place: p, ...extra });
+}
+const PLACE_SUGGEST = txt('place', 'Default place', 'Tokyo, Japan', 'The place to show when the Place pin has no signal: a city, a country, a province, a district, an address or a landmark anywhere on Earth, in English, 简体中文 or 繁體中文 (for example “Paris, France”, “Bavaria”, “Eiffel Tower” or “东京”), or coordinates such as 35.68, 139.76.', { maxLength: 200, placeholder: 'e.g. Kyoto, Texas, 1 Infinite Loop, 35.68 139.76', suggest: cityLabels });
+const placePins = [
+  out('lat', 'Latitude', 'num', 'Latitude of the place in degrees, north positive.', 'right'),
+  out('lon', 'Longitude', 'num', 'Longitude of the place in degrees, east positive.', 'right'),
+  out('name', 'Name', 'text', 'The name of the place as it was found, with its country.', 'right'),
+];
+
+export const places: ModuleDef[] = [
+  {
+    ...base, type: 'map', name: 'Map', caption: 'Map Display', glyph: 'map', size: 'tall', source: true, keywords: 'place location city country province street address openstreetmap osm navigate where position gps coordinates',
+    inputs: [inp('in', 'Place', 'text', 'Any place on Earth: a city, a country, a province, a district, a street address or a landmark, or coordinates such as 35.68, 139.76.', 'top', true)],
+    outputs: placePins,
+    params: [
+      PLACE_SUGGEST,
+      bol('fit', 'Fit to place', true, 'Zoom so that the whole place is in view: a country shows all of it, a city its streets. Off uses the Zoom setting.'),
+      num('zoom', 'Zoom', 16, 1, 19, 1, 'Used when Fit to place is off. 3 is a continent, 10 a city, 16 shows the streets and buildings, 19 is as close as the map goes.'),
+      bol('marker', 'Show pin', true, 'Draw a pin on the exact spot.'),
+      sel('style', 'Appearance', 'dark', [['dark', 'Dark'], ['light', 'Light map']], 'Dark matches the rest of the program; Light is the usual OpenStreetMap colouring.'),
+      details('the name and the coordinates of the place'),
+    ],
+    run(c) { runPlace(c, {}); },
+    doc: {
+      summary: 'A street-level map that shows exactly where a place is.',
+      runtime: 'Reads a place from the Place pin (or the Default place setting) and shows it on an OpenStreetMap map with a pin on the spot. A city, a country, a province, a district, an address or a landmark anywhere on Earth is understood, in English, Simplified or Traditional Chinese; coordinates such as 35.68, 139.76 work too. Cities and countries the program knows appear at once; everything else is looked up with OpenStreetMap Nominatim, which also brings the outline of an area, drawn on the map. The node shows the map; the expand button opens a window where it can be dragged and zoomed down to single buildings. The latitude, longitude and name leave on the right. Map tiles and lookups need an internet connection and are the only network use of this module.',
+      errors: ['A place that is not found raises an error naming it.', 'Without a connection only the cities, countries and coordinates the program knows can be shown; the map itself stays blank.'],
+      examples: ['Text “Eiffel Tower” → Map: see the tower on the street map.', 'Constant “Bavaria” → Map and Globe: the same place on a map and on the planet.', 'Map Latitude and Longitude → Projector: read the coordinates of a place.'],
+    },
+  },
+  {
+    ...base, type: 'globe', name: 'Globe', caption: 'Globe Display', glyph: 'globe', size: 'tall', source: true, keywords: 'earth planet world place location city country province continent sphere where position coordinates',
+    inputs: [inp('in', 'Place', 'text', 'Any place on Earth: a city, a country, a province, a district, a street address or a landmark, or coordinates such as 35.68, 139.76.', 'top', true)],
+    outputs: placePins,
+    params: [
+      PLACE_SUGGEST,
+      bol('borders', 'Show borders', true, 'Draw the borders between countries, dimmer than the coastlines.'),
+      bol('grid', 'Show grid', true, 'Draw the lines of latitude and longitude every 30 degrees.'),
+      bol('marker', 'Show pin', true, 'Draw a marker on the exact spot, and the outline of the area when the place is one.'),
+      bol('spin', 'Auto-rotate', false, 'Turn the globe slowly. Off keeps the place facing you.'),
+      details('the name and the coordinates of the place'),
+    ],
+    run(c) { runPlace(c, {}); },
+    doc: {
+      summary: 'A wire-frame globe that turns to face a place and marks where it is.',
+      runtime: 'Reads a place from the Place pin (or the Default place setting), turns the globe to face it and marks the spot; an area such as a country or a province is outlined. Coastlines and borders are drawn as thin white lines on black, like the rest of the Behavior modules. Cities and countries the program knows appear at once; everything else is looked up with OpenStreetMap Nominatim, which needs an internet connection. The expand button opens a window where the globe can be turned by dragging and zoomed with the wheel. The latitude, longitude and name leave on the right.',
+      errors: ['A place that is not found raises an error naming it.'],
+      examples: ['Text “Antarctica” → Globe: see where it is on the planet.', 'Clock City → Globe: follow the city of a clock.'],
+    },
   },
 ];

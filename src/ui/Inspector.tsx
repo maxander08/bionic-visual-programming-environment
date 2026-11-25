@@ -6,7 +6,7 @@ import { checkConnection } from '../core/graph';
 import { describe, fmtNum } from '../core/util';
 import { fromNumber, packDec, toPlain, type Dec } from '../core/decimal';
 import { add, cmp, fromInt, mul, toDec } from '../core/decmath';
-import { findCity, fmtOffset, readClock } from '../core/worldclock';
+import { cityLabel, findCity, fmtOffset, readClock } from '../core/worldclock';
 import { formatBase, formatDuration, fromBaseUnit, parseDuration, round6, toBaseUnit, unitWord, type TimeBase } from '../core/duration';
 import { engine, getDiagnostics, useDiagVersion, useNodeVer } from '../runtime/session';
 import { getSensorState, sensorVersion, subscribeSensors } from '../runtime/sensors';
@@ -17,7 +17,7 @@ import { FAMILY_VAR } from './NodeView';
 import { FileInspector } from './FilePanel';
 import { ExactValuePanel, FileConverterPanel, ProjectorPanel, UnitConverterPanel } from './ActorPanel';
 import { FILE_KIND_BY_TYPE } from '../core/files';
-import { tr, trFace } from '../i18n';
+import { getLang, tr, trFace } from '../i18n';
 
 function NumberField({ id, p, value, onChange }: { id?: string; p: Extract<ParamDef, { kind: 'number' }>; value: unknown; onChange: (v: number | string) => void }) {
   const shown = (v: unknown) => (typeof v === 'string' ? v : String(v));
@@ -170,7 +170,7 @@ function ClockInfo({ city }: { city: string }) {
   if (!c) return <p className="callout warn"><Icon name="alert" size={14} />{tr("“{city}” is not a known city yet. Start typing and pick one of the suggestions.", { city: city.trim() || '…' })}</p>;
   let off = '';
   try { off = fmtOffset(readClock(c.tz, Date.now(), false, false).offset); } catch { /* unknown zone */ }
-  return <p className="doc"><b>{c.label}</b> · {c.tz}{off ? tr(' · {off} now', { off }) : ''} · {tr("population")} {c.pop.toLocaleString('en-US')}</p>;
+  return <p className="doc"><b>{cityLabel(c, getLang())}</b> · {c.tz}{off ? tr(' · {off} now', { off }) : ''} · {tr("population")} {c.pop.toLocaleString('en-US')}</p>;
 }
 
 function Section({ title, children, open = true, right }: { title: string; children: React.ReactNode; open?: boolean; right?: React.ReactNode }) {

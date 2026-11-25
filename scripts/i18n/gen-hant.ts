@@ -24,10 +24,19 @@ const PLACES: Record<string, string> = {
   '法兰克福': '法蘭克福', '汉堡': '漢堡', '米兰': '米蘭', '里昂': '里昂', '马赛': '馬賽', '基辅': '基輔', '特拉维夫': '特拉維夫', '耶路撒冷': '耶路撒冷',
   '加尔各答': '加爾各答', '班加罗尔': '班加羅爾', '金奈': '清奈', '新北': '新北', '台北': '臺北', '台中': '臺中', '台南': '臺南',
 };
+// Unit and prefix names as Taiwan writes them (the Simplified names are the mainland ones: 千米, 英寸, 立方米 …).
+const UNITS_TW: Record<string, string> = {
+  'kilometre per hour': '公里每小時', 'inch': '英吋', 'square kilometre': '平方公里', 'cubic metre': '立方公尺', 'square metre': '平方公尺', 'metre per second': '公尺每秒',
+  'metre per second squared': '公尺每二次方秒', 'ampere per metre': '安培每公尺', 'square metre per second': '平方公尺每秒', 'kilogram-force': '公斤力', 'coulomb per kilogram': '庫侖每公斤',
+  'bit': '位元', 'tonne': '公噸', 'litre': '公升', 'degree Celsius': '攝氏度', 'degree Fahrenheit': '華氏度', 'kilowatt-hour': '度（千瓦小時）', 'US gallon': '美制加侖',
+  'US quart': '美制夸脫', 'US pint': '美制品脫', 'US cup': '美制杯', 'cubic foot': '立方英尺', 'cubic inch': '立方英吋', 'square inch': '平方英吋', 'pound per square inch': '磅每平方英吋',
+  'horsepower (mechanical)': '馬力（機械）', 'millimetre of mercury': '毫米汞柱', 'knot': '節', 'mile per hour': '英里每小時', 'revolution per minute': '每分鐘轉數',
+};
 const out: Record<string, string> = {};
 for (const [k, v] of Object.entries(zhHans)) {
   let t: string = conv(v);
   if (k.startsWith('city:')) t = PLACES[v] ?? t;
+  if (UNITS_TW[k]) t = UNITS_TW[k];
   if (/\bmass\b/i.test(k)) for (const [re, to] of FIX) t = t.replace(re, to);
   // OpenCC s2twp leaves 舍入 in its simplified form and turns 拉丁扩展 into 拉丁擴充套件 (browser extension).
   t = t.replace(/舍入/g, '捨入').replace(/拉丁擴充套件/g, '拉丁擴展');

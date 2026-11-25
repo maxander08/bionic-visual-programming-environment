@@ -82,6 +82,7 @@ function CanvasImpl({ graph, compounds, prefix = '', ro = false, main = false }:
   const [hover, setHover] = useState<{ x: number; y: number; text: string; mode: 'in' | 'out' } | null>(null);
   const hoverKey = useRef<string | null>(null);   // port the pointer is currently over
   const hoverBack = useRef(false);                // re-show the tooltip after a wire ends
+  const wireOver = useRef<string | null>(null);   // module under the pointer while a wire is being drawn (its pin names are shown)
   const [localSel, setLocalSel] = useState<string[]>([]);
   const [localEdge, setLocalEdge] = useState<string | null>(null);
 
@@ -429,6 +430,15 @@ function CanvasImpl({ graph, compounds, prefix = '', ro = false, main = false }:
     if (nodeEl && ro) { setLocalSel([nodeEl.dataset.node!]); }
   };
 
+  // While a wire is dragged the canvas holds the pointer, so CSS :hover no longer reaches the modules. The module the pointer
+  // is over gets the `wire-over` class instead, which shows its pin names exactly like :hover does.
+  const setWireOver = (id: string | null) => {
+    if (wireOver.current === id) return;
+    if (wireOver.current) world.current?.querySelector(`[data-node="${CSS.escape(wireOver.current)}"]`)?.classList.remove('wire-over');
+    wireOver.current = id;
+    if (id) world.current?.querySelector(`[data-node="${CSS.escape(id)}"]`)?.classList.add('wire-over');
+  };
+
   const updateProv = () => {
     const d = drag.current;
     const p = prov.current;
@@ -494,6 +504,16 @@ function CanvasImpl({ graph, compounds, prefix = '', ro = false, main = false }:
       const opp = d.anchor.dir === 'out' ? 'in' : 'out';
       let target: { node: string; port: string } | null = null;
       if (hit && hit.dir === opp && hit.node !== d.anchor.node && d.cand.get(`${hit.node}|${hit.port}`)) target = { node: hit.node, port: hit.port };
+      let over: string | null = null;
+      if (hit && hit.node !== d.anchor.node) over = hit.node;
+      else {
+        const m = 12 / view.current.k;
+        live.current.layout.forEach((l, id) => {
+          const n = pos(id);
+          if (id !== d.anchor.node && n && wp.x >= n.x - m && wp.x <= n.x + l.w + m && wp.y >= n.y - m && wp.y <= n.y + l.h + m) over = id;
+        });
+      }
+      setWireOver(over);
       if (target?.node !== d.target?.node || target?.port !== d.target?.port) {
         if (d.target) portEl(d.target.node, opp, d.target.port)?.classList.remove('cand-hot');
         if (target) portEl(target.node, opp, target.port)?.classList.add('cand-hot');
@@ -559,6 +579,7 @@ function CanvasImpl({ graph, compounds, prefix = '', ro = false, main = false }:
     drag.current = null;
     if (!d) return;
     root.current?.classList.remove('dragging', 'wiring');
+    setWireOver(null);
     if (d.t === 'pan') {
       if (!d.moved && !cancelled) setSel([], d.hitEdge);
       else commitView();
