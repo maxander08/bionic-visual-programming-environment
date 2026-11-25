@@ -929,6 +929,8 @@ export const zhHant: Record<string, string> = {
  "Meter Display": "儀表顯示",
  "Window": "視窗",
  "Auto scale": "自動縮放",
+ "Show number": "顯示數字",
+ "Show the latest value as a number at the top of the node, level with the name (numeric signals only).": "在節點頂部、與名稱同一行顯示最新數值（僅限數值訊號）。",
  "Audio": "音訊",
  "Audio Speaker": "音訊揚聲器",
  "Frequency": "頻率",

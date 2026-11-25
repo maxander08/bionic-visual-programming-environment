@@ -275,7 +275,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
           <EquationPlot plot={view.plot} />
           {!ro && <button className="expand" data-interactive aria-label={tr("Open graph full size")} onClick={() => useStore.getState().openDialog('meter', rid)}><Icon name="expand" /></button>}
         </div>
-      ) : <div className="meter-wrap"><Meter hist={view.hist} auto={params.auto !== false} /><span className="meter-num">{view.lastText !== undefined ? String(view.lastText) : view.last !== undefined ? String(view.last) : ''}</span></div>;
+      ) : <div className="meter-wrap"><Meter hist={view.hist} auto={params.auto !== false} /></div>;
       break;
     case 'equation':
       body = <div className="text-body eq pre clamp2">{String(params.expr ?? '') || <span className="ph">{"y = sin(x)"}</span>}</div>;
@@ -356,6 +356,11 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
     default: body = fileKind ? <FileFace node={node} kind={fileKind} ro={ro} more={more} /> : def.family === 'quantity' ? <QuantityFace text={def.type === 'qty-time' ? localizeDuration(String(view.text ?? def.chip?.(params) ?? '')) : String(view.text ?? def.chip?.(params) ?? '')} sub={tr(String(view.sub ?? ''))} dim={view.text === undefined} /> : null;
   }
 
+  // The Meter's latest value is drawn in the title row, level with its name (switch it off with the “Show number” setting).
+  const meterNum = def.type === 'meter' && !view.plot && params.showNumber !== false
+    ? (view.lastText !== undefined ? String(view.lastText) : view.last !== undefined ? String(view.last) : '')
+    : '';
+
   // Base Data chips show the value they last emitted, so a converted Input shows as what it became.
   const chipText = (def.family === 'data' && typeof view.chip === 'string' ? view.chip : def.chip?.(params)) ?? '';
 
@@ -389,6 +394,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
           <div className="node-title">
             {dot}
             <span className="t" title={title}>{title}</span>
+            {meterNum !== '' && <span className="meter-num" title={meterNum}>{meterNum}</span>}
             {level !== 'ok' && <span className={`mark ${level}`} aria-label={level === 'error' ? tr("Error") : tr("Warning")}>{level === 'error' ? '×' : '!'}</span>}
           </div>
           <div className="node-body">{body}</div>

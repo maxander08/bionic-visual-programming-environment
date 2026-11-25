@@ -26,6 +26,7 @@ export const nodes: Record<string, string> = {
   'Projector': '投影器', 'Text Display': '文本显示', 'Image Display': '图像显示',
   'Number format': '数字格式', 'Automatic': '自动', 'Integer': '整数', '2 decimals': '2 位小数', 'Percent (×100)': '百分比（×100）',
   'Meter': '仪表', 'Meter Display': '仪表显示', 'Window': '窗口', 'Auto scale': '自动缩放',
+  'Show number': '显示数字', 'Show the latest value as a number at the top of the node, level with the name (numeric signals only).': '在节点顶部、与名称同一行显示最新数值（仅限数值信号）。',
   'Audio': '音频', 'Audio Speaker': '音频扬声器', 'Frequency': '频率', 'Amplitude': '振幅', 'Waveform': '波形', 'Sine': '正弦波', 'Triangle': '三角波', 'Square': '方波', 'Saw': '锯齿波', 'Default pitch': '默认音高', 'Volume': '音量', 'Mute': '静音',
   'Haptic': '触觉反馈', 'Haptic Generator': '触觉发生器', 'Trigger': '触发', 'Duration': '时长',
   'Vital': '指示', 'Vital Indicator': '状态指示器', 'Color': '颜色', 'White': '白色', 'Red': '红色', 'Green': '绿色', 'Cyan': '青色', 'Yellow': '黄色',
