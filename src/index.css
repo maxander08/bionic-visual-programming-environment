@@ -276,7 +276,12 @@ fieldset.driven { margin: 0; padding: 0; border: 0; min-width: 0; opacity: 0.5; 
 .proj-text { color: #2fd9cf; font-size: 17px; line-height: 1.2; width: 100%; font-weight: 400; align-self: flex-start; margin-top: 4px; }
 .big { color: #2fd9cf; font-size: 30px; font-weight: 400; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.1; } .big.n2 { font-size: 22px; } .big.n3 { font-size: 15px; }
 /* Sits fully inside .node-body (which clips with overflow:hidden), so its hover/backdrop shape is never cut off. */
-.expand { position: absolute; right: 0; bottom: 0; width: 22px; height: 22px; display: grid; place-items: center; background: none; border: 0; color: #fff9; border-radius: 5px; z-index: 1; } .expand:hover { color: #fff; background: #ffffff18; }
+.expand { position: absolute; right: 0; bottom: 0; width: 24px; height: 18px; padding: 0; display: grid; place-items: center; background: #000d; border: 1px solid #ffffff44; color: #fff; border-radius: 9px; z-index: 1; opacity: 0; pointer-events: none; transition: opacity var(--dur-micro) var(--ease), background var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease); }
+.expand svg { width: 12px; height: 12px; display: block; }
+/* Like the Calculus steppers, the button shows only while its module is hovered, selected or focused (always on touch screens). */
+.node:hover .expand, .node.sel .expand, .node.wire-over .expand, .expand:focus-visible { opacity: 1; pointer-events: auto; }
+.expand:hover { background: #262626; border-color: #ffffff88; }
+@media (hover: none) { .expand { opacity: 1; pointer-events: auto; } }
 .imgcv { width: 100%; height: 100%; object-fit: contain; border-radius: 6px; display: block; }
 .empty { width: 100%; height: 100%; }
 .meter-wrap { position: relative; width: 100%; height: 100%; } .meter-wrap .art { height: 100%; }
@@ -444,7 +449,6 @@ fieldset.driven { margin: 0; padding: 0; border: 0; min-width: 0; opacity: 0.5; 
 
 /* Map and Globe: the picture on the node (still) and in the full-size window (draggable). Black, white and thin lines, like every Behavior. */
 .place-wrap { position: relative; width: 100%; height: 100%; border-radius: 6px; overflow: hidden; background: #000; }
-.place-wrap .expand { background: #000b; color: #fff; border: 1px solid #ffffff44; }
 .place-note { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; color: #fffb; pointer-events: none; }
 .place-cap { position: absolute; left: 0; right: 24px; bottom: 0; padding: 3px 6px; background: #000c; font-size: 10.5px; line-height: 1.25; display: flex; flex-direction: column; pointer-events: none; border-radius: 0 4px 0 0; }
 .place-cap span { color: #fffb; font-variant-numeric: tabular-nums; }
