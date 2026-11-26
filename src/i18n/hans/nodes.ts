@@ -56,7 +56,7 @@ export const nodes: Record<string, string> = {
   'Envelope': '包络', 'Phase': '阶段', 'Attack': '起音', 'Decay': '衰减', 'Sustain': '保持', 'Release': '释音', 'Peak': '峰值',
   'Nap': '小憩', 'Sleep': '休眠', 'Refractory (ignore after firing)': '不应期（发放后忽略）', 'Suspend (hold while asleep)': '挂起（休眠时保持）', 'Max sleep': '最长休眠',
   'Wave': '波形', 'Wave Generator': '波形发生器', 'F': 'F', 'Shape': '形状',
-  'Equation': '方程', 'y(x)': 'y(x)', 'x min': 'x 最小值', 'x max': 'x 最大值', 'Auto y range': '自动 y 范围', 'y min': 'y 最小值', 'y max': 'y 最大值', 'Samples': '采样数', 'Evaluate at x': '在 x 处求值',
+  'Equation': '方程', 'Equation text': '方程文本', 'y(x)': 'y(x)', 'x min': 'x 最小值', 'x max': 'x 最大值', 'Auto y range': '自动 y 范围', 'y min': 'y 最小值', 'y max': 'y 最大值', 'Samples': '采样数', 'Evaluate at x': '在 x 处求值',
   'Send Event': '发送事件', 'Event Sender': '事件发送器', 'Event name': '事件名称',
   // base data
   'Rounding': '舍入方式', 'Toward zero': '向零取整', 'Nearest': '最接近', 'Up': '向上', 'Base': '进制', 'Decimal (10)': '十进制 (10)', 'Binary (2)': '二进制 (2)', 'Octal (8)': '八进制 (8)', 'Hexadecimal (16)': '十六进制 (16)',

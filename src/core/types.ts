@@ -30,6 +30,8 @@ interface ParamBase {
   pin?: false;
   /** Forces the setting pin onto this edge instead of the automatic placement (top first for chips, left first otherwise). */
   pinSide?: Side;
+  /** The type of the setting pin when it differs from the one the kind gives it (a text setting whose pin takes an Equation). */
+  pinType?: PortType;
 }
 export type ParamDef =
   | (ParamBase & { kind: 'number'; min: number; max: number; step: number; default: number; unit?: string; /** A duration: shown and typed as “2 h 40 min”, held as a plain number in this unit (seconds or milliseconds). */ time?: 's' | 'ms'; /** The setting may hold any number of digits (kept as text when a double cannot hold them). Read it with ctx.dec(). */ exact?: boolean })

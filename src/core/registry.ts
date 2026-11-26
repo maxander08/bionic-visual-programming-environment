@@ -19,6 +19,7 @@ import { fromNumber, isDec, packDec, toNumber, toPlain, type Dec } from './decim
 import { cmp, toDec } from './decmath';
 import { formatBase, parseDuration, toBaseUnit } from './duration';
 import { parseQuantity } from './quantities';
+import { isEquation } from './equation';
 
 const info: ModuleDef[] = [
   {
@@ -60,7 +61,7 @@ export const PIN_SPACING = 24;
 const edgeNeed = (n: number) => (n <= 1 ? 0 : Math.ceil(((n + 1) * PIN_SPACING) / GRID) * GRID);
 
 const PIN_TYPE: Record<'number' | 'select' | 'text' | 'bool', PortType> = { number: 'num', select: 'text', text: 'text', bool: 'bool' };
-const pinType = (p: ParamDef): PortType => (p.kind === 'number' && p.time ? 'any' : PIN_TYPE[p.kind as 'number']);
+const pinType = (p: ParamDef): PortType => p.pinType ?? (p.kind === 'number' && p.time ? 'any' : PIN_TYPE[p.kind as 'number']);
 
 const joinText = (...parts: string[]) => parts.filter(Boolean).join(getLang() === 'en' ? ' ' : '');
 
@@ -71,6 +72,7 @@ function settingPin(p: ParamDef): PortDef | null {
     : p.kind === 'number' ? tr('Number from {min} to {max}{unit}; values outside are clamped.', { min: fmtNum(p.min), max: fmtNum(p.max), unit: p.unit ? ' ' + p.unit : '' })
     : p.kind === 'bool' ? tr('True or false.')
     : p.kind === 'select' ? tr('Text, one of: {list}.', { list: p.options.map((o) => o.value).join(', ') })
+    : p.kind === 'text' && p.pinType === 'data' ? tr('An Equation (the Equation output of an Equation node): its first expression is used. Text is read as the expression itself.')
     : '';
   return {
     id: SETTING_PREFIX + p.key, label: p.label, type: pinType(p), optional: true, param: p.key,
@@ -219,7 +221,8 @@ export function resolveParams(def: ModuleDef, rawParams: Params): Params {
         break;
       case 'text':
         // A number sent to a text setting keeps every digit (it is not tidied), so a Decimal Value never loses any.
-        out[p.key] = typeof v === 'string' ? v.slice(0, p.maxLength ?? 2000) : typeof v === 'number' && Number.isFinite(v) ? numText(v).slice(0, p.maxLength ?? 2000) : isDec(v) ? toPlain(v).slice(0, p.maxLength ?? 2000) : p.default;
+        // A setting whose pin takes an Equation reads the first expression of the Equation that arrives.
+        out[p.key] = p.pinType === 'data' && isEquation(v) ? (v.exprs[0] ?? p.default).slice(0, p.maxLength ?? 2000) : typeof v === 'string' ? v.slice(0, p.maxLength ?? 2000) : typeof v === 'number' && Number.isFinite(v) ? numText(v).slice(0, p.maxLength ?? 2000) : isDec(v) ? toPlain(v).slice(0, p.maxLength ?? 2000) : p.default;
         break;
       case 'bool':
         out[p.key] = typeof v === 'boolean' ? v : p.default;

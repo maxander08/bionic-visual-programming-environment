@@ -132,6 +132,22 @@ describe('running in the graph', () => {
     expect(eq.exprs).toEqual(['sin(x)', 'cos(x)', 'x^2', '2*x']);
     expect([eq.xMin, eq.xMax]).toEqual([-3, 3]);
   });
+  it('takes each expression pin from an Equation (data), not from text', () => {
+    const d = getDef('engine-calculus', undefined, { fn: 3 })!;
+    for (const k of [1, 2, 3]) expect(d.inputs.find((q) => q.id === `p:f${k}`)).toMatchObject({ type: 'data', param: `f${k}` });
+    const { e } = build({ nodes: [['q', 'equation', { expr: 'x^2' }], ['c', 'engine-calculus', { mode: 'derivative', fn: 2, f1: '', f2: '', at: 3 }]], wires: [['q', 'eq', 'c', 'p:f1']] });
+    e.runFor(200);
+    expect(e.out('c', 'result')).toBe('2*x');
+    expect(e.out('c', 'value')).toBeCloseTo(6, 9);
+  });
+  it('the Equation node gives its equation as text on a second output pin beside Equation', () => {
+    const d = getDef('equation')!;
+    expect(d.outputs.filter((o) => (o.side ?? 'bottom') === 'bottom').map((o) => [o.id, o.label, o.type])).toEqual([['eq', 'Equation', 'data'], ['text', 'Equation text', 'text']]);
+    const { e } = build({ nodes: [['q', 'equation', { expr: 'y = x^2' }], ['c', 'engine-calculus', { mode: 'derivative', fn: 1, f1: '', at: 3 }]], wires: [['q', 'text', 'c', 'p:f1']] });
+    e.runFor(200);
+    expect(e.out('q', 'text')).toBe('y = x^2');
+    expect(e.out('c', 'result')).toBe('2*x');
+  });
   it('chains: the derivative of a derivative', () => {
     const { e } = build({ nodes: [['a', 'engine-calculus', { f1: 'x^4', show: 'result' }], ['b', 'engine-calculus', { show: 'result', at: 1 }]], wires: [['a', 'eq', 'b', 'eq']] });
     e.runFor(200);

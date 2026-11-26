@@ -455,7 +455,7 @@ export const nodes: ModuleDef[] = [
   {
     category: 'Node', family: 'node', type: 'equation', name: 'Equation', caption: 'Equation', glyph: 'f(x)', size: 'small', source: true, keywords: 'formula function graph plot curve expression sin cos math store',
     inputs: [inp('x', 'X', 'num', 'Evaluate the first equation at this x for the y(x) output. Optional: the “Evaluate at x” setting is used when it is not connected.', 'top', true)],
-    outputs: [out('eq', 'Equation', 'data', 'The equation stored as data (expressions, plot range, time). Route it to a Meter to see its graph.'), out('y', 'y(x)', 'num', 'Value of the first equation at x.', 'right')],
+    outputs: [out('eq', 'Equation', 'data', 'The equation stored as data (expressions, plot range, time). Route it to a Meter to see its graph.'), out('text', 'Equation text', 'text', 'The equation as text: the expressions as typed, one per line.'), out('y', 'y(x)', 'num', 'Value of the first equation at x.', 'right')],
     params: [
       txt('expr', 'Equation', 'sin(x)', `Any expression in x (and t, the simulation time in seconds). Write one equation per line or separate them with “;” to graph several curves. A leading “y =” is allowed. Functions: ${FUNCTION_NAMES.join(', ')}. Constants: pi, e, tau, phi. Operators: + − * / ^ %, and implicit products such as 2x or 3sin(x).`, { multiline: true, maxLength: 600, placeholder: 'y = sin(x)' }),
       num('xMin', 'x min', -10, -1e6, 1e6, 0.1, 'Left edge of the graph.'),
@@ -477,6 +477,7 @@ export const nodes: ModuleDef[] = [
       const t = usesT ? c.time / 1000 : 0;
       const data: EquationData = { kind: 'equation', exprs, xMin: c.num('xMin'), xMax: c.num('xMax'), yMin: c.num('yMin'), yMax: c.num('yMax'), yAuto: c.bool('yAuto'), samples: c.num('samples'), t };
       c.emit('eq', data);
+      c.emit('text', exprs.join('\n'));
       const x = c.has('x') ? n(c.get('x')) : c.num('x');
       const y = fns[0].fn({ x, t });
       if (Number.isFinite(y)) c.emit('y', y);

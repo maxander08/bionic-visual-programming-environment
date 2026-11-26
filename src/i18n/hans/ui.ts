@@ -246,6 +246,8 @@ export const ui: Record<string, string> = {
   'Number from {min} to {max}{unit}; values outside are clamped.': '数值范围 {min} 至 {max}{unit}；超出范围的值会被限制。',
   'True or false.': '真或假。',
   'Text, one of: {list}.': '文本，可选值：{list}。',
+  'An Equation (the Equation output of an Equation node): its first expression is used. Text is read as the expression itself.': '方程（方程节点的“方程”输出）：使用它的第一个表达式。文本则按表达式本身读取。',
+  'The equation as text: the expressions as typed, one per line.': '文本形式的方程：按输入的原样，每行一个表达式。',
 
   // dialogs
   'Close dialog': '关闭对话框',

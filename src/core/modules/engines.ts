@@ -44,7 +44,8 @@ function calculusParams(p: Params, all = false): ParamDef[] {
     { ...num('fn', 'Expressions', 1, 1, CALC_MAX_ITEMS, 1, 'How many expressions the module holds, from 1 to 99. Each has its own pin (ƒ₁, ƒ₂ …). Change it with the + and − buttons on the module, or type a number here. Removing an expression drops its pin and its text.'), pin: false },
   ];
   for (let k = 1; k <= nf; k++) {
-    list.push(txt(`f${k}`, `ƒ${SUB(k)}(x)`, k === 1 ? 'x^3 - 3x' : '', `Expression ƒ${SUB(k)}. ${FN_DOC} An empty expression is skipped.`, { maxLength: 400, placeholder: 'y = sin(x)' }));
+    // The pin of each expression takes an Equation (data), not text.
+    list.push({ ...txt(`f${k}`, `ƒ${SUB(k)}(x)`, k === 1 ? 'x^3 - 3x' : '', `Expression ƒ${SUB(k)}. ${FN_DOC} An empty expression is skipped.`, { maxLength: 400, placeholder: 'y = sin(x)' }), pinType: 'data' });
   }
   list.push({ ...num('pn', 'Parameters', 0, 0, CALC_MAX_ITEMS, 1, 'How many named parameters the module holds, from 0 to 99. A parameter is a number with a name (a, b, c …) that every expression can use, and that a signal can change while the program runs. Change it with the “p” buttons on the module, or type a number here. Removing a parameter drops its pins.'), pin: false });
   for (let k = 1; k <= np; k++) {

@@ -29,7 +29,7 @@ describe('setting pins', () => {
         if (p.kind === 'action' || p.hidden || p.pin === false) { expect(pin, `${m.type}.${p.key}`).toBeUndefined(); continue; }
         expect(pin, `${m.type}.${p.key}`).toBeDefined();
         // a time setting also takes text such as “2 h 40 min”
-        expect(pin!.type).toBe(p.kind === 'number' && p.time ? 'any' : kindType[p.kind]);
+        expect(pin!.type).toBe(p.pinType ?? (p.kind === 'number' && p.time ? 'any' : kindType[p.kind]));
         expect(pin!.optional).toBe(true);
         expect(pin!.param).toBe(p.key);
         expect(pin!.label).toBe(p.label);
