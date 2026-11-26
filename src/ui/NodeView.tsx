@@ -324,7 +324,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
     case 'color':
       body = (
         <div className="hsv">
-          <div><span>H</span><span>S</span><span>V</span></div>
+          <div>{(({ cmyk: ['C', 'M', 'Y', 'K'], pantone: [tr('Pantone')], hex: [tr('Hex')] } as Record<string, string[]>)[String(view.model)] ?? ['H', 'S', 'V']).map((t) => <span key={t}>{t}</span>)}</div>
           <i style={{ background: view.hex ?? '#2060ff' }} />
         </div>
       );

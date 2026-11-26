@@ -1,11 +1,14 @@
 // The pictures of the Map and the Globe modules. Both are used twice: small and still on the node, and big and draggable in the
 // full-size window (`interactive`).
-//   MapView   — OpenStreetMap tiles laid out by hand (core/geo.ts has the tile arithmetic): a pin on the exact spot, the outline of an area.
+//   MapView   — OpenStreetMap data drawn in the interface language (VectorMap.tsx), with a pin on the exact spot and the outline of an area laid over it
+//               by hand (core/geo.ts has the tile arithmetic). Where WebGL or the vector tiles are not available, plain OpenStreetMap picture tiles are used.
 //   GlobeView — a wire-frame globe on a canvas: coastlines and borders as thin white lines on black, the marker, the outline of an area.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LAND_LINES } from '../core/data/land';
 import { MAX_ZOOM, TILE, clamp, fromPixel, orthographic, placeLabel, toPixel, unproject, wrapLon, zoomFor, type Place } from '../core/geo';
 import { getLang, tr } from '../i18n';
+import { useStore } from '../state/store';
+import { VectorMap } from './VectorMap';
 import { Icon } from './icons';
 
 function useSize() {
@@ -31,7 +34,17 @@ interface MapState { lat: number; lon: number; z: number }
 
 export function MapView({ place, fit = true, zoom = 16, marker = true, style = 'dark', interactive = false }: MapProps) {
   const [ref, size] = useSize();
+  const lang = useStore((s) => s.settings.language);
+  // 'vector': the map drawn in the interface language; 'plain': OpenStreetMap picture tiles, used when the vector map cannot start.
+  const [base, setBase] = useState<'vector' | 'plain'>('vector');
+  const [drawn, setDrawn] = useState(false);
   const sized = size.w > 0 && size.h > 0;
+  // A vector map that has not drawn after this long (the tile server does not answer, the browser cannot start it) gives way to the plain tiles.
+  useEffect(() => {
+    if (base !== 'vector' || drawn || !sized) return;
+    const t = setTimeout(() => setBase('plain'), 20000);
+    return () => clearTimeout(t);
+  }, [base, drawn, sized]);
   const home = useMemo<MapState | null>(() => {
     if (!place || !sized) return null;
     const b = place.bbox;
@@ -100,7 +113,10 @@ export function MapView({ place, fit = true, zoom = 16, marker = true, style = '
         onPointerUp: () => { drag.current = null; }, onPointerCancel: () => { drag.current = null; },
         onDoubleClick: (e: React.MouseEvent<HTMLDivElement>) => { const r = e.currentTarget.getBoundingClientRect(); zoomBy(1, e.clientX - r.left, e.clientY - r.top); },
       } : {})}>
-      <div className="mapv-tiles">{tiles.map((t) => <img key={t.key} src={t.src} alt="" draggable={false} decoding="async" referrerPolicy="origin" style={{ left: t.left, top: t.top }} />)}</div>
+      <div className={`mapv-tiles ${base === 'vector' && drawn ? 'drawn' : ''}`}>
+        {base === 'vector' && v && sized && <VectorMap view={v} w={size.w} h={size.h} lang={lang} onReady={() => setDrawn(true)} onFail={() => setBase('plain')} />}
+        {base === 'plain' && tiles.map((t) => <img key={t.key} src={t.src} alt="" draggable={false} decoding="async" referrerPolicy="origin" style={{ left: t.left, top: t.top }} />)}
+      </div>
       {sized && (rings.length > 0 || pin) && (
         <svg className="mapv-over" width={size.w} height={size.h} aria-hidden="true">
           {rings.map((d, i) => <path key={i} d={d} className="mapv-area" />)}
@@ -115,8 +131,8 @@ export function MapView({ place, fit = true, zoom = 16, marker = true, style = '
       )}
       <span className="mapv-credit">
         {interactive
-          ? <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>
-          : '© OpenStreetMap contributors'}
+          ? <><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>{base === 'vector' && <> · <a href="https://openfreemap.org" target="_blank" rel="noreferrer">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/" target="_blank" rel="noreferrer">OpenMapTiles</a></>}</>
+          : base === 'vector' ? '© OpenStreetMap contributors · OpenFreeMap · © OpenMapTiles' : '© OpenStreetMap contributors'}
       </span>
       {interactive && (
         <div className="place-ctls">

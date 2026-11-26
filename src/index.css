@@ -216,7 +216,8 @@ fieldset.driven { margin: 0; padding: 0; border: 0; min-width: 0; opacity: 0.5; 
 .canvas-root.overport { cursor: crosshair; } .canvas-root.wiring { cursor: crosshair; } .canvas-root.dragging { cursor: grabbing; }
 .world { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
 .wires { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; z-index: 0; }
-.wires.top { z-index: 10; }
+/* The wire being drawn runs under the setting pin names: a module that shows its names (hovered, selected, or the wire's target) is above it. */
+.wires.top { z-index: 1; }
 .w { fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .w-st { stroke: #4b4b4b; stroke-width: 1.6; } .w-hot { stroke: #8a8a8a; stroke-width: 1.8; } .w-sel { stroke: #fff; stroke-width: 2.4; }
 .w-bad { stroke: var(--err); stroke-width: 1.8; stroke-dasharray: 5 4; } .w-off { stroke: #444; stroke-width: 1.6; stroke-dasharray: 3 5; }
@@ -288,7 +289,7 @@ fieldset.driven { margin: 0; padding: 0; border: 0; min-width: 0; opacity: 0.5; 
 .graph-legend li { display: flex; align-items: center; gap: 7px; min-width: 0; } .graph-legend i { width: 14px; height: 3px; border-radius: 2px; flex: none; }
 .graph-legend code { overflow-wrap: anywhere; }
 .state-name { position: absolute; left: 0; right: 0; bottom: 0; text-align: center; font-size: 11px; color: #cfeee5; }
-.hsv { width: 100%; height: 100%; display: flex; flex-direction: column; gap: 6px; } .hsv > div { display: flex; gap: 5px; } .hsv span { flex: 1; text-align: center; border: 1px solid #555; border-radius: 6px; padding: 2px 0; font-size: 11px; color: #fff; }
+.hsv { width: 100%; height: 100%; display: flex; flex-direction: column; gap: 4px; } .hsv > div { display: flex; gap: 5px; } .hsv span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; border: 1px solid #555; border-radius: 6px; padding: 1px 0; font-size: 11px; line-height: 1.25; color: #fff; }
 .hsv i { flex: 1; border-radius: 6px; min-height: 12px; }
 .grad { display: block; width: 100%; height: 100%; border-radius: 6px; background: linear-gradient(120deg, #8d6cff 0%, #5ac8ff 35%, #9dffa8 62%, #ffa7d0 100%); opacity: 0.9; } .grad.dark { background: radial-gradient(circle at 35% 30%, #4a4a58, #050507 70%); }
 .port { position: absolute; background: #fff; opacity: 0; pointer-events: none; transition: opacity var(--dur-micro), transform var(--dur-instant), background var(--dur-instant); z-index: 2; }
@@ -452,7 +453,10 @@ fieldset.driven { margin: 0; padding: 0; border: 0; min-width: 0; opacity: 0.5; 
 .mapv.dark { background: #0b0b0b; } .mapv.light { background: #e8e4dc; }
 .mapv-tiles { position: absolute; inset: 0; }
 .mapv-tiles img { position: absolute; width: 256px; height: 256px; max-width: none; user-select: none; pointer-events: none; }
-.mapv.dark .mapv-tiles img { filter: grayscale(1) invert(1) brightness(0.92) contrast(1.15); }
+.mapv.dark .mapv-tiles img, .mapv.dark .mapv-tiles canvas { filter: grayscale(1) invert(1) brightness(0.92) contrast(1.15); }
+.mapv-gl { position: absolute; inset: 0; pointer-events: none; } .mapv-gl .maplibregl-map { position: absolute; inset: 0; width: 100%; height: 100%; } .mapv-gl canvas { outline: none; }
+/* The vector map stays hidden until it has drawn its first picture. */
+.mapv-tiles .mapv-gl { opacity: 0; transition: opacity var(--dur-micro, 120ms); } .mapv-tiles.drawn .mapv-gl { opacity: 1; }
 .mapv-over { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
 .mapv-area { fill: rgba(255, 255, 255, 0.12); stroke: #fff; stroke-width: 1.6; stroke-linejoin: round; }
 .mapv-pin { fill: #fff; stroke: #000; stroke-width: 1.3; } .mapv-pin-dot { fill: #000; } .mapv-spot { fill: none; stroke: #fff; stroke-width: 1.4; }

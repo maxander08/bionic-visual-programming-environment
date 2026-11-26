@@ -1,4 +1,4 @@
-import type { ModuleDef } from '../types';
+import type { ModuleDef, ParamDef, Params } from '../types';
 import { clamp, hsvToRgb, isImage, makeImage, toBool, toNum, toText } from '../util';
 import { isDec, jsonText, setScale, toPlain } from '../decimal';
 import * as D from '../decmath';
@@ -9,6 +9,8 @@ import { requestPlace, type Place } from '../geo';
 import { cityLabels } from '../worldclock';
 import { getLang } from '../../i18n';
 import { getFileInfo, isFileDescriptor } from '../files';
+import { cmykToRgb, parseHex, rgbToCmyk, rgbToHex, type RGB } from '../colorspaces';
+import { nearestPantone, pantoneToRgb } from '../pantone';
 
 /** Longest value the Projector keeps for display. Longer values are cut (the view says so). */
 export const PROJECT_MAX_CHARS = 2_000_000;
@@ -50,6 +52,27 @@ export function projectView(v: unknown, format = 'auto'): Record<string, unknown
 
 const base = { category: 'Behavior' as const, family: 'behavior' as const };
 const COLORS: [string, string][] = [['white', 'White'], ['red', 'Red'], ['green', 'Green'], ['cyan', 'Cyan'], ['yellow', 'Yellow']];
+
+const COLOR_MODELS: [string, string][] = [['hsv', 'HSV'], ['cmyk', 'CMYK'], ['pantone', 'Pantone'], ['hex', 'Hex']];
+export const colorModel = (p: Params): string => (COLOR_MODELS.some(([v]) => v === p.model) ? String(p.model) : 'hsv');
+/**
+ * The settings of the Color module. Every color model keeps its settings (so a value typed for one model is still there after a visit to another),
+ * but only the settings of the chosen model are shown and have a setting pin: the others are hidden. `all` lists every model, for the documentation.
+ */
+function colorParams(p: Params, all: boolean): ParamDef[] {
+  const model = colorModel(p);
+  const of = (m: string, d: ParamDef): ParamDef => (all || model === m ? { ...d, pinSide: 'left' } : { ...d, hidden: true });
+  const cmyk = (key: string, label: string, def: number, ink: string) => of('cmyk', num(key, label, def, 0, 100, 1, `Amount of ${ink} ink, 0–100 %. Used when the model is CMYK.`, '%'));
+  return [
+    { pin: false as const, ...sel('model', 'Color model', 'hsv', COLOR_MODELS, 'How the color is written: HSV, CMYK, Pantone or Hex. Each model has its own settings.') },
+    of('hsv', num('h', 'Hue', 0.6, 0, 1, 0.01, 'Used when H is unconnected.')),
+    of('hsv', num('s', 'Saturation', 1, 0, 1, 0.01, 'Used when S is unconnected.')),
+    of('hsv', num('v', 'Value', 1, 0, 1, 0.01, 'Used when V is unconnected.')),
+    cmyk('c', 'Cyan', 100, 'cyan'), cmyk('m', 'Magenta', 60, 'magenta'), cmyk('y', 'Yellow', 0, 'yellow'), cmyk('k', 'Black', 0, 'black'),
+    of('pantone', txt('pantone', 'Pantone', '300 C', 'A Pantone code such as 485 C or 19-4052 TCX, or a name such as Classic Blue. Used when the model is Pantone.', { maxLength: 60, placeholder: '485 C' })),
+    of('hex', txt('hex', 'Hex', '#0066ff', 'A hex color: #rrggbb or #rgb. Used when the model is Hex.', { maxLength: 9, placeholder: '#rrggbb' })),
+  ];
+}
 
 export const behaviors: ModuleDef[] = [
   {
@@ -146,20 +169,58 @@ export const behaviors: ModuleDef[] = [
     doc: { summary: 'Shows a system notification when triggered.', runtime: 'Requires notification permission, requested from the inspector button. Without permission nothing is shown and the node says so.', errors: ['Permission denied, default (not yet granted) or API unavailable: no notification is sent.'] },
   },
   {
-    ...base, type: 'color', name: 'Color', caption: 'Color Generator', glyph: 'color', size: 'square', keywords: 'hue saturation value hsv',
-    inputs: [inp('h', 'H', 'num', 'Hue 0–1.', 'top', true), inp('s', 'S', 'num', 'Saturation 0–1.', 'top', true), inp('v', 'V', 'num', 'Value 0–1.', 'top', true)],
-    outputs: [out('image', 'Swatch', 'image', 'A solid 8×8 image of the color.'), out('css', 'Hex', 'text', 'The color as #rrggbb.', 'right')],
-    params: [num('h', 'Hue', 0.6, 0, 1, 0.01, 'Used when H is unconnected.'), num('s', 'Saturation', 1, 0, 1, 0.01, 'Used when S is unconnected.'), num('v', 'Value', 1, 0, 1, 0.01, 'Used when V is unconnected.')],
+    ...base, type: 'color', name: 'Color', caption: 'Color', glyph: 'color', size: 'small', keywords: 'hue saturation value hsv cmyk pantone hex rgb swatch palette',
+    inputs: [inp('h', 'H', 'num', 'Hue 0–1. Used in the HSV model.', 'top', true), inp('s', 'S', 'num', 'Saturation 0–1. Used in the HSV model.', 'top', true), inp('v', 'V', 'num', 'Value 0–1. Used in the HSV model.', 'top', true)],
+    outputs: [
+      out('image', 'Swatch', 'image', 'A solid 8×8 image of the color.'),
+      out('c', 'Cyan', 'num', 'The cyan of the color in CMYK, 0–100 %.'),
+      out('m', 'Magenta', 'num', 'The magenta of the color in CMYK, 0–100 %.'),
+      out('y', 'Yellow', 'num', 'The yellow of the color in CMYK, 0–100 %.'),
+      out('k', 'Black', 'num', 'The black (key) of the color in CMYK, 0–100 %.'),
+      out('css', 'Hex', 'text', 'The color as #rrggbb.', 'right'),
+      out('pantone', 'Pantone', 'text', 'The Pantone color: the one asked for in the Pantone model, otherwise the closest Pantone color, as text such as PANTONE 19-4052 TCX Classic Blue.', 'right'),
+    ],
+    params: colorParams({}, true),
+    dynamicParams: (p) => colorParams(p, false),
     source: true,
     run(c) {
-      const g = (p: string) => (c.has(p) ? clamp(toNum(c.get(p)) || 0, 0, 1) : c.num(p));
-      const [r, gg, b] = hsvToRgb(g('h'), g('s'), g('v'));
+      const model = colorModel({ model: c.str('model') });
+      let rgb: RGB;
+      let cmyk: [number, number, number, number] | null = null;
+      let pantone = '';
+      if (model === 'cmyk') {
+        cmyk = [c.num('c'), c.num('m'), c.num('y'), c.num('k')];
+        rgb = cmykToRgb(...cmyk);
+      } else if (model === 'pantone') {
+        const q = c.str('pantone').trim();
+        const hit = pantoneToRgb(q);
+        if (!hit) return c.fail(`“${q}” is not a Pantone color the program knows. Try a code such as 485 C or 19-4052 TCX, or a name such as Classic Blue.`);
+        rgb = hit.rgb;
+        pantone = hit.name;
+      } else if (model === 'hex') {
+        const q = c.str('hex').trim();
+        const hit = parseHex(q);
+        if (!hit) return c.fail(`“${q}” is not a hex color. Write it as #rrggbb or #rgb, for example #0a7aff.`);
+        rgb = hit;
+      } else {
+        const g = (p: string) => (c.has(p) ? clamp(toNum(c.get(p)) || 0, 0, 1) : c.num(p));
+        rgb = hsvToRgb(g('h'), g('s'), g('v'));
+      }
+      const [r, gg, b] = rgb;
+      const hex = rgbToHex(rgb);
+      cmyk = cmyk ?? rgbToCmyk(rgb);
+      pantone = pantone || nearestPantone(rgb);
       c.emit('image', makeImage(8, 8, () => [r, gg, b]));
-      const hex = '#' + [r, gg, b].map((x) => x.toString(16).padStart(2, '0')).join('');
       c.emit('css', hex);
-      c.view({ hex, rgb: [r, gg, b] });
+      c.emit('pantone', pantone);
+      (['c', 'm', 'y', 'k'] as const).forEach((port, i) => c.emit(port, cmyk![i]));
+      c.view({ model, hex, rgb: [r, gg, b], cmyk, pantone });
     },
-    doc: { summary: 'Generates a color from hue, saturation and value.', runtime: 'HSV → RGB. Outputs a swatch image and its hex text.' },
+    doc: {
+      summary: 'Generates a color from HSV, CMYK, a Pantone code or a hex code.',
+      runtime: 'The Color model setting chooses how the color is written: HSV (hue, saturation, value), CMYK (cyan, magenta, yellow, black, in percent), Pantone (a code such as 485 C or 19-4052 TCX, or a name such as Classic Blue) or Hex (#rrggbb). Each model has its own setting pins, and the pins of the others are hidden. The color leaves as a swatch image, as hex text, as cyan, magenta, yellow and black numbers, and as the Pantone color it is or is closest to. Screens show CMYK and Pantone as approximations of the printed ink.',
+      errors: ['A hex code that is not #rgb or #rrggbb raises an error.', 'A Pantone code or name the program does not know raises an error.'],
+    },
   },
 ];
 

@@ -113,7 +113,8 @@ function placeSettingPins(def: ModuleDef, params: ParamDef[]): ModuleDef {
 const settingCache = new WeakMap<ModuleDef, Map<string, ModuleDef>>();
 function withSettingPins(def: ModuleDef, params: ParamDef[]): ModuleDef {
   // Modules whose choices depend on other settings (the Actors) list the choices in the key, so each variant keeps its own pin hints.
-  const sig = params.map((p) => (def.dynamicParams && p.kind === 'select' ? `${p.key}:${p.options.map((o) => o.value).join(',')}` : p.key)).join('|');
+  // A setting that is hidden has no pin, so the same list with other settings hidden is another variant (the Color module's models).
+  const sig = params.map((p) => (def.dynamicParams && p.kind === 'select' ? `${p.key}:${p.options.map((o) => o.value).join(',')}` : p.hidden ? `${p.key}!` : p.key)).join('|');
   let m = settingCache.get(def);
   if (!m) settingCache.set(def, (m = new Map()));
   let d = m.get(sig);

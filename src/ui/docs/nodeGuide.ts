@@ -233,11 +233,13 @@ export const GUIDE: Record<string, NodeGuide> = {
     settings: { gap: 'Notifications closer together than this are dropped. 3000 ms is a sensible default.' },
   },
   color: {
-    when: 'You want to produce a colour from hue, saturation and value, or sweep through colours.',
-    steps: ['Add **Color** and connect 0–1 numbers to **H**, **S**, **V**, or set them as settings.', 'Use **Swatch** (an image) with an Image or Projector, and **Hex** (the `#rrggbb` text) elsewhere.'],
-    tips: ['Drive **H** with a slow [[n:wave]] (offset 0.5, amplitude 0.5) to cycle through the rainbow.', 'Feed **Swatch** to [[n:knowledge]] with *Dominant color* to test it.'],
-    up: ['wave', 'sense'], down: ['image', 'projector', 'knowledge'], alias: 'hsv rgb hue swatch palette hex css',
-    settings: { h: 'Used only when H has no wire. 0 and 1 are both red.', s: '0 is grey, 1 is vivid.', v: '0 is black, 1 is brightest.' },
+    when: 'You want to produce a colour from HSV, CMYK, a Pantone code or a hex code, or sweep through colours.',
+    steps: ['Add **Color** and choose the **Color model**: HSV, CMYK, Pantone or Hex. Each model shows its own settings, each with a setting pin.', 'HSV: connect 0–1 numbers to **H**, **S**, **V**, or set them as settings. CMYK: set **Cyan**, **Magenta**, **Yellow** and **Black** (0–100 %). Pantone: type a code such as `485 C` or `19-4052 TCX`, or a name such as `Classic Blue`. Hex: type `#rrggbb`.', 'Use **Swatch** (an image) with an Image or Projector, **Hex** (the `#rrggbb` text) and **Pantone** (the Pantone colour, or the closest one) as text, and **Cyan**, **Magenta**, **Yellow**, **Black** as numbers.'],
+    tips: ['Drive **H** with a slow [[n:wave]] (offset 0.5, amplitude 0.5) to cycle through the rainbow.', 'Feed **Swatch** to [[n:knowledge]] with *Dominant color* to test it.', 'A Pantone colour on a screen is an approximation of the printed ink.'],
+    pitfalls: ['A hex code that is not `#rgb` or `#rrggbb`, or a Pantone code the program does not know, raises an error.'],
+    up: ['wave', 'sense'], down: ['image', 'projector', 'knowledge'], alias: 'hsv rgb hue swatch palette hex css cmyk pantone ink print',
+    settings: { h: 'Used only when H has no wire in the HSV model. 0 and 1 are both red.', s: '0 is grey, 1 is vivid.', v: '0 is black, 1 is brightest.', c: 'Cyan ink in the CMYK model, 0–100 %.', m: 'Magenta ink in the CMYK model, 0–100 %.', y: 'Yellow ink in the CMYK model, 0–100 %.', k: 'Black ink in the CMYK model, 0–100 %.', pantone: 'A code (`485 C`, `19-4052 TCX`) or a name (`Classic Blue`).', hex: '`#rrggbb` or `#rgb`.' },
+    options: { model: { hsv: 'Hue, saturation and value, 0–1.', cmyk: 'Cyan, magenta, yellow and black, in percent.', pantone: 'A Pantone code or name.', hex: 'A web colour code such as #0a7aff.' } },
   },
 
   /* ───── Nodes ───── */

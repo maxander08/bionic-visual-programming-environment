@@ -14,5 +14,6 @@ import { time } from './hans/time';
 import { pinnames } from './hans/pinnames';
 import { newModules } from './hans/newmodules';
 import { geo } from './hans/geo';
+import { color } from './hans/color';
 
-export const zhHans: Record<string, string> = { ...geo, ...newModules, ...actors, ...time, ...pinnames, ...numfmt, ...exact, ...files, ...nodes, ...content, ...docs, ...extra, ...ui, ...faces, ...docsUi };
+export const zhHans: Record<string, string> = { ...color, ...geo, ...newModules, ...actors, ...time, ...pinnames, ...numfmt, ...exact, ...files, ...nodes, ...content, ...docs, ...extra, ...ui, ...faces, ...docsUi };
