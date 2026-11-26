@@ -16,6 +16,7 @@ import { Icon } from './icons';
 import { FAMILY_VAR } from './NodeView';
 import { FileInspector } from './FilePanel';
 import { ExactValuePanel, FileConverterPanel, ProjectorPanel, UnitConverterPanel } from './ActorPanel';
+import { CalculusPanel } from './EnginePanel';
 import { FILE_KIND_BY_TYPE } from '../core/files';
 import { getLang, tr, trFace } from '../i18n';
 
@@ -422,6 +423,7 @@ function NodePanel({ id }: { id: string }) {
       {node.type === 'actor-fileconv' && <Section title={tr("Conversion")}><FileConverterPanel node={node} /></Section>}
       {node.type === 'actor-unitconv' && <Section title={tr("Result")}><UnitConverterPanel node={node} /></Section>}
       {node.type === 'actor-numfmt' && <Section title={tr("Result")}><ExactValuePanel node={node} field="text" hint={tr('The full result, every digit. The node face shows only as much as fits.')} /></Section>}
+      {node.type === 'engine-calculus' && <Section title={tr("Analysis")}><CalculusPanel node={node} /></Section>}
       {node.type === 'decimal' && <Section title={tr("Exact value")}><ExactValuePanel node={node} field="chip" hint={tr('Every digit of the number, never rounded. Use a Number Formatter to round it.')} /></Section>}
       {FILE_KIND_BY_TYPE.has(node.type) && <Section title={tr("File")}><FileInspector node={node} kind={FILE_KIND_BY_TYPE.get(node.type)!} /></Section>}
       {defs.length > 0 && (

@@ -51,6 +51,7 @@ describe('translation', () => {
   });
   it('translates dynamic engine messages through their templates', () => {
     expect(trIn('zh-Hans', 'Output “out” is not a finite number.')).toBe('输出“out”不是有限数值。');
+    expect(trIn('zh-Hans', 'sin() takes 1 argument(s), got 2.')).toBe('sin() 需要 1 个参数，但给了 2 个。');
     expect(trIn('zh-Hant', 'Camera error: NotFoundError.')).toContain('NotFoundError');
   });
   it('the two Chinese dictionaries have the same keys', () => {

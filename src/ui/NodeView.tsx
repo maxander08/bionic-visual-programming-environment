@@ -10,6 +10,7 @@ import { useSyncExternalStore } from 'react';
 import { useStore } from '../state/store';
 import { Icon } from './icons';
 import { EquationPlot } from './EquationPlot';
+import { EngineSteps } from './EngineSteps';
 import { GlobeView, MapView } from './PlaceViews';
 import { fmtCoords, placeLabel, type Place } from '../core/geo';
 import { FileFace, FilePreview, Thumb, useFileDrop } from './FilePanel';
@@ -22,7 +23,7 @@ import { fmtClockDate, fmtClockTime, fmtCountdown } from '../i18n/format';
 
 export const FAMILY_VAR: Record<string, string> = {
   sensor: '#ff2a2a', sense: '#6fd3ee', knowledge: '#a259ff', attention: '#f7c52b', fear: '#3ddc97', memory: '#86f0cc', apparatus: '#2fd6c0',
-  emotion: '#ff8a50', behavior: '#f4f4f4', projector: '#2fd9cf', node: '#ffc933', data: '#e84dff', timekeeping: '#ff7ac6', quantity: '#b6e34a', file: '#3aa0ff', actor: '#ff9f43', info: '#7b8cff', workspace: '#c9a3ff',
+  emotion: '#ff8a50', behavior: '#f4f4f4', projector: '#2fd9cf', node: '#ffc933', data: '#e84dff', timekeeping: '#ff7ac6', quantity: '#b6e34a', file: '#3aa0ff', actor: '#ff9f43', engine: '#e6c48a', info: '#7b8cff', workspace: '#c9a3ff',
 };
 
 const TK_STATE: Record<string, string> = { idle: 'Ready', running: 'Running', paused: 'Paused', done: 'Done', stopped: 'Stopped', limit: 'Limit reached', armed: 'Armed', ringing: 'Ringing', snoozed: 'Snoozed' };
@@ -309,6 +310,15 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
         </div>
       );
       break;
+    case 'engine-calculus':
+      body = (
+        <div className="meter-wrap">
+          {view.plot ? <EquationPlot plot={view.plot} /> : <svg className="art meter" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><polyline points="0,30 18,25 36,13 50,9 64,13 82,25 100,30" fill="none" stroke="currentColor" strokeWidth="1.4" vectorEffect="non-scaling-stroke" strokeLinejoin="round" opacity=".45" /></svg>}
+          {!ro && <EngineSteps node={node} />}
+          {!ro && <button className="expand" data-interactive aria-label={tr("Open graph full size")} title={tr("Open graph full size")} onClick={() => useStore.getState().openDialog('meter', rid)}><Icon name="expand" /></button>}
+        </div>
+      );
+      break;
     case 'equation':
       body = <div className="text-body eq pre clamp2">{String(params.expr ?? '') || <span className="ph">{"y = sin(x)"}</span>}</div>;
       break;
@@ -391,7 +401,7 @@ function NodeViewImpl({ node, def, selected, conn, prefix, ro }: Props) {
   // The Meter's latest value is drawn in the title row, level with its name (switch it off with the “Show number” setting).
   const meterNum = def.type === 'meter' && !view.plot && params.showNumber !== false
     ? (view.lastText !== undefined ? String(view.lastText) : view.last !== undefined ? String(view.last) : '')
-    : '';
+    : def.type === 'engine-calculus' ? String(view.short ?? '') : '';
 
   // Base Data chips show the value they last emitted, so a converted Input shows as what it became.
   const chipText = (def.family === 'data' && typeof view.chip === 'string' ? view.chip : def.chip?.(params)) ?? '';
@@ -468,6 +478,7 @@ export function PreviewNode({ def, scale = 0.78 }: { def: ModuleDef; scale?: num
   else if (def.type === 'actor-unitconv') body = <QuantityFace text="3.28084ft" sub="" hideSub />;
   else if (def.type === 'actor-numfmt') body = <QuantityFace text="1.235e+3" sub="" hideSub />;
   else if (def.type === 'actor-baseconv') body = <QuantityFace text="FF" sub="" hideSub plain />;
+  else if (def.type === 'engine-calculus') body = <svg className="art meter" viewBox="0 0 100 40" preserveAspectRatio="none"><polyline points="0,30 14,27 28,15 40,8 52,13 66,27 80,33 100,24" fill="none" stroke="currentColor" strokeWidth="1.4" vectorEffect="non-scaling-stroke" /><polyline points="0,36 18,32 36,22 52,20 68,22 86,12 100,4" fill="none" stroke="#e6c48a" strokeWidth="1.4" vectorEffect="non-scaling-stroke" /></svg>;
   else if (def.type === 'meter') body = <svg className="art meter" viewBox="0 0 100 40" preserveAspectRatio="none"><polyline points="0,22 20,22 30,8 38,34 46,22 60,18 100,22" fill="none" stroke="currentColor" strokeWidth="1.4" vectorEffect="non-scaling-stroke" /></svg>;
   else if (def.type === 'map') body = <svg className="art" viewBox="0 0 100 70" aria-hidden="true"><g fill="none" stroke="currentColor" strokeWidth="1.2" opacity=".75"><path d="M6 14l30-6 28 8 30-6v46l-30 6-28-8-30 6zM36 8v46M64 16v46" /></g><path d="M50 40c-6-8-9-12-9-16a9 9 0 1 1 18 0c0 4-3 8-9 16z" fill="#fff" /><circle cx="50" cy="24" r="3.2" fill="#000" /></svg>;
   else if (def.type === 'globe') body = <svg className="art" viewBox="0 0 100 70" aria-hidden="true"><g fill="none" stroke="currentColor" strokeWidth="1.2"><circle cx="50" cy="35" r="30" /><ellipse cx="50" cy="35" rx="13" ry="30" opacity=".5" /><path d="M20 35h60M24 21h52M24 49h52" opacity=".5" /></g><circle cx="58" cy="28" r="3" fill="#fff" /></svg>;

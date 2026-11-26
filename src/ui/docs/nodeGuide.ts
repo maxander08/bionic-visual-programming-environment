@@ -953,6 +953,52 @@ GUIDE['actor-baseconv'] = {
   },
 };
 
+/* ───── Engines ───── */
+
+GUIDE['engine-calculus'] = {
+  when: 'You want to differentiate, integrate, take a limit, sum a series or study the shape of a curve, on one expression or many, with numbers you can change while the program runs.',
+  steps: [
+    'Add **Calculus** from the **Engines** section. It looks like a Meter: a graph on its face and the latest number in its title row.',
+    'Type an expression in the inspector, or wire a text to the **ƒ₁(x)** pin, for example *x^3 - 3x*. Choose what to do with it in **Analysis**.',
+    'Hover or select the module and press **+** on its **ƒ** button to add another expression with a pin of its own, or **+** on its **p** button to add a parameter such as *a*. **−** removes the last one.',
+    'Connect the **Equation** output to a [[n:meter]] to see the function and its result drawn together, or read the numbers from **Value** and **Values**.',
+    'Or connect an [[n:equation]] node to the **Equation** pin: its expressions and its x and y range replace the typed ones.',
+  ],
+  tips: [
+    'There is no limit to the idea: every expression and every parameter is a setting, and every setting has a setting pin, so a signal can write a formula, rename a parameter or change a value while the program runs.',
+    'Parameters are named numbers. With *a* set to 2, the expression *a*sin(x)* is 2 sin x, and wiring a Wave to the value pin of *a* makes the graph move. Differentiating by a parameter gives a partial derivative.',
+    'Derivatives are exact, not approximations: the result is written out as an expression, so it can be drawn, passed on, or differentiated again by a second Calculus module wired to the first.',
+    'For an improper integral type **inf** or **-inf** as a bound. A limit at infinity works the same way. Bounds may also be expressions such as *pi/2*.',
+    'Curve analysis looks at the stretch from **x min** to **x max**. Widen it to find more roots and turning points.',
+    'The Output expression setting chooses which expression feeds **Value**; **Values** always lists all of them.',
+  ],
+  pitfalls: [
+    'A result the Meter’s equation parser cannot read (it has no factorial and no parameters) is left off the graph but stays in **Report** and **Result**.',
+    'Parameter names cannot be x, t, pi, e or the name of a function, and two parameters cannot share a name.',
+    'A limit that does not exist, a series that diverges or an integral that does not converge sends nothing to **Value**; the **Report** says why.',
+    'Removing an expression or a parameter with **−** drops its pin, its text and any wire connected to that pin.',
+  ],
+  up: ['equation', 'constant', 'wave', 'engine-calculus'],
+  down: ['meter', 'projector', 'text', 'engine-calculus'],
+  alias: 'calculus derivative differentiate slope tangent integral integrate antiderivative area limit series sum taylor maclaurin fourier convergence curve sketch extrema maximum minimum inflection asymptote root zero parameter variable expression equation engine math',
+  settings: {
+    mode: 'Start with Derivative to see how the module works, then try the others on the same expression.',
+    fn: 'The number of expressions. The + and − buttons on the module change it too.',
+    pn: 'The number of parameters. The p buttons on the module change it too.',
+    f1: 'Any expression in x. One equation per pin: add more pins for more equations.',
+    show: 'Use Result only when you want a Meter to draw nothing but the result.',
+  },
+  options: {
+    mode: {
+      derivative: 'The exact derivative of any order, its value at a point, and optionally the tangent line.',
+      integral: 'The antiderivative where a closed form is known, and the definite integral between two bounds, improper ones included.',
+      limit: 'The limit at a point or at infinity, from both sides or from one, saying so when it is infinite or does not exist.',
+      series: 'A sum of terms with its convergence test, a Taylor polynomial about a point, or a Fourier series.',
+      curve: 'Intercepts, turning points, inflection points, asymptotes, where the curve rises, falls and bends, and its area and length.',
+    },
+  },
+};
+
 /* ───── Files: one guide per kind of file ───── */
 const FILE_GUIDE: Record<string, Partial<NodeGuide> & { when: string }> = {
   'file-document': {

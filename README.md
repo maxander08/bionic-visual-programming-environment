@@ -119,6 +119,8 @@ src/
 │   ├── project.ts     Serialisation, sanitising, share-link encoding
 │   ├── library.ts     Example programs and built-in compound systems
 │   ├── equation.ts    Safe expression parser, equation data and plot sampler
+│   ├── calcexpr.ts    Calculus Engine: expression trees, exact derivatives, antiderivatives, simplifier and printer
+│   ├── calculus.ts    Calculus Engine: integrals, limits, series, curve analysis and the `analyze` entry point
 │   ├── util.ts        Coercion, RNG, image statistics
 │   ├── timekeeping.ts Duration formatting, time-of-day parsing, time-zone maths for the Timekeeping modules
 │   ├── decimal.ts     Arbitrary-precision decimal numbers: parsing, formatting, rounding, exact signal values
@@ -133,7 +135,8 @@ src/
 │       ├── behavior.ts  Text, image, projector, meter, audio, haptic, notify…
 │       ├── timekeeping.ts  Timekeeping section: Timer, Alarm, Stopwatch, World Clock
 │       ├── basedata.ts     Base Data section: Integer, Decimal, String, Character, Boolean, Array / List
-│       └── quantities.ts   Quantities section: one module per kind of quantity (Time, Length, Pressure…)
+│       ├── quantities.ts   Quantities section: one module per kind of quantity (Time, Length, Pressure…)
+│       └── engines.ts      Engines section: the Calculus Engine (any number of expressions and parameters, one setting pin each)
 ├── runtime/        Browser-side runtime: sensors (camera/mic/etc.), session, outputs
 ├── state/          Zustand store, undo/redo, localStorage persistence
 ├── ui/             Canvas, node views, inspector, library, dialogs, chrome

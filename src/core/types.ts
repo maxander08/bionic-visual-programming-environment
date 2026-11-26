@@ -150,10 +150,11 @@ export type Family =
   | 'quantity'
   | 'file'
   | 'actor'
+  | 'engine'
   | 'info'
   | 'workspace';
 
-export type Category = 'Sensor' | 'Nucleus' | 'Behavior' | 'Node' | 'Base Data' | 'Timekeeping' | 'Quantities' | 'Files' | 'Actors' | 'Info' | 'Workspace Settings';
+export type Category = 'Sensor' | 'Nucleus' | 'Behavior' | 'Node' | 'Base Data' | 'Timekeeping' | 'Quantities' | 'Files' | 'Actors' | 'Engines' | 'Info' | 'Workspace Settings';
 
 export interface ModuleDoc {
   summary: string;
