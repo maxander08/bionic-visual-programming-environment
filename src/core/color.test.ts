@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Engine } from './engine';
-import { addNode, emptyGraph, flatten } from './graph';
+import { addNode, connect, emptyGraph, flatten, sanitizeGraph, setParams } from './graph';
 import { cmykToRgb, parseHex, rgbToCmyk, rgbToHex } from './colorspaces';
 import { nearestPantone, pantoneToRgb } from './pantone';
 import { getDef, resolveParams } from './registry';
@@ -54,12 +54,52 @@ describe('Pantone color lookup', () => {
 });
 
 describe('Color module', () => {
-  it('keeps only the selected model’s settings as setting pins', () => {
+  it('keeps only the selected model’s settings as setting pins, plus the Color model pin', () => {
     const pins = (model: string) => getDef('color', undefined, { model })!.paramPins!.map((p) => p.param);
-    expect(pins('hsv')).toEqual(['h', 's', 'v']);
-    expect(pins('cmyk')).toEqual(['c', 'm', 'y', 'k']);
-    expect(pins('pantone')).toEqual(['pantone']);
-    expect(pins('hex')).toEqual(['hex']);
+    expect(pins('hsv')).toEqual(['model', 'h', 's', 'v']);
+    expect(pins('cmyk')).toEqual(['model', 'c', 'm', 'y', 'k']);
+    expect(pins('pantone')).toEqual(['model', 'pantone']);
+    expect(pins('hex')).toEqual(['model', 'hex']);
+  });
+
+  it('puts the model’s settings on the north edge and the Color model on the west edge', () => {
+    const sides = (model: string) => {
+      const d = getDef('color', undefined, { model })!;
+      const on = (s: string) => d.inputs.filter((p) => p.side === s).map((p) => p.param);
+      return { top: on('top'), left: on('left'), others: d.inputs.length - on('top').length - on('left').length };
+    };
+    expect(sides('hsv')).toEqual({ top: ['h', 's', 'v'], left: ['model'], others: 0 });
+    expect(sides('cmyk')).toEqual({ top: ['c', 'm', 'y', 'k'], left: ['model'], others: 0 });
+    expect(sides('pantone')).toEqual({ top: ['pantone'], left: ['model'], others: 0 });
+    expect(sides('hex')).toEqual({ top: ['hex'], left: ['model'], others: 0 });
+  });
+
+  it('can be driven from the Color model pin and the model’s setting pins', () => {
+    let graph: Graph = emptyGraph();
+    graph = addNode(graph, 'color', 0, 0, { model: 'hsv' }, undefined, 'color').graph;
+    graph = addNode(graph, 'constant', 0, 200, { kind: 'text', value: 'hex' }, undefined, 'm').graph;
+    graph = addNode(graph, 'constant', 0, 300, { value: 0 }, undefined, 'h').graph;
+    graph = connect(graph, 'm', 'out', 'color', 'p:model').graph;
+    graph = connect(graph, 'h', 'out', 'color', 'p:h').graph;
+    const engine = new Engine(50);
+    engine.load(flatten(graph));
+    engine.runFor(200);
+    expect(engine.nodes.get('color')!.viewData).toMatchObject({ model: 'hex', hex: '#0066ff' });
+    graph = setParams(graph, 'm', { kind: 'text', value: 'hsv' });
+    const e2 = new Engine(50);
+    e2.load(flatten(graph));
+    e2.runFor(200);
+    expect(e2.nodes.get('color')!.outputs.css?.v).toBe('#ff0000');
+  });
+
+  it('keeps wires saved to the old H, S and V pins', () => {
+    const raw = {
+      nodes: { c: { id: 'c', type: 'color', x: 0, y: 0, params: {} }, k: { id: 'k', type: 'constant', x: 0, y: 100, params: { value: 0.5 } } },
+      edges: { e1: { id: 'e1', from: 'k', fromPort: 'out', to: 'c', toPort: 'h', weight: 1, delay: 0, enabled: true } },
+    } as unknown as Graph;
+    const { graph, problems } = sanitizeGraph(raw, {});
+    expect(problems).toEqual([]);
+    expect(graph.edges.e1.toPort).toBe('p:h');
   });
 
   it('retains each model’s settings when the selected model changes', () => {

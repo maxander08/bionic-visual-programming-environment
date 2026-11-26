@@ -61,10 +61,10 @@ export const colorModel = (p: Params): string => (COLOR_MODELS.some(([v]) => v =
  */
 function colorParams(p: Params, all: boolean): ParamDef[] {
   const model = colorModel(p);
-  const of = (m: string, d: ParamDef): ParamDef => (all || model === m ? { ...d, pinSide: 'left' } : { ...d, hidden: true });
+  const of = (m: string, d: ParamDef): ParamDef => (all || model === m ? { ...d, pinSide: 'top' } : { ...d, hidden: true });
   const cmyk = (key: string, label: string, def: number, ink: string) => of('cmyk', num(key, label, def, 0, 100, 1, `Amount of ${ink} ink, 0–100 %. Used when the model is CMYK.`, '%'));
   return [
-    { pin: false as const, ...sel('model', 'Color model', 'hsv', COLOR_MODELS, 'How the color is written: HSV, CMYK, Pantone or Hex. Each model has its own settings.') },
+    { pinSide: 'left' as const, ...sel('model', 'Color model', 'hsv', COLOR_MODELS, 'How the color is written: HSV, CMYK, Pantone or Hex. Each model has its own settings.') },
     of('hsv', num('h', 'Hue', 0.6, 0, 1, 0.01, 'Used when H is unconnected.')),
     of('hsv', num('s', 'Saturation', 1, 0, 1, 0.01, 'Used when S is unconnected.')),
     of('hsv', num('v', 'Value', 1, 0, 1, 0.01, 'Used when V is unconnected.')),
@@ -170,7 +170,7 @@ export const behaviors: ModuleDef[] = [
   },
   {
     ...base, type: 'color', name: 'Color', caption: 'Color', glyph: 'color', size: 'small', keywords: 'hue saturation value hsv cmyk pantone hex rgb swatch palette',
-    inputs: [inp('h', 'H', 'num', 'Hue 0–1. Used in the HSV model.', 'top', true), inp('s', 'S', 'num', 'Saturation 0–1. Used in the HSV model.', 'top', true), inp('v', 'V', 'num', 'Value 0–1. Used in the HSV model.', 'top', true)],
+    inputs: [],
     outputs: [
       out('image', 'Swatch', 'image', 'A solid 8×8 image of the color.'),
       out('c', 'Cyan', 'num', 'The cyan of the color in CMYK, 0–100 %.'),
@@ -203,8 +203,7 @@ export const behaviors: ModuleDef[] = [
         if (!hit) return c.fail(`“${q}” is not a hex color. Write it as #rrggbb or #rgb, for example #0a7aff.`);
         rgb = hit;
       } else {
-        const g = (p: string) => (c.has(p) ? clamp(toNum(c.get(p)) || 0, 0, 1) : c.num(p));
-        rgb = hsvToRgb(g('h'), g('s'), g('v'));
+        rgb = hsvToRgb(c.num('h'), c.num('s'), c.num('v'));
       }
       const [r, gg, b] = rgb;
       const hex = rgbToHex(rgb);

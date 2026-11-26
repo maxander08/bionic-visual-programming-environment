@@ -126,8 +126,8 @@ export const nodes: ModuleDef[] = [
   },
   {
     ...chipBase, type: 'math', name: 'Math', caption: 'Math', glyph: 'M', chip: (p) => String(p.fn),
-    inputs: [inp('a', 'A', 'num', 'Operand.'), inp('b', 'B', 'num', 'Second operand for min, max, pow, mod.', 'left', true)], outputs: [out('out', 'Result', 'num', 'Function result.')],
-    params: [sel('fn', 'Function', 'abs', ['abs', 'sqrt', 'square', 'sin', 'cos', 'tanh', 'exp', 'log', 'floor', 'round', 'ceil', 'min', 'max', 'pow', 'mod'].map((x) => [x, x] as [string, string]), 'Function applied to a (and b).'), PREC],
+    inputs: [inp('a', 'A', 'num', 'Operand.'), inp('b', 'B', 'num', 'Second operand for min, max, pow, mod.', 'top', true)], outputs: [out('out', 'Result', 'num', 'Function result.')],
+    params: [sel('fn', 'Function', 'abs', ['abs', 'sqrt', 'square', 'sin', 'cos', 'tanh', 'exp', 'log', 'floor', 'round', 'ceil', 'min', 'max', 'pow', 'mod'].map((x) => [x, x] as [string, string]), 'Function applied to a (and b).'), { ...PREC, pinSide: 'left' }],
     run(c) {
       calc(c, () => {
         const a = sig$(c, 'a'), b = c.has('b') ? sig$(c, 'b') : D.ZERO, P = c.num('precision'), fn = c.str('fn');
@@ -209,8 +209,8 @@ export const nodes: ModuleDef[] = [
   },
   {
     ...chipBase, type: 'compare', name: 'Compare', caption: 'Comparator', glyph: '=', chip: (p) => String(p.op),
-    inputs: [inp('a', 'A', 'any', 'Left operand.'), inp('b', 'B', 'any', 'Right operand; uses the fallback when not connected.', 'left', true)], outputs: [out('out', 'Result', 'bool', 'True when the relation holds.')],
-    params: [sel('op', 'Relation', '>', ['==', '!=', '>', '<', '>=', '<='].map((x) => [x, x] as [string, string]), 'Relation between a and b.'), txt('fallback', 'Fallback b', '0', 'Right operand when b is unconnected.'), dnum('tolerance', 'Tolerance', 0, 0, 1e6, 0.001, 'Equality slack for numbers.')],
+    inputs: [inp('a', 'A', 'any', 'Left operand.'), inp('b', 'B', 'any', 'Right operand; uses the fallback when not connected.', 'top', true)], outputs: [out('out', 'Result', 'bool', 'True when the relation holds.')],
+    params: [sel('op', 'Relation', '>', ['==', '!=', '>', '<', '>=', '<='].map((x) => [x, x] as [string, string]), 'Relation between a and b.'), txt('fallback', 'Fallback b', '0', 'Right operand when b is unconnected.'), { ...dnum('tolerance', 'Tolerance', 0, 0, 1e6, 0.001, 'Equality slack for numbers.'), pinSide: 'left' }],
     run(c) {
       calc(c, () => {
         const a = c.get('a'), b = c.has('b') ? c.get('b') : c.str('fallback');

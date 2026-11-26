@@ -3,6 +3,7 @@ import { Engine } from './engine';
 import { addNode, connect, createCompound, emptyGraph, flatten, setParams } from './graph';
 import { builtinCompounds } from './library';
 import { MODULES, PIN_SPACING, compoundModuleDef, defaultParams, getDef, nodeSize, paramDefsOf, portPosition } from './registry';
+import { setActiveLang } from '../i18n';
 import { SIZES, type CompoundDef, type Graph, type Params } from './types';
 
 function build(spec: { nodes: [string, string, Params?][]; wires: [string, string, string, string][]; compounds?: Record<string, CompoundDef> }) {
@@ -171,7 +172,7 @@ describe('setting pins', () => {
   it('dynamic settings: package pins follow the package, and stale connections are pruned', () => {
     let g = addNode(emptyGraph(), 'imagination', 0, 0, { package: 'trend' }, undefined, 'i').graph;
     expect(getDef('imagination', undefined, g.nodes.i.params)!.inputs.some((p) => p.id === 'p:window')).toBe(true);
-    expect(getDef('imagination', undefined, g.nodes.i.params)!.inputs.some((p) => p.id === 'p:package')).toBe(false);
+    expect(getDef('imagination', undefined, g.nodes.i.params)!.inputs.some((p) => p.id === 'p:package')).toBe(true);
     g = addNode(g, 'constant', 0, 200, {}, undefined, 'c').graph;
     g = connect(g, 'c', 'out', 'i', 'p:window').graph;
     expect(Object.keys(g.edges)).toHaveLength(1);
@@ -203,5 +204,25 @@ describe('setting pins', () => {
     g = connect(g, 'k', 'out', 'r', 'p:max').graph;
     const res = createCompound(g, ['r'], 'Rnd', {});
     expect('error' in res).toBe(false);
+  });
+
+  it('Comparator, Math and Color keep the same pin layout in English, 简体中文 and 繁體中文', () => {
+    const layout = (type: string, params?: Params) => {
+      const d = getDef(type, undefined, params)!;
+      const on = (side: string) => d.inputs.filter((p) => p.side === side).map((p) => p.param ?? p.id);
+      return { top: on('top'), left: on('left'), right: on('right'), bottom: on('bottom') };
+    };
+    const want = (top: string[], left: string[]) => ({ top, left, right: [], bottom: [] });
+    try {
+      for (const lang of ['en', 'zh-Hans', 'zh-Hant'] as const) {
+        setActiveLang(lang);
+        expect(layout('compare')).toEqual(want(['a', 'b', 'op', 'fallback'], ['tolerance']));
+        expect(layout('math')).toEqual(want(['a', 'b', 'fn'], ['precision']));
+        expect(layout('color')).toEqual(want(['h', 's', 'v'], ['model']));
+        expect(layout('color', { model: 'cmyk' })).toEqual(want(['c', 'm', 'y', 'k'], ['model']));
+        const model = getDef('color')!.inputs.find((p) => p.param === 'model')!;
+        expect(model.label).toBe(lang === 'en' ? 'Color model' : lang === 'zh-Hans' ? '颜色模型' : '顏色模型');
+      }
+    } finally { setActiveLang('en'); }
   });
 });

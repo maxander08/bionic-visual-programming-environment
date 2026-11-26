@@ -286,8 +286,10 @@ export function sanitizeGraph(raw: Graph, compounds: Record<string, CompoundDef>
     g.nodes[n.id] = { id: n.id, type: n.type, x: Math.max(-1e6, Math.min(1e6, x)), y: Math.max(-1e6, Math.min(1e6, y)), params: resolveParams(def, n.params ?? {}), ...(n.disabled ? { disabled: true } : {}) };
   }
   const driven = new Set<string>();
-  for (const e of Object.values(raw.edges ?? {})) {
+  for (let e of Object.values(raw.edges ?? {})) {
     if (!e || typeof e.id !== 'string') continue;
+    // Programs saved before the Color module's H, S and V pins became its setting pins keep their wires.
+    if (g.nodes[e.to]?.type === 'color' && (e.toPort === 'h' || e.toPort === 's' || e.toPort === 'v')) e = { ...e, toPort: SETTING_PREFIX + e.toPort };
     const key = `${e.to}:${e.toPort}`;
     const chk = checkConnection(g, e.from, e.fromPort, e.to, e.toPort, compounds);
     if (!chk.ok || driven.has(key)) { problems.push(`Dropped connection ${e.from}.${e.fromPort} → ${e.to}.${e.toPort}: ${chk.reason ?? 'input already driven'}.`); continue; }
