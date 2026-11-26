@@ -2,7 +2,7 @@
 export const zhHant: Record<string, string> = {
  "Color": "顏色",
  "Generates a color from HSV, CMYK, a Pantone code or a hex code.": "根據 HSV、CMYK、彩通編號或十六進位制程式碼生成顏色。",
- "The Color model setting chooses how the color is written: HSV (hue, saturation, value), CMYK (cyan, magenta, yellow, black, in percent), Pantone (a code such as 485 C or 19-4052 TCX, or a name such as Classic Blue) or Hex (#rrggbb). Each model has its own setting pins, and the pins of the others are hidden. The color leaves as a swatch image, as hex text, as cyan, magenta, yellow and black numbers, and as the Pantone color it is or is closest to. Screens show CMYK and Pantone as approximations of the printed ink.": "“顏色模型”設定決定顏色的表示方式：HSV（色相、飽和度、明度）、CMYK（青、品紅、黃、黑，以百分比表示）、彩通（編號如 485 C 或 19-4052 TCX，或名稱如 Classic Blue）或十六進位制（#rrggbb）。每種模型都有各自的設定引腳，其他模型的引腳會被隱藏。顏色會以色板影像、十六進位制文本、青/品紅/黃/黑數值，以及與之相同或最接近的彩通顏色輸出。螢幕上的 CMYK 和彩通顏色只是印刷油墨的近似效果。",
+ "The Color model setting chooses how the color is written: HSV (hue, saturation, value), CMYK (cyan, magenta, yellow, black, in percent), Pantone (a code such as 485 C or 19-4052 TCX, or a name such as Classic Blue) or Hex (#rrggbb). Each model has its own setting pins, and the pins of the others are hidden. The color leaves as a swatch image, as hex text, as hue, saturation and value numbers, as cyan, magenta, yellow and black numbers, and as the Pantone color it is or is closest to. Screens show CMYK and Pantone as approximations of the printed ink.": "“顏色模型”設定決定顏色的表示方式：HSV（色相、飽和度、明度）、CMYK（青、品紅、黃、黑，以百分比表示）、彩通（編號如 485 C 或 19-4052 TCX，或名稱如 Classic Blue）或十六進位制（#rrggbb）。每種模型都有各自的設定引腳，其他模型的引腳會被隱藏。顏色會以色板影像、十六進位制文本、HSV 色相/飽和度/明度數值、CMYK 青/品紅/黃/黑數值，以及相同或最接近的彩通顏色輸出。螢幕上的 CMYK 和彩通顏色只是印刷油墨的近似效果。",
  "A hex code that is not #rgb or #rrggbb raises an error.": "不是 #rgb 或 #rrggbb 的十六進位制程式碼會報錯。",
  "A Pantone code or name the program does not know raises an error.": "程式不認識的彩通編號或名稱會報錯。",
  "“{q}” is not a Pantone color the program knows. Try a code such as 485 C or 19-4052 TCX, or a name such as Classic Blue.": "“{q}”不是程式認識的彩通顏色。請嘗試 485 C 或 19-4052 TCX 這樣的編號，或 Classic Blue 這樣的名稱。",
@@ -23,6 +23,9 @@ export const zhHant: Record<string, string> = {
  "The magenta of the color in CMYK, 0–100 %.": "顏色的 CMYK 品紅值，0–100 %。",
  "The yellow of the color in CMYK, 0–100 %.": "顏色的 CMYK 黃色值，0–100 %。",
  "The black (key) of the color in CMYK, 0–100 %.": "顏色的 CMYK 黑色（K）值，0–100 %。",
+ "The hue of the color in HSV, 0–1.": "顏色的 HSV 色相值，0–1。",
+ "The saturation of the color in HSV, 0–1.": "顏色的 HSV 飽和度值，0–1。",
+ "The value (brightness) of the color in HSV, 0–1.": "顏色的 HSV 明度（亮度）值，0–1。",
  "The Pantone color: the one asked for in the Pantone model, otherwise the closest Pantone color, as text such as PANTONE 19-4052 TCX Classic Blue.": "彩通顏色：彩通模型下為所設定的顏色，否則為最接近的彩通顏色，文本形式如 PANTONE 19-4052 TCX Classic Blue。",
  "Amount of cyan ink, 0–100 %. Used when the model is CMYK.": "青色油墨的用量，0–100 %。模型為 CMYK 時使用。",
  "Amount of magenta ink, 0–100 %. Used when the model is CMYK.": "品紅油墨的用量，0–100 %。模型為 CMYK 時使用。",

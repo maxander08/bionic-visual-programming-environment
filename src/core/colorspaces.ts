@@ -19,6 +19,20 @@ export function rgbToCmyk([r, g, b]: RGB): [number, number, number, number] {
   return [t((1 - R - k) / (1 - k)), t((1 - G - k) / (1 - k)), t((1 - B - k) / (1 - k)), t(k)];
 }
 
+/** sRGB 0–255 → H, S, V, each 0–1 (hue 0 and 1 are both red; a grey has hue 0 and saturation 0). */
+export function rgbToHsv([r, g, b]: RGB): [number, number, number] {
+  const R = r / 255, G = g / 255, B = b / 255;
+  const max = Math.max(R, G, B), min = Math.min(R, G, B), d = max - min;
+  let h = 0;
+  if (d > 0) {
+    if (max === R) h = (((G - B) / d) % 6 + 6) % 6;
+    else if (max === G) h = (B - R) / d + 2;
+    else h = (R - G) / d + 4;
+    h /= 6;
+  }
+  return [h, max === 0 ? 0 : d / max, max];
+}
+
 export const rgbToHex = ([r, g, b]: RGB) => '#' + [r, g, b].map((x) => to255(x).toString(16).padStart(2, '0')).join('');
 
 /** “#0a7aff”, “0a7aff”, “#0af” or “#0a7affcc” (the opacity is ignored) → sRGB; null when the text is not a hex color. */

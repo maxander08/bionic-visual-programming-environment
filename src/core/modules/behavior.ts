@@ -9,7 +9,7 @@ import { requestPlace, type Place } from '../geo';
 import { cityLabels } from '../worldclock';
 import { getLang } from '../../i18n';
 import { getFileInfo, isFileDescriptor } from '../files';
-import { cmykToRgb, parseHex, rgbToCmyk, rgbToHex, type RGB } from '../colorspaces';
+import { cmykToRgb, parseHex, rgbToCmyk, rgbToHex, rgbToHsv, type RGB } from '../colorspaces';
 import { nearestPantone, pantoneToRgb } from '../pantone';
 
 /** Longest value the Projector keeps for display. Longer values are cut (the view says so). */
@@ -179,6 +179,9 @@ export const behaviors: ModuleDef[] = [
       out('k', 'Black', 'num', 'The black (key) of the color in CMYK, 0–100 %.'),
       out('css', 'Hex', 'text', 'The color as #rrggbb.', 'right'),
       out('pantone', 'Pantone', 'text', 'The Pantone color: the one asked for in the Pantone model, otherwise the closest Pantone color, as text such as PANTONE 19-4052 TCX Classic Blue.', 'right'),
+      out('h', 'Hue', 'num', 'The hue of the color in HSV, 0–1.', 'right'),
+      out('s', 'Saturation', 'num', 'The saturation of the color in HSV, 0–1.', 'right'),
+      out('v', 'Value', 'num', 'The value (brightness) of the color in HSV, 0–1.', 'right'),
     ],
     params: colorParams({}, true),
     dynamicParams: (p) => colorParams(p, false),
@@ -187,6 +190,7 @@ export const behaviors: ModuleDef[] = [
       const model = colorModel({ model: c.str('model') });
       let rgb: RGB;
       let cmyk: [number, number, number, number] | null = null;
+      let hsv: [number, number, number] | null = null;
       let pantone = '';
       if (model === 'cmyk') {
         cmyk = [c.num('c'), c.num('m'), c.num('y'), c.num('k')];
@@ -203,21 +207,24 @@ export const behaviors: ModuleDef[] = [
         if (!hit) return c.fail(`“${q}” is not a hex color. Write it as #rrggbb or #rgb, for example #0a7aff.`);
         rgb = hit;
       } else {
-        rgb = hsvToRgb(c.num('h'), c.num('s'), c.num('v'));
+        hsv = [c.num('h'), c.num('s'), c.num('v')];
+        rgb = hsvToRgb(...hsv);
       }
       const [r, gg, b] = rgb;
       const hex = rgbToHex(rgb);
       cmyk = cmyk ?? rgbToCmyk(rgb);
+      hsv = hsv ?? rgbToHsv(rgb);
       pantone = pantone || nearestPantone(rgb);
       c.emit('image', makeImage(8, 8, () => [r, gg, b]));
       c.emit('css', hex);
       c.emit('pantone', pantone);
       (['c', 'm', 'y', 'k'] as const).forEach((port, i) => c.emit(port, cmyk![i]));
+      (['h', 's', 'v'] as const).forEach((port, i) => c.emit(port, hsv![i]));
       c.view({ model, hex, rgb: [r, gg, b], cmyk, pantone });
     },
     doc: {
       summary: 'Generates a color from HSV, CMYK, a Pantone code or a hex code.',
-      runtime: 'The Color model setting chooses how the color is written: HSV (hue, saturation, value), CMYK (cyan, magenta, yellow, black, in percent), Pantone (a code such as 485 C or 19-4052 TCX, or a name such as Classic Blue) or Hex (#rrggbb). Each model has its own setting pins, and the pins of the others are hidden. The color leaves as a swatch image, as hex text, as cyan, magenta, yellow and black numbers, and as the Pantone color it is or is closest to. Screens show CMYK and Pantone as approximations of the printed ink.',
+      runtime: 'The Color model setting chooses how the color is written: HSV (hue, saturation, value), CMYK (cyan, magenta, yellow, black, in percent), Pantone (a code such as 485 C or 19-4052 TCX, or a name such as Classic Blue) or Hex (#rrggbb). Each model has its own setting pins, and the pins of the others are hidden. The color leaves as a swatch image, as hex text, as hue, saturation and value numbers, as cyan, magenta, yellow and black numbers, and as the Pantone color it is or is closest to. Screens show CMYK and Pantone as approximations of the printed ink.',
       errors: ['A hex code that is not #rgb or #rrggbb raises an error.', 'A Pantone code or name the program does not know raises an error.'],
     },
   },

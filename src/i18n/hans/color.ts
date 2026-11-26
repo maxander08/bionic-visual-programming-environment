@@ -4,8 +4,8 @@ export const color: Record<string, string> = {
   // module
   'Color': '颜色',
   'Generates a color from HSV, CMYK, a Pantone code or a hex code.': '根据 HSV、CMYK、潘通编号或十六进制代码生成颜色。',
-  'The Color model setting chooses how the color is written: HSV (hue, saturation, value), CMYK (cyan, magenta, yellow, black, in percent), Pantone (a code such as 485 C or 19-4052 TCX, or a name such as Classic Blue) or Hex (#rrggbb). Each model has its own setting pins, and the pins of the others are hidden. The color leaves as a swatch image, as hex text, as cyan, magenta, yellow and black numbers, and as the Pantone color it is or is closest to. Screens show CMYK and Pantone as approximations of the printed ink.':
-    '“颜色模型”设置决定颜色的表示方式：HSV（色相、饱和度、明度）、CMYK（青、品红、黄、黑，以百分比表示）、潘通（编号如 485 C 或 19-4052 TCX，或名称如 Classic Blue）或十六进制（#rrggbb）。每种模型都有各自的设置引脚，其他模型的引脚会被隐藏。颜色会以色板图像、十六进制文本、青/品红/黄/黑数值，以及与之相同或最接近的潘通颜色输出。屏幕上的 CMYK 和潘通颜色只是印刷油墨的近似效果。',
+  'The Color model setting chooses how the color is written: HSV (hue, saturation, value), CMYK (cyan, magenta, yellow, black, in percent), Pantone (a code such as 485 C or 19-4052 TCX, or a name such as Classic Blue) or Hex (#rrggbb). Each model has its own setting pins, and the pins of the others are hidden. The color leaves as a swatch image, as hex text, as hue, saturation and value numbers, as cyan, magenta, yellow and black numbers, and as the Pantone color it is or is closest to. Screens show CMYK and Pantone as approximations of the printed ink.':
+    '“颜色模型”设置决定颜色的表示方式：HSV（色相、饱和度、明度）、CMYK（青、品红、黄、黑，以百分比表示）、潘通（编号如 485 C 或 19-4052 TCX，或名称如 Classic Blue）或十六进制（#rrggbb）。每种模型都有各自的设置引脚，其他模型的引脚会被隐藏。颜色会以色板图像、十六进制文本、HSV 色相/饱和度/明度数值、CMYK 青/品红/黄/黑数值，以及相同或最接近的潘通颜色输出。屏幕上的 CMYK 和潘通颜色只是印刷油墨的近似效果。',
   'A hex code that is not #rgb or #rrggbb raises an error.': '不是 #rgb 或 #rrggbb 的十六进制代码会报错。',
   'A Pantone code or name the program does not know raises an error.': '程序不认识的潘通编号或名称会报错。',
   '“{q}” is not a Pantone color the program knows. Try a code such as 485 C or 19-4052 TCX, or a name such as Classic Blue.': '“{q}”不是程序认识的潘通颜色。请尝试 485 C 或 19-4052 TCX 这样的编号，或 Classic Blue 这样的名称。',
@@ -24,6 +24,9 @@ export const color: Record<string, string> = {
   'The magenta of the color in CMYK, 0–100 %.': '颜色的 CMYK 品红值，0–100 %。',
   'The yellow of the color in CMYK, 0–100 %.': '颜色的 CMYK 黄色值，0–100 %。',
   'The black (key) of the color in CMYK, 0–100 %.': '颜色的 CMYK 黑色（K）值，0–100 %。',
+  'The hue of the color in HSV, 0–1.': '颜色的 HSV 色相值，0–1。',
+  'The saturation of the color in HSV, 0–1.': '颜色的 HSV 饱和度值，0–1。',
+  'The value (brightness) of the color in HSV, 0–1.': '颜色的 HSV 明度（亮度）值，0–1。',
   'The Pantone color: the one asked for in the Pantone model, otherwise the closest Pantone color, as text such as PANTONE 19-4052 TCX Classic Blue.': '潘通颜色：潘通模型下为所设定的颜色，否则为最接近的潘通颜色，文本形式如 PANTONE 19-4052 TCX Classic Blue。',
   'Amount of cyan ink, 0–100 %. Used when the model is CMYK.': '青色油墨的用量，0–100 %。模型为 CMYK 时使用。',
   'Amount of magenta ink, 0–100 %. Used when the model is CMYK.': '品红油墨的用量，0–100 %。模型为 CMYK 时使用。',

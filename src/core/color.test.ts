@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Engine } from './engine';
 import { addNode, connect, emptyGraph, flatten, sanitizeGraph, setParams } from './graph';
-import { cmykToRgb, parseHex, rgbToCmyk, rgbToHex } from './colorspaces';
+import { cmykToRgb, parseHex, rgbToCmyk, rgbToHex, rgbToHsv } from './colorspaces';
 import { nearestPantone, pantoneToRgb } from './pantone';
 import { getDef, resolveParams } from './registry';
 import type { Graph, Params } from './types';
@@ -135,5 +135,43 @@ describe('Color module', () => {
     const bad = runColor({ model: 'pantone', pantone: 'not a swatch' });
     expect(bad.status.level).toBe('error');
     expect(bad.status.message).toContain('not a Pantone color');
+  });
+});
+
+describe('Color module HSV outputs', () => {
+  it('has Hue, Saturation and Value output pins on the east side', () => {
+    const d = getDef('color')!;
+    expect(d.outputs.filter((p) => p.side === 'right').map((p) => p.id)).toEqual(['css', 'pantone', 'h', 's', 'v']);
+  });
+
+  it('converts RGB to HSV', () => {
+    expect(rgbToHsv([255, 0, 0])).toEqual([0, 1, 1]);
+    expect(rgbToHsv([0, 0, 0])).toEqual([0, 0, 0]);
+    expect(rgbToHsv([128, 128, 128])[1]).toBe(0);
+    const [h, s, v] = rgbToHsv([0, 102, 255]);
+    expect(h).toBeCloseTo(0.6, 5);
+    expect(s).toBe(1);
+    expect(v).toBe(1);
+  });
+
+  it('emits the HSV values in every color model', () => {
+    const hsv = runColor({ model: 'hsv', h: 0.25, s: 0.5, v: 0.75 });
+    expect(hsv.outputs.h?.v).toBe(0.25);
+    expect(hsv.outputs.s?.v).toBe(0.5);
+    expect(hsv.outputs.v?.v).toBe(0.75);
+    const hex = runColor({ model: 'hex', hex: '#0066ff' });
+    expect(hex.outputs.h?.v as number).toBeCloseTo(0.6, 5);
+    expect(hex.outputs.s?.v).toBe(1);
+    expect(hex.outputs.v?.v).toBe(1);
+    const cmyk = runColor({ model: 'cmyk', c: 0, m: 100, y: 100, k: 0 });
+    expect(cmyk.outputs.h?.v).toBe(0);
+    expect(cmyk.outputs.s?.v).toBe(1);
+    expect(cmyk.outputs.v?.v).toBe(1);
+    const pantoneRgb = pantoneToRgb('485 C')!.rgb;
+    const [pantoneHue, pantoneSaturation, pantoneValue] = rgbToHsv(pantoneRgb);
+    const pantone = runColor({ model: 'pantone', pantone: '485 C' });
+    expect(pantone.outputs.h?.v).toBeCloseTo(pantoneHue, 5);
+    expect(pantone.outputs.s?.v).toBeCloseTo(pantoneSaturation, 5);
+    expect(pantone.outputs.v?.v).toBeCloseTo(pantoneValue, 5);
   });
 });
