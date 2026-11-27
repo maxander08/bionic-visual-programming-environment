@@ -23,7 +23,7 @@ import { fmtClockDate, fmtClockTime, fmtCountdown } from '../i18n/format';
 
 export const FAMILY_VAR: Record<string, string> = {
   sensor: '#ff2a2a', sense: '#6fd3ee', knowledge: '#a259ff', attention: '#f7c52b', fear: '#3ddc97', memory: '#86f0cc', apparatus: '#2fd6c0',
-  emotion: '#ff8a50', behavior: '#f4f4f4', projector: '#2fd9cf', node: '#ffc933', data: '#e84dff', timekeeping: '#ff7ac6', quantity: '#b6e34a', file: '#3aa0ff', actor: '#ff9f43', engine: '#e6c48a', info: '#7b8cff', workspace: '#c9a3ff',
+  emotion: '#ff8a50', behavior: '#f4f4f4', projector: '#2fd9cf', node: '#ffc933', strmod: '#6ee05a', data: '#e84dff', timekeeping: '#ff7ac6', quantity: '#b6e34a', file: '#3aa0ff', actor: '#ff9f43', engine: '#e6c48a', info: '#7b8cff', workspace: '#c9a3ff',
 };
 
 const TK_STATE: Record<string, string> = { idle: 'Ready', running: 'Running', paused: 'Paused', done: 'Done', stopped: 'Stopped', limit: 'Limit reached', armed: 'Armed', ringing: 'Ringing', snoozed: 'Snoozed' };

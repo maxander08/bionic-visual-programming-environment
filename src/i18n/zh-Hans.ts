@@ -17,5 +17,6 @@ import { geo } from './hans/geo';
 import { color } from './hans/color';
 import { engines } from './hans/engines';
 import { limitless } from './hans/limitless';
+import { strmods } from './hans/strmods';
 
-export const zhHans: Record<string, string> = { ...limitless, ...engines, ...color, ...geo, ...newModules, ...actors, ...time, ...pinnames, ...numfmt, ...exact, ...files, ...nodes, ...content, ...docs, ...extra, ...ui, ...faces, ...docsUi };
+export const zhHans: Record<string, string> = { ...strmods, ...limitless, ...engines, ...color, ...geo, ...newModules, ...actors, ...time, ...pinnames, ...numfmt, ...exact, ...files, ...nodes, ...content, ...docs, ...extra, ...ui, ...faces, ...docsUi };

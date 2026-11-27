@@ -103,7 +103,7 @@ export const moduleByType = (type: string) => MODULES.find((m) => m.type === typ
 const CATEGORY_WORDS: Record<string, string> = {
   sensor: 'Sensor', nucleus: 'Nucleus', nuclei: 'Nucleus', behavior: 'Behavior', behaviour: 'Behavior', 'base data': 'Base Data', 'data type': 'Base Data',
   timekeeping: 'Timekeeping', 'time keeping': 'Timekeeping', quantity: 'Quantities', quantities: 'Quantities', file: 'Files', actor: 'Actors', engine: 'Engines',
-  'info module': 'Info', 'workspace setting': 'Workspace Settings', 'math node': 'Node', 'plumbing node': 'Node',
+  'info module': 'Info', 'workspace setting': 'Workspace Settings', 'math node': 'Node', 'string modifier': 'String Modifiers', 'string method': 'String Modifiers', 'string node': 'String Modifiers', 'plumbing node': 'Node',
 };
 export function findCategory(text: string): string | null {
   const s = ' ' + sing(text) + ' ';

@@ -147,6 +147,7 @@ export type Family =
   | 'behavior'
   | 'projector'
   | 'node'
+  | 'strmod'
   | 'data'
   | 'timekeeping'
   | 'quantity'
@@ -156,7 +157,7 @@ export type Family =
   | 'info'
   | 'workspace';
 
-export type Category = 'Sensor' | 'Nucleus' | 'Behavior' | 'Node' | 'Base Data' | 'Timekeeping' | 'Quantities' | 'Files' | 'Actors' | 'Engines' | 'Info' | 'Workspace Settings';
+export type Category = 'Sensor' | 'Nucleus' | 'Behavior' | 'Node' | 'String Modifiers' | 'Base Data' | 'Timekeeping' | 'Quantities' | 'Files' | 'Actors' | 'Engines' | 'Info' | 'Workspace Settings';
 
 export interface ModuleDoc {
   summary: string;
