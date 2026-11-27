@@ -119,7 +119,7 @@ describe('Subtractor and Divisor', () => {
     expect(e.out('d', 'out')).toBe(3);
     expect(e.out('q', 'out')).toBe(2.25);
   });
-  it('Divisor raises an error instead of emitting on division by zero', () => {
+  it('Divisor gives an error instead of emitting on division by zero', () => {
     const { e } = build({ nodes: [['a', 'constant', { value: '9' }], ['d', 'div', { divisor: 0 }]], wires: [['a', 'out', 'd', 'a']] });
     e.run(2);
     expect(e.nodes.get('d')!.status.level).toBe('error');
@@ -184,7 +184,7 @@ describe('state, memory, reward, timing', () => {
     e.runFor(300);
     expect(e.out('v', 'out')).toBe(0);
   });
-  it('Hyponerve emits only on rule match; Nap enforces a refractory period', () => {
+  it('Hyponerve sends out only on rule match; Nap enforces a refractory period', () => {
     const { e } = build({ nodes: [['s', 'sequence', { values: '1, 1, 2', auto: 100 }], ['h', 'hyponerve', { rule: 'change' }], ['c', 'counter', { max: 99 }]], wires: [['s', 'out', 'h', 'in'], ['h', 'out', 'c', 'inc']] });
     e.runFor(1000);
     expect(e.out('c', 'out')).toBeGreaterThan(0);
@@ -328,7 +328,7 @@ describe('projects and sharing', () => {
   });
   it('rejects malformed imports with helpful errors and drops invalid parts', () => {
     expect(parseProjectJSON('not json').error).toMatch(/JSON/);
-    expect(validateProject({ format: 'other' }).error).toMatch(/not a Nicque/);
+    expect(validateProject({ format: 'other' }).error).toMatch(/isn.t a Nicque/);
     expect(validateProject({ format: 'nicque', version: 99, graph: { nodes: {}, edges: {} } }).error).toMatch(/Unsupported/);
     // Legacy Neural Studio format imports seamlessly and upgrades to 'nicque'
     const r = validateProject({ format: 'neural-studio', version: 1, name: 'x'.repeat(500), graph: { nodes: { a: { id: 'a', type: 'bogus', x: 0, y: 0, params: {} }, b: { id: 'b', type: 'constant', x: 1e12, y: 'q', params: { value: 3 } } }, edges: { e: { id: 'e', from: 'a', fromPort: 'out', to: 'b', toPort: 'in' } } } });

@@ -124,7 +124,7 @@ export function parseItems(text: string, separator: string, as: ItemsAs | string
     if (as === 'text') items.push(s);
     else if (as === 'number') {
       const n = readNumber(s);
-      if (n === undefined) return { ok: false, error: `“${s}” is not a number. Items as “Numbers” needs every item to be one.` };
+      if (n === undefined) return { ok: false, error: `“${s}” isn’t a number. Items as “Numbers” needs every item to be one.` };
       items.push(n);
     } else if (s === 'true') items.push(true);
     else if (s === 'false') items.push(false);

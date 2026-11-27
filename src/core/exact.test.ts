@@ -69,7 +69,7 @@ describe('exact decimal arithmetic', () => {
     expect(P(M.floor(D('-0.1')))).toBe('-1');
     expect(P(M.mod(D('-5.5'), D('2')))).toBe('0.5');
   });
-  it('only a value a double cannot hold travels as an exact decimal', () => {
+  it('only a value a double can’t hold travels as an exact decimal', () => {
     expect(packDec(D('0.3'))).toBe(0.3);
     expect(packDec(D('42.00'))).toBe(42);
     expect(isDec(packDec(D('3.14159265358979323846')))).toBe(true);

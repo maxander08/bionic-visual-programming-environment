@@ -25,9 +25,9 @@ export const sensors: ModuleDef[] = [
     inputs: [],
     outputs: [out('image', 'Image', 'image', 'Latest frame, downscaled to about 64 pixels wide.'), out('luma', 'Luma', 'num', 'Mean brightness of the frame, 0–1.', 'right')],
     params: [
-      sel('source', 'Source', 'sim', [['sim', 'Simulated scene'], ['camera', 'Camera (needs permission)'], ['file', 'Image file']], 'Where frames come from. Camera needs a device and permission; the simulated scene needs nothing.'),
+      sel('source', 'Source', 'sim', [['sim', 'Simulated scene'], ['camera', 'Camera (needs permission)'], ['file', 'Image file']], 'Where the frames come from. The camera needs a device and your permission. The simulated scene needs nothing.'),
       RATE(5),
-      txt('fileData', 'Image data', '', 'Downscaled image kept inside the program when the source is a file.', { hidden: true, maxLength: 400000 }),
+      txt('fileData', 'Image data', '', 'A smaller copy of the image, kept inside the program when the source is a file.', { hidden: true, maxLength: 400000 }),
     ],
     source: true,
     run(c) {
@@ -48,9 +48,9 @@ export const sensors: ModuleDef[] = [
       } else c.warn(src === 'file' ? 'No image loaded. Choose a file in the inspector.' : 'Waiting for camera frames. Grant permission and press Run.');
     },
     doc: {
-      summary: 'Produces images. Use the built-in simulated scene to test programs without hardware, switch to the camera, or load an image file.',
-      runtime: 'Simulated: emits a new frame every 1/rate seconds of simulation time. Camera: frames arrive from the browser at ≈10 fps while the program runs. File: emits the loaded image once.',
-      errors: ['Camera permission denied or no camera present: the node shows a warning and emits nothing.', 'Camera access requires a secure context (https or localhost); it may be blocked for file:// pages in some browsers.'],
+      summary: 'Produces images. Use the built-in simulated scene to test programs without any hardware, switch to your camera, or load an image file.',
+      runtime: 'Simulated: sends out a new frame every 1/rate seconds of simulation time. Camera: frames arrive from the browser at ≈10 fps while the program runs. File: sends out the loaded image once.',
+      errors: ['Camera permission denied or no camera present: the node shows a warning and sends out nothing.', 'Camera access requires a secure context (https or localhost); it may be blocked for file:// pages in some browsers.'],
       examples: ['Vision → Sense (brightness) → Projector shows live brightness.'],
     },
   },
@@ -62,7 +62,7 @@ export const sensors: ModuleDef[] = [
     params: [
       sel('source', 'Source', 'sim', [['sim', 'Simulated melody'], ['mic', 'Microphone (needs permission)']], 'Simulated melody needs no hardware.'),
       RATE(10),
-      num('gain', 'Gain', 1, 0.1, 10, 0.1, 'Multiplier applied to level.'),
+      num('gain', 'Gain', 1, 0.1, 10, 0.1, 'Multiplies the level.'),
     ],
     source: true,
     run(c) {
@@ -82,7 +82,7 @@ export const sensors: ModuleDef[] = [
       } else c.warn('Waiting for microphone. Grant permission and press Run.');
     },
     doc: {
-      summary: 'Measures sound. Outputs loudness and dominant pitch.',
+      summary: 'Listens to sound and gives you its loudness and dominant pitch.',
       runtime: 'Simulated: a repeating eight-note melody with a 1 s loudness swell. Microphone: RMS level and the strongest FFT bin (≈ ±10 Hz accuracy) from the Web Audio analyser.',
       errors: ['Microphone permission denied or unavailable: warning shown, no output.', 'Nothing is recorded or stored; only level and pitch leave the sensor.'],
     },
@@ -102,7 +102,7 @@ export const sensors: ModuleDef[] = [
     },
     doc: {
       summary: 'A pad inside the node. Press or drag on it with mouse, pen or finger.',
-      runtime: 'Emits normalized coordinates and press state whenever the pointer moves over the pad. Works on every device with a pointer.',
+      runtime: 'Sends out normalized coordinates and press state whenever the pointer moves over the pad. Works on every device with a pointer.',
     },
   },
   {
@@ -111,7 +111,7 @@ export const sensors: ModuleDef[] = [
     inputs: [],
     outputs: [out('x', 'X', 'num', 'Horizontal tilt or position, −1…1.'), out('y', 'Y', 'num', 'Vertical tilt or position, −1…1.', 'right')],
     params: [
-      sel('source', 'Source', 'sim', [['sim', 'Simulated sway'], ['pointer', 'Pointer position'], ['device', 'Device orientation']], 'Device orientation needs a phone/tablet sensor and permission on iOS.'),
+      sel('source', 'Source', 'sim', [['sim', 'Simulated sway'], ['pointer', 'Pointer position'], ['device', 'Device orientation']], 'Device orientation needs a phone or tablet sensor, and on iOS you have to give permission.'),
       RATE(10),
     ],
     source: true,
@@ -156,8 +156,8 @@ export const sensors: ModuleDef[] = [
     type: 'info', name: 'Info', caption: 'Info Sensor', category: 'Sensor', family: 'sensor', glyph: '', size: 'small',
     keywords: 'text number manual input',
     inputs: [],
-    outputs: [out('text', 'Text', 'text', 'The text set in the inspector.'), out('number', 'Number', 'num', 'The text parsed as a number; empty if it is not numeric.', 'right')],
-    params: [txt('text', 'Text', 'hello', 'Information to emit. Edit it here in the inspector; the node only displays it.', { multiline: true })],
+    outputs: [out('text', 'Text', 'text', 'The text set in the inspector.'), out('number', 'Number', 'num', 'The text parsed as a number; empty if it isn’t numeric.', 'right')],
+    params: [txt('text', 'Text', 'hello', 'The information this node holds. Edit it here in the inspector. The node itself only displays it.', { multiline: true })],
     source: true,
     run(c) {
       const t = c.str('text');
@@ -165,8 +165,8 @@ export const sensors: ModuleDef[] = [
       c.emit('number', t.trim() === '' ? undefined : readNumber(t));
     },
     doc: {
-      summary: 'Manual text and number source for offline experiments.',
-      runtime: 'The text is edited only in the right sidebar (inspector); the node just displays it. Emits when the text changes. “number” is only emitted if the whole text is numeric.',
+      summary: 'Type in your own text and numbers, handy for offline experiments.',
+      runtime: 'The text is edited only in the right sidebar (inspector); the node just displays it. Sends out when the text changes. “number” is only sent if the whole text is numeric.',
     },
   },
   {
@@ -174,25 +174,25 @@ export const sensors: ModuleDef[] = [
     keywords: 'toggle boolean button manual',
     inputs: [],
     outputs: [out('on', 'On', 'bool', 'True when the switch is on.')],
-    params: [bol('on', 'On', false, 'Switch state. Click the inner pad of the node to toggle.')],
+    params: [bol('on', 'On', false, 'Whether the switch is on. Click the inner pad of the node to toggle it.')],
     source: true,
     run(c) {
       c.emit('on', c.bool('on'));
     },
-    doc: { summary: 'A manual boolean input.', runtime: 'Emits its state at start and every time it is toggled.' },
+    doc: { summary: 'A manual boolean input.', runtime: 'Sends out its state at start and every time it’s toggled.' },
   },
   {
     type: 'device', name: 'Device', caption: 'Somatic Sensor', category: 'Sensor', family: 'sensor', glyph: '', size: 'small',
     keywords: 'platform online network',
     inputs: [],
     outputs: [out('name', 'Name', 'text', 'Browser platform and screen size.'), out('online', 'Online', 'bool', 'Whether the browser reports a network connection.', 'right')],
-    params: [txt('label', 'Fallback label', 'unknown device', 'Reported when the browser exposes no platform information.')],
+    params: [txt('label', 'Fallback label', 'unknown device', 'Shown when the browser doesn’t share any platform information.')],
     source: true,
     run(c) {
       c.emit('name', String(c.injected?.name ?? c.str('label')));
       c.emit('online', c.injected ? !!c.injected.online : true);
     },
-    doc: { summary: 'Reports facts about the device running the program.', runtime: 'Read once at start, and again on online/offline events.' },
+    doc: { summary: 'Tells you about the device the program is running on.', runtime: 'Read once at start, and again on online/offline events.' },
   },
 ];
 

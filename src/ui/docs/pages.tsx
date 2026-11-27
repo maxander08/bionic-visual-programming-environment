@@ -247,7 +247,7 @@ export function NodePage({ type }: { type: string }) {
           <li><b>{m.inputs.length}</b> input{m.inputs.length === 1 ? '' : 's'}</li>
           <li><b>{m.outputs.length}</b> output{m.outputs.length === 1 ? '' : 's'}</li>
           <li><b>{params.length}</b> setting{params.length === 1 ? '' : 's'}</li>
-          {m.delaying && <li className="hl" title="Holds state or time, so a feedback loop through it is allowed.">Holds state · loop-safe</li>}
+          {m.delaying && <li className="hl" title="Holds state or time, so a feedback loop through it’s allowed.">Holds state · loop-safe</li>}
           {m.source && <li className="hl" title="Evaluates once at start without needing an input.">Runs at start</li>}
         </ul>
       </PageHead>
@@ -294,7 +294,7 @@ export function NodePage({ type }: { type: string }) {
 
       <section>
         <h2 className="dx-h2" id="dx-settings" data-toc="Settings">Settings</h2>
-        {params.length === 0 ? <p className="dx-p dx-dim">This module has no settings. {m.category === 'Sensor' ? 'It is driven by the pad or device.' : ''}</p> : (
+        {params.length === 0 ? <p className="dx-p dx-dim">This module has no settings. {m.category === 'Sensor' ? 'It’s driven by the pad or device.' : ''}</p> : (
           <>
             <p className="dx-small">Edit these in the inspector (right sidebar) after selecting the module. Each is also available as a setting pin.</p>
             <div className="dx-settings">
@@ -314,7 +314,7 @@ export function NodePage({ type }: { type: string }) {
       <section>
         <h2 className="dx-h2" id="dx-behavior" data-toc="How it behaves">How it behaves</h2>
         <p className="dx-p">{m.doc.runtime}</p>
-        {m.delaying && <Callout kind="note" title="Holds state or time">This module remembers something between ticks, so a connection that loops back through it is legal. See <DocLink route={{ k: 'article', id: 'feedback' }}>Feedback loops</DocLink>.</Callout>}
+        {m.delaying && <Callout kind="note" title="Holds state or time">This module remembers something between ticks, so a connection that loops back through it’s legal. See <DocLink route={{ k: 'article', id: 'feedback' }}>Feedback loops</DocLink>.</Callout>}
         {m.source && <Callout kind="note" title="Starts on its own">It evaluates once when the program starts, even before any input arrives.</Callout>}
       </section>
 
@@ -466,7 +466,7 @@ export function SettingsIndex() {
 export function PackagesPage() {
   return (
     <article>
-      <PageHead eyebrow="Reference" title="Inference packages" lead="Packages are the analysis techniques hosted inside a Knowledge or Imagination nucleus. Each one states honestly what it is, what it needs and where it breaks." route={{ k: 'packages' }} />
+      <PageHead eyebrow="Reference" title="Inference packages" lead="Packages are the analysis techniques that run inside a Knowledge or Imagination nucleus. Each one is upfront about what it is, what it needs and where it breaks." route={{ k: 'packages' }} />
       <Callout kind="tip" title="How to use one">Add <DocLink route={{ k: 'node', type: 'knowledge' }}>Knowledge</DocLink> or <DocLink route={{ k: 'node', type: 'imagination' }}>Imagination</DocLink>, then choose the package in the inspector. Library → Presets places a node with the package already chosen.</Callout>
       <h2 className="dx-h2" id="dx-knowledge" data-toc="Knowledge packages">Knowledge packages <small className="dx-dim">classify and label</small></h2>
       {PACKAGES.filter((p) => p.host === 'knowledge').map((p) => <PackageCard key={p.id} pkg={p} />)}
@@ -497,7 +497,7 @@ export function GoalGrid({ limit }: { limit?: number }) {
 export function FinderPage() {
   return (
     <article>
-      <PageHead eyebrow="Start here" title="Find a node by goal" lead="Start from what you want to happen. Each card lists the modules that do it, and links to a working recipe when there is one." route={{ k: 'finder' }} />
+      <PageHead eyebrow="Start here" title="Find a node by goal" lead="Start with what you want to happen. Each card lists the modules that do it, and links to a working recipe if there’s one." route={{ k: 'finder' }} />
       <GoalGrid />
     </article>
   );

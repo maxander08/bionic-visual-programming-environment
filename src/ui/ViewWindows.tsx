@@ -21,7 +21,7 @@ export function FullWindow({ title, label, onClose, children, actions }: { title
   const fullscreen = () => {
     const el = document.querySelector<HTMLElement>('.modal.full');
     if (document.fullscreenElement) void document.exitFullscreen();
-    else void el?.requestFullscreen?.().catch(() => toast(tr('This browser would not go full screen.'), 'info'));
+    else void el?.requestFullscreen?.().catch(() => toast(tr('This browser wouldn’t go full screen.'), 'info'));
   };
   return (
     <Modal title={title} onClose={onClose} full label={label}

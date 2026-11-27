@@ -31,7 +31,7 @@ export function FileConverterPanel({ node }: { node: NodeInst }) {
       <p className={`status-line ${state === 'done' ? 'ok' : state === 'working' ? 'info' : state === 'error' ? 'err' : 'warn'}`}>
         {state === 'done' ? tr('Made “{name}” · {size}.', { name: String(view.name ?? ''), size: fmtBytes(Number(view.size) || 0) })
           : state === 'working' ? tr('Converting “{name}”…', { name: String(view.name ?? '') })
-          : state === 'error' ? tr('The conversion did not work. The reason is shown above.')
+          : state === 'error' ? tr('The conversion didn’t work. The reason is shown above.')
           : tr('Connect a file to the File pin and press Run.')}
       </p>
       <div className="btn-row">
@@ -40,7 +40,7 @@ export function FileConverterPanel({ node }: { node: NodeInst }) {
       </div>
       <p className="doc">{tr('A {from} file can become:', { from: tr(FILE_KIND_BY_ID.get(from)?.name ?? from) })}</p>
       <dl className="file-facts">{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd title={v}>{v}</dd></div>)}</dl>
-      <p className="doc">{tr('Conversion happens in this browser. Nothing is uploaded, and the result is not saved with the program: it is made again when the program runs.')}</p>
+      <p className="doc">{tr('Conversion happens in this browser. Nothing is uploaded, and the result isn’t saved with the program. It’s made again whenever the program runs.')}</p>
     </div>
   );
 }
@@ -78,7 +78,7 @@ export function ExactValuePanel({ node, field, hint }: { node: NodeInst; field: 
   const v = typeof view[field] === 'string' ? (view[field] as string) : undefined;
   const copy = () => {
     if (v === undefined) return;
-    navigator.clipboard?.writeText(v).then(() => toast(tr('Copied.'), 'ok'), () => toast(tr('Copying is not allowed here.'), 'error'));
+    navigator.clipboard?.writeText(v).then(() => toast(tr('Copied.'), 'ok'), () => toast(tr('Copying isn’t allowed here.'), 'error'));
   };
   return (
     <div className="field">

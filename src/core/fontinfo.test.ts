@@ -56,7 +56,7 @@ describe('Font File: reading the file', () => {
   it('recognises CFF (OpenType) outlines', async () => {
     expect(await parseFont(makeSfnt('OTTO', 'Serifa', 'Regular', 10, 1000))).toMatchObject({ container: 'OTF', outlines: 'CFF', family: 'Serifa' });
   });
-  it('rejects things that are not fonts', async () => {
+  it('rejects things that aren’t fonts', async () => {
     expect(await parseFont(new TextEncoder().encode('hello, this is plainly not a font file'))).toBeNull();
     expect(await parseFont(new Uint8Array(4))).toBeNull();
     expect(fontSignature(new Uint8Array(20))).toBeNull();

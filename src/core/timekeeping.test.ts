@@ -416,7 +416,7 @@ describe('Alarm', () => {
     advance(e, 100);
     expect(out(e, 'count')).toBe(1);
   });
-  it('skips days that are not allowed', () => {
+  it('skips days that aren’t allowed', () => {
     const e = build('alarm', tokyo({ repeat: 'weekends' }));
     advance(e, 12000);
     expect(out(e, 'count')).toBe(0);
@@ -427,7 +427,7 @@ describe('Alarm', () => {
     expect(out(w, 'count')).toBe(1);
     expect(out(w, 'next')).toBe('Mon 16 Mar, 07:30:00.000');
   });
-  it('does not ring for a time that has already passed when the program starts', () => {
+  it('doesn’t ring for a time that has already passed when the program starts', () => {
     const e = build('alarm', tokyo({ time: '07:00' }));
     advance(e, 2000);
     expect(out(e, 'ringing')).toBe(false);
@@ -480,7 +480,7 @@ describe('Alarm', () => {
     const bad = build('alarm', { time: '25:00' });
     advance(bad, 100);
     expect(bad.nodes.get('n')!.status.level).toBe('error');
-    expect(bad.nodes.get('n')!.status.message).toMatch(/not a time of day/);
+    expect(bad.nodes.get('n')!.status.message).toMatch(/isn.t a time of day/);
     const city = build('alarm', { time: '07:30', city: 'Atlantis' });
     advance(city, 100);
     expect(city.nodes.get('n')!.status.level).toBe('error');

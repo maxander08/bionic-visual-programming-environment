@@ -163,16 +163,16 @@ export function StatusBar() {
   return (
     <footer className="statusbar" role="contentinfo">
       <span className={`run-state ${run}`} role="status"><i />{run === 'running' ? tr("Running") : run === 'paused' ? tr("Paused") : tr("Stopped")}</span>
-      <span className="stat" title={tr("Simulation clock. It advances in fixed ticks and does not depend on screen refresh.")}>t {fmtNum(engine.time / 1000, 2)} s</span>
+      <span className="stat" title={tr("Simulation clock. It moves forward in fixed ticks, whatever the screen’s refresh rate.")}>t {fmtNum(engine.time / 1000, 2)} s</span>
       <span className="stat" title={tr("Simulation tick period and speed")}>{tr("{ms} ms ×{speed}", { ms: settings.tickMs, speed: settings.speed })}</span>
       <span className="stat hide-sm">{tr("{n} modules · {m} links", { n: Object.keys(project.graph.nodes).length, m: Object.keys(project.graph.edges).length })}</span>
-      <span className="stat hide-sm" title={tr("Modules evaluated in the last tick; only modules whose inputs changed run.")}>{tr("{n} evals · {us} µs", { n: s.evalsLastTick, us: s.tickMicros })}</span>
+      <span className="stat hide-sm" title={tr("Modules evaluated in the last tick. Only modules whose inputs changed run.")}>{tr("{n} evals · {us} µs", { n: s.evalsLastTick, us: s.tickMicros })}</span>
       <span className="tb-spacer" />
       <button className={`diag-btn ${errors ? 'err' : warns ? 'warn' : ''}`} aria-expanded={open} onClick={() => setOpen(!open)} aria-label={tr('{e} errors, {w} warnings. Show diagnostics', { e: errors, w: warns })}>
         <Icon name="alert" size={13} />{tr(errors === 1 ? "{n} error" : "{n} errors", { n: errors })} · {tr(warns === 1 ? "{n} warning" : "{n} warnings", { n: warns })}
       </button>
-      <span className={`stat save ${saveState}`} title={saveState === 'unavailable' ? tr("Browser storage is unavailable (private mode or restricted file access). Use File → Export to keep your work.") : tr("Autosave keeps the latest state in this browser.")}>
-        {saveState === 'saved' ? tr("Autosaved") : saveState === 'unsaved' ? tr("Saving…") : tr("Storage unavailable: export to keep work")}
+      <span className={`stat save ${saveState}`} title={saveState === 'unavailable' ? tr("Browser storage isn’t available (you may be in private mode, or file access is restricted). Use File → Export to keep your work.") : tr("Autosave keeps the latest state in this browser.")}>
+        {saveState === 'saved' ? tr("Autosaved") : saveState === 'unsaved' ? tr("Saving…") : tr("Storage isn’t available. Export to keep your work.")}
       </span>
       {open && (
         <div className="diag-pop" role="dialog" aria-label={tr("Diagnostics")}>

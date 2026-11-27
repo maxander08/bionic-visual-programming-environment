@@ -21,7 +21,7 @@ function loadImage(blob: Blob): Promise<HTMLImageElement> {
     const url = URL.createObjectURL(blob);
     const im = new Image();
     im.onload = () => { URL.revokeObjectURL(url); resolve(im); };
-    im.onerror = () => { URL.revokeObjectURL(url); reject(new Error('This browser could not decode the picture, so it cannot be converted. (TIFF is not supported by most browsers.)')); };
+    im.onerror = () => { URL.revokeObjectURL(url); reject(new Error('This browser couldn’t decode the picture, so it can’t be converted. (Most browsers don’t support TIFF.)')); };
     im.src = url;
   });
 }
@@ -34,7 +34,7 @@ function canvasOf(src: CanvasImageSource, w: number, h: number, white: boolean):
   cv.width = Math.max(1, Math.round(w * k));
   cv.height = Math.max(1, Math.round(h * k));
   const ctx = cv.getContext('2d', { willReadFrequently: true });
-  if (!ctx) return fail('This browser cannot draw pictures, so it cannot convert them.');
+  if (!ctx) return fail('This browser can’t draw pictures, so it can’t convert them.');
   if (white) { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height); }
   ctx.drawImage(src, 0, 0, cv.width, cv.height);
   return { cv, w: cv.width, h: cv.height };
@@ -52,9 +52,9 @@ function frameOfVideo(blob: Blob, white: boolean): Promise<Raster> {
     const v = document.createElement('video');
     v.preload = 'metadata'; v.muted = true;
     const done = (r: Raster | Error) => { clearTimeout(timer); v.removeAttribute('src'); try { v.load(); } catch { /* nothing to release */ } URL.revokeObjectURL(url); r instanceof Error ? reject(r) : resolve(r); };
-    const timer = setTimeout(() => done(new Error('This browser could not read a picture from the video in time.')), 15000);
-    v.onerror = () => done(new Error('This browser could not decode the video (its format is not supported here), so no still frame can be taken.'));
-    v.onloadedmetadata = () => { try { v.currentTime = Number.isFinite(v.duration) && v.duration > 0 ? Math.min(1, v.duration / 10) : 0; } catch { done(new Error('The video could not be searched.')); } };
+    const timer = setTimeout(() => done(new Error('This browser couldn’t read a picture from the video in time.')), 15000);
+    v.onerror = () => done(new Error('This browser couldn’t decode the video (its format isn’t supported here), so no still frame can be taken.'));
+    v.onloadedmetadata = () => { try { v.currentTime = Number.isFinite(v.duration) && v.duration > 0 ? Math.min(1, v.duration / 10) : 0; } catch { done(new Error('The video couldn’t be searched.')); } };
     v.onseeked = () => { try { done(v.videoWidth ? canvasOf(v, v.videoWidth, v.videoHeight, white) : new Error('The video has no picture.')); } catch (e) { done(e as Error); } };
     v.src = url;
   });
@@ -63,7 +63,7 @@ function frameOfVideo(blob: Blob, white: boolean): Promise<Raster> {
 const encode = async (r: Raster, type: string, q: number): Promise<Blob> => {
   const b = await new Promise<Blob | null>((res) => r.cv.toBlob(res, type, q));
   if (!b) return fail('The picture is too large for this browser to convert.');
-  if (b.type !== type) return fail(`This browser cannot write ${type.split('/')[1].toUpperCase()} pictures.`);
+  if (b.type !== type) return fail(`This browser can’t write ${type.split('/')[1].toUpperCase()} pictures.`);
   return b;
 };
 const bytesOf = async (b: Blob) => new Uint8Array(await b.arrayBuffer());
@@ -85,9 +85,9 @@ async function pictureOutput(from: FileKindId, blob: Blob, fmt: string, q: numbe
 
 async function wavOf(blob: Blob): Promise<Uint8Array> {
   const Ctx: typeof OfflineAudioContext | undefined = window.OfflineAudioContext ?? (window as unknown as { webkitOfflineAudioContext?: typeof OfflineAudioContext }).webkitOfflineAudioContext;
-  if (!Ctx) return fail('This browser cannot decode sound, so it cannot convert it.');
+  if (!Ctx) return fail('This browser can’t decode sound, so it can’t convert it.');
   let buf: AudioBuffer;
-  try { buf = await new Ctx(1, 1, 44100).decodeAudioData(await blob.arrayBuffer()); } catch { return fail('This browser could not decode the sound (its format is not supported here).'); }
+  try { buf = await new Ctx(1, 1, 44100).decodeAudioData(await blob.arrayBuffer()); } catch { return fail('This browser couldn’t decode the sound (it doesn’t support that format here).'); }
   if (buf.length * buf.numberOfChannels * 2 > MAX_WAV) return fail('The sound is too long to write as a WAV file here (the limit is 256 MB).');
   return F.encodeWav(Array.from({ length: buf.numberOfChannels }, (_, c) => buf.getChannelData(c)), buf.sampleRate);
 }
@@ -96,15 +96,15 @@ async function wavOf(blob: Blob): Promise<Uint8Array> {
 
 async function readTable(info: FileInfo, blob: Blob): Promise<string[][]> {
   if (info.ext === 'csv') return F.parseDelimited(info.text ?? '');
-  if (info.ext === 'xlsx') { try { return F.readXlsx(await bytesOf(blob)); } catch { return fail('The cells of this .XLSX workbook could not be read. It may be damaged or password-protected.'); } }
-  return fail(`The cells of a .${info.ext.toUpperCase()} file cannot be read in the browser. Use a .CSV or .XLSX file.`);
+  if (info.ext === 'xlsx') { try { return F.readXlsx(await bytesOf(blob)); } catch { return fail('The cells of this .XLSX workbook couldn’t be read. It may be damaged or password-protected.'); } }
+  return fail(`The cells of a .${info.ext.toUpperCase()} file can’t be read in the browser. Use a .CSV or .XLSX file.`);
 }
 
 /** The readable words of any text-bearing file, whatever its format. */
 async function bodyText(from: FileKindId, info: FileInfo, blob: Blob): Promise<string> {
   if (from === 'spreadsheet') return F.tableToText(await readTable(info, blob));
   if (info.text === undefined) {
-    return fail(info.ext === 'doc' ? 'The text of an old .DOC file cannot be read in the browser. Save it as .DOCX first.' : `The text of “${info.name}” could not be read, so it cannot be converted.`);
+    return fail(info.ext === 'doc' ? 'The text of an old .DOC file can’t be read in the browser. Save it as .DOCX first.' : `The text of “${info.name}” couldn’t be read, so it can’t be converted.`);
   }
   if (from === 'text' && info.ext === 'rtf') return F.rtfToText(info.text);
   if (from === 'web' && info.ext === 'html') return F.htmlToText(info.text);
@@ -124,7 +124,7 @@ async function pagesAsJpegs(text: string, quality: number): Promise<F.PdfPage[]>
     const cv = document.createElement('canvas');
     cv.width = P.w * S; cv.height = P.h * S;
     const ctx = cv.getContext('2d');
-    if (!ctx) return fail('This browser cannot draw pictures, so it cannot convert text that needs them.');
+    if (!ctx) return fail('This browser can’t draw pictures, so it can’t convert text that needs them.');
     ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
     ctx.fillStyle = '#000'; ctx.textBaseline = 'top';
     ctx.font = `${P.size * S}px ${stack}`;
@@ -146,11 +146,11 @@ async function imagePdf(blob: Blob, quality: number): Promise<Uint8Array> {
 
 async function produce(req: ConvertRequest, info: FileInfo, blob: Blob, title: string): Promise<{ data: Uint8Array | Blob; warn?: string }> {
   const from = req.src.type, to = req.to, fmt = req.format;
-  const warn = info.textCut ? 'The source is longer than 1 000 000 characters, so only its first part was converted.' : undefined;
+  const warn = info.textCut ? 'The source is longer than 1 000 000 characters, so only the first part was converted.' : undefined;
   const ok = (data: Uint8Array | Blob, w = warn) => ({ data, warn: w });
 
   if (to === 'compressed') return ok(F.zipOne(info.name, await bytesOf(blob)), undefined);
-  if (from === 'compressed') { try { return ok(utf8(F.listZip(await bytesOf(blob)))); } catch { return fail('This archive could not be read. Only .ZIP files can be listed.'); } }
+  if (from === 'compressed') { try { return ok(utf8(F.listZip(await bytesOf(blob)))); } catch { return fail('This archive couldn’t be read. Only .ZIP files can be listed.'); } }
 
   switch (to) {
     case 'image': return ok(await pictureOutput(from, blob, fmt, req.quality), undefined);
@@ -176,20 +176,20 @@ async function produce(req: ConvertRequest, info: FileInfo, blob: Blob, title: s
       if (from === 'image') return ok(await imagePdf(blob, req.quality), undefined);
       const text = await bodyText(from, info, blob);
       if (F.unsupportedForPdf(text) === 0) return ok(F.buildPdfFromText(text));
-      return ok(F.buildPdfFromJpegs(await pagesAsJpegs(text, req.quality)), [warn, 'The text has characters a PDF’s built-in font cannot show, so the pages were drawn as pictures: the text in this PDF cannot be selected.'].filter(Boolean).join(' '));
+      return ok(F.buildPdfFromJpegs(await pagesAsJpegs(text, req.quality)), [warn, 'The text has characters a PDF’s built-in font can’t show, so the pages were drawn as pictures. That means the text in this PDF can’t be selected.'].filter(Boolean).join(' '));
     }
     case 'spreadsheet': {
       const rows = from === 'spreadsheet' ? await readTable(info, blob) : F.parseDelimited(await bodyText(from, info, blob));
       return ok(fmt === 'xlsx' ? F.buildXlsx(rows) : utf8(F.toCsv(rows), true));
     }
   }
-  return fail(`This converter cannot turn a ${FILE_KIND_BY_ID.get(from)?.name ?? from} file into a ${FILE_KIND_BY_ID.get(to)?.name ?? to} file.`);
+  return fail(`This converter can’t turn a ${FILE_KIND_BY_ID.get(from)?.name ?? from} file into a ${FILE_KIND_BY_ID.get(to)?.name ?? to} file.`);
 }
 
 async function convert(req: ConvertRequest, id: string): Promise<FileInfo> {
   const info = getFileInfo(req.src.id);
   const blob = await getBlob(req.src.id);
-  if (!info || !blob) return fail(`“${req.src.name}” is not in this browser any more. Drop it on its Files node again.`);
+  if (!info || !blob) return fail(`“${req.src.name}” isn’t in this browser any more. Drop it on its Files node again.`);
   const base = req.name.trim() ? F.safeName(req.name) : F.safeName(F.baseName(req.src.name));
   const name = `${base}.${req.format}`;
   const made = await produce(req, info, blob, base);

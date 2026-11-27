@@ -146,7 +146,7 @@ const motionDevice = mk(
         if (r !== 'granted') return setStatus(d.ids, 'denied', 'Motion permission was denied.');
       }
     } catch (e) {
-      return setStatus(d.ids, 'denied', `Motion permission could not be requested (${errName(e)}). It must be triggered by tapping Run.`);
+      return setStatus(d.ids, 'denied', `Motion permission couldn’t be requested (${errName(e)}). It must be triggered by tapping Run.`);
     }
     let got = false;
     orient = (e) => {
@@ -242,7 +242,7 @@ export function syncSensors(e: Engine, running: boolean) {
         else if (fileDone.get(n.id) !== data) {
           fileDone.set(n.id, data);
           void decodeFile(data).then((img) => {
-            if (!img) return setStatus([n.id], 'error', 'The chosen file could not be decoded as an image.');
+            if (!img) return setStatus([n.id], 'error', 'The chosen file couldn’t be decoded as an image.');
             e.inject(n.id, { image: img, luma: Math.round(imageStats(img).mean * 1000) / 1000 });
             setStatus([n.id], 'live', `Image loaded (${img.w}×${img.h}).`);
           });

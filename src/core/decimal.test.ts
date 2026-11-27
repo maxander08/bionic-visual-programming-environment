@@ -36,7 +36,7 @@ describe('arbitrary-precision decimals', () => {
     expect(toPlain(D('1e3'))).toBe('1000');
     expect(toPlain(D('12.5E-3'))).toBe('0.0125');
   });
-  it('refuses what is not a number', () => {
+  it('refuses what isn’t a number', () => {
     for (const bad of ['', '.', 'abc', '1,5', '1e', '--1', '1.2.3', 'Infinity', 'NaN']) expect(parseDec(bad).ok, bad).toBe(false);
   });
   it('checks zero exponents against the plain-text memory limit without expanding the zeroes', () => {
@@ -152,11 +152,11 @@ describe('Number Formatter actor', () => {
     const e = build([['c', 'constant', { value: 4 }], ['f', 'actor-numfmt', { value: '3.14159265', mode: 'places', n: 1 }]], [['c', 'out', 'f', 'p:n']]);
     expect(e.out('f', 'text')).toBe('3.1416');
   });
-  it('raises an error for text that is not a number', () => {
+  it('gives an error for text that isn’t a number', () => {
     const e = build([['c', 'constant', { kind: 'text', value: '1,5' }], ['f', 'actor-numfmt']], [['c', 'out', 'f', 'in']]);
     expect(e.nodes.get('f')!.status.level).toBe('error');
   });
-  it('emits Formatted and Number with every digit, even beyond a double', () => {
+  it('sends out Formatted and Number with every digit, even beyond a double', () => {
     const e = build([['f', 'actor-numfmt', { value: '1e400', mode: 'sci', n: 3 }]]);
     expect(e.out('f', 'text')).toBe('1.00e+400');
     expect(toText(e.out('f', 'number'))).toBe('1' + '0'.repeat(400));

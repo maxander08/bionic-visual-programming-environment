@@ -21,28 +21,28 @@ export const timer: ModuleDef = {
   ...base, type: 'timer', name: 'Timer', caption: 'Countdown Timer', glyph: '⏲',
   keywords: 'countdown count down delay timeout interval repeat remaining finish done egg cooking',
   inputs: [
-    inp('start', 'Start', 'any', 'A truthy arrival starts the countdown, resumes it when paused, or restarts it once it has finished.', 'top', true),
+    inp('start', 'Start', 'any', 'A true value starts the countdown, resumes it when paused, or restarts it once it has finished.', 'top', true),
     inp('pause', 'Pause', 'any', 'While true the countdown is held. Release it and the countdown goes on from where it stopped.', 'top', true),
-    inp('reset', 'Reset', 'any', 'A truthy arrival stops the timer and sets it back to the full duration.', 'top', true),
-    inp('toggle', 'Pause / Resume', 'any', 'A truthy arrival holds a running countdown, or lets a held one go on: the same as the PAUSE / RESUME button.', 'top', true),
+    inp('reset', 'Reset', 'any', 'A true value stops the timer and sets it back to the full duration.', 'top', true),
+    inp('toggle', 'Pause / Resume', 'any', 'When a true value arrives, a running countdown pauses, or a paused one carries on. Same as the PAUSE / RESUME button.', 'top', true),
   ],
   outputs: [
     out('time', 'Time', 'text', 'Time left as MM:SS.mmm (HH:MM:SS.mmm from one hour), counting down. The Show milliseconds setting can drop the milliseconds from this text.'),
     out('remaining', 'Remaining', 'num', 'Seconds left, with millisecond precision.'),
-    out('done', 'Done', 'bool', 'True when the countdown has finished and stays true until Start or Reset. With Repeat on it is a short pulse (at least one tick) every time a round ends.'),
+    out('done', 'Done', 'bool', 'True when the countdown has finished and stays true until Start or Reset. With Repeat on it’s a short pulse (at least one tick) every time a round ends.'),
     out('running', 'Running', 'bool', 'True while the countdown is moving: not stopped, not paused and not finished.'),
     out('progress', 'Progress', 'num', 'How much of the duration has passed, from 0 (just started) to 1 (finished).'),
     ...timeParts('time left'),
     out('count', 'Completions', 'num', 'How many times the countdown has reached zero since the program started.', 'right'),
   ],
   params: [
-    num('duration', 'Duration', 60, 0.1, 8640000, 0.1, 'How long the countdown lasts. Type it the way you say it: 2 h 40 min, 1h30m, 90 s, 1:30:00 or 2.5 hours; a plain number is seconds. It follows this setting while the timer is waiting; a countdown that is already running keeps its length until it restarts.', 's'),
+    num('duration', 'Duration', 60, 0.1, 8640000, 0.1, 'How long the countdown lasts. Type it the way you’d say it: 2 h 40 min, 1h30m, 90 s, 1:30:00 or 2.5 hours. A plain number is seconds. The timer follows this setting while it’s waiting, but a countdown that’s already running keeps its length until it restarts.', 's'),
     bol('autostart', 'Auto start', true, 'Begin counting down as soon as the program runs. Turn it off to wait for the Start pin or the START button.'),
     bol('repeat', 'Repeat', false, 'When the countdown ends, start it again at once instead of stopping.'),
-    bol('millis', 'Show milliseconds', true, 'Add milliseconds to the Time output (04:59.250). Without them the text rounds up, so it reads 00:01 until the very end. The Hour, Minute, Seconds and Milliseconds pins are always exact.'),
+    bol('millis', 'Show milliseconds', true, 'Show milliseconds in the Time output (04:59.250). Without them the text rounds up, so it reads 00:01 right until the end. The Hour, Minute, Seconds and Milliseconds pins are always exact.'),
     details('the progress bar and the number of completions'),
     act('startNow', 'START', 'start', 'Start, resume or restart the countdown now.'),
-    act('pauseNow', 'PAUSE / RESUME', 'pause', 'Hold the countdown, or let it go on.'),
+    act('pauseNow', 'PAUSE / RESUME', 'pause', 'Pause the countdown, or let it carry on.'),
     act('resetNow', 'RESET', 'reset', 'Stop and set the timer back to the full duration.'),
   ],
   run(c) {
@@ -97,8 +97,8 @@ export const timer: ModuleDef = {
     if (wake < Infinity) c.wake(Math.max(1, wake));
   },
   doc: {
-    summary: 'Counts down from a set duration, shows the time left and signals when it reaches zero.',
-    runtime: 'Measures simulation time, so it pauses when the program pauses and starts over on Stop → Run. With Auto start on (the default) it begins counting at once; otherwise it waits for a truthy arrival on Start. Pause holds it while true, Reset sets it back to the full duration and stops it. At zero, Done turns true and stays true until Start or Reset; with Repeat on, Done is instead a short pulse and the countdown begins again, carrying over any time that was left over from the tick. It counts to the millisecond: Time shows milliseconds (unless Show milliseconds is off, which rounds the text up to whole seconds), and Hour, Minute, Seconds and Milliseconds are separate outputs of the time left, refreshed every tick while it runs.',
+    summary: 'Counts down from a set time, shows what’s left and signals when it hits zero.',
+    runtime: 'Measures simulation time, so it pauses when the program pauses and starts over on Stop → Run. With Auto start on (the default) it begins counting at once; otherwise it waits for a true value on Start. Pause holds it while true, Reset sets it back to the full duration and stops it. At zero, Done turns true and stays true until Start or Reset; with Repeat on, Done is instead a short pulse and the countdown begins again, carrying over any time that was left over from the tick. It counts to the millisecond: Time shows milliseconds (unless Show milliseconds is off, which rounds the text up to whole seconds), and Hour, Minute, Seconds and Milliseconds are separate outputs of the time left, refreshed every tick while it runs.',
     errors: ['A Duration driven from a pin that carries no number is ignored and the inspector value is used.'],
     examples: ['Timer Done → Notify: get a message after 5 minutes.', 'Timer Milliseconds → Threshold: react in the last half second of a countdown.', 'Timer Progress → Meter: watch a countdown bar fill.', 'Timer Done → its own Reset pin through a Delay: a timer that restarts after a pause.'],
   },
@@ -109,11 +109,11 @@ export const stopwatch: ModuleDef = {
   ...base, type: 'stopwatch', name: 'Stopwatch', caption: 'Stopwatch', glyph: '⏱',
   keywords: 'chronometer count up elapsed lap split time measure duration race',
   inputs: [
-    inp('start', 'Start', 'any', 'A truthy arrival starts the stopwatch or resumes it.', 'top', true),
-    inp('stop', 'Stop', 'any', 'A truthy arrival stops the stopwatch and keeps the time reached.', 'top', true),
-    inp('lap', 'Lap', 'any', 'A truthy arrival records a lap while the stopwatch is running: the time since the previous lap (or the start).', 'top', true),
-    inp('reset', 'Reset', 'any', 'A truthy arrival stops the stopwatch, sets it to zero and forgets the laps.', 'top', true),
-    inp('toggle', 'Start / Stop', 'any', 'A truthy arrival starts the stopwatch, or stops it when it is running: the same as the START / STOP button.', 'top', true),
+    inp('start', 'Start', 'any', 'A true value starts the stopwatch or resumes it.', 'top', true),
+    inp('stop', 'Stop', 'any', 'A true value stops the stopwatch and keeps the time reached.', 'top', true),
+    inp('lap', 'Lap', 'any', 'A true value records a lap while the stopwatch is running: the time since the previous lap (or the start).', 'top', true),
+    inp('reset', 'Reset', 'any', 'A true value stops the stopwatch, sets it to zero and forgets the laps.', 'top', true),
+    inp('toggle', 'Start / Stop', 'any', 'When a true value arrives, the stopwatch starts, or stops if it’s running. Same as the START / STOP button.', 'top', true),
   ],
   outputs: [
     out('time', 'Time', 'text', 'Elapsed time as MM:SS.mmm (HH:MM:SS.mmm from one hour). The Show milliseconds setting can drop the milliseconds from this text.'),
@@ -125,12 +125,12 @@ export const stopwatch: ModuleDef = {
   ],
   params: [
     bol('autostart', 'Auto start', true, 'Begin counting as soon as the program runs. Turn it off to wait for the Start pin or the START / STOP button.'),
-    bol('millis', 'Show milliseconds', true, 'Add milliseconds to the Time output (01:05.250). The Hour, Minute, Seconds and Milliseconds pins are always exact.'),
+    bol('millis', 'Show milliseconds', true, 'Show milliseconds in the Time output (01:05.250). The Hour, Minute, Seconds and Milliseconds pins are always exact.'),
     num('limit', 'Stop at', 0, 0, 8640000, 1, 'The stopwatch stops by itself when it reaches this time, typed as 2 h 40 min, 90 s or 1:30:00 (a plain number is seconds). 0 means no limit.', 's'),
     details('the latest lap'),
-    act('toggleNow', 'START / STOP', 'toggle', 'Start the stopwatch, or stop it when it is running.'),
+    act('toggleNow', 'START / STOP', 'toggle', 'Start the stopwatch, or stop it if it’s running.'),
     act('lapNow', 'LAP', 'lap', 'Record a lap now.'),
-    act('resetNow', 'RESET', 'reset', 'Stop, set to zero and forget the laps.'),
+    act('resetNow', 'RESET', 'reset', 'Stop, reset to zero and clear the laps.'),
   ],
   run(c) {
     const s = c.state;
@@ -173,12 +173,12 @@ export const stopwatch: ModuleDef = {
   },
   doc: {
     summary: 'Counts elapsed time upwards, with start, stop, lap and reset controls.',
-    runtime: 'Measures simulation time, so it pauses when the program pauses and starts over on Stop → Run. With Auto start on (the default) it counts from the moment the program runs. A truthy arrival on Start runs it, on Stop holds it, on Lap records a lap and on Reset clears it. A lap is the time since the previous lap, or since zero for the first. It counts to the millisecond: Time shows milliseconds (unless Show milliseconds is off), and Hour, Minute, Seconds and Milliseconds are separate outputs of the elapsed time, refreshed every tick while it runs. With Stop at above 0 it stops by itself at that time; Start then begins a fresh run.',
+    runtime: 'Measures simulation time, so it pauses when the program pauses and starts over on Stop → Run. With Auto start on (the default) it counts from the moment the program runs. A true value on Start runs it, on Stop holds it, on Lap records a lap and on Reset clears it. A lap is the time since the previous lap, or since zero for the first. It counts to the millisecond: Time shows milliseconds (unless Show milliseconds is off), and Hour, Minute, Seconds and Milliseconds are separate outputs of the elapsed time, refreshed every tick while it runs. With Stop at above 0 it stops by itself at that time; Start then begins a fresh run.',
     examples: ['Switch → Stopwatch Start / Stop (through two Compare modules): time how long a switch stays on.', 'Keys → Stopwatch Lap: record a lap every time a key is pressed.', 'Stopwatch Elapsed → Threshold: react after 30 seconds.', 'Stopwatch Minute and Seconds → Text displays: show your own clock face.'],
   },
 };
 
-const REPEAT: [string, string][] = [['once', 'Once (next time it is reached)'], ['daily', 'Every day'], ['weekdays', 'Weekdays (Mon–Fri)'], ['weekends', 'Weekends (Sat–Sun)']];
+const REPEAT: [string, string][] = [['once', 'Once (next time it’s reached)'], ['daily', 'Every day'], ['weekdays', 'Weekdays (Mon–Fri)'], ['weekends', 'Weekends (Sat–Sun)']];
 const SNOOZE_MS = 5 * 60 * 1000;
 
 /** Alarm: rings at a time of day, in this device's zone or in any city's. */
@@ -186,26 +186,26 @@ export const alarm: ModuleDef = {
   ...base, type: 'alarm', name: 'Alarm', caption: 'Alarm Clock', glyph: '⏰',
   keywords: 'wake up ring bell reminder schedule time of day clock snooze ringing notify daily weekday',
   inputs: [
-    inp('dismiss', 'Dismiss', 'any', 'A truthy arrival silences a ringing alarm and cancels a pending snooze.', 'top', true),
-    inp('snooze', 'Snooze', 'any', 'A truthy arrival silences a ringing alarm; it rings again 5 minutes later.', 'top', true),
-    inp('test', 'Test ring', 'any', 'A truthy arrival rings the alarm right now, to try what it drives: the same as the TEST RING button.', 'top', true),
+    inp('dismiss', 'Dismiss', 'any', 'A true value silences a ringing alarm and cancels a pending snooze.', 'top', true),
+    inp('snooze', 'Snooze', 'any', 'A true value silences a ringing alarm; it rings again 5 minutes later.', 'top', true),
+    inp('test', 'Test ring', 'any', 'When a true value arrives, the alarm rings right now, so you can try out whatever it drives. Same as the TEST RING button.', 'top', true),
   ],
   outputs: [
-    out('ringing', 'Ringing', 'bool', 'True while the alarm is ringing: from the alarm time until the Ring time has passed or it is dismissed or snoozed.'),
-    out('countdown', 'Time left', 'text', 'Time until the next ring, such as 07:12:30.250 (or 1d 02:00:00.000). Empty when the alarm will not ring again.'),
-    out('seconds', 'Seconds left', 'num', 'The whole time left in seconds, with millisecond precision. It has no value when the alarm will not ring again.'),
+    out('ringing', 'Ringing', 'bool', 'True while the alarm is ringing: from the alarm time until the Ring time has passed or it’s dismissed or snoozed.'),
+    out('countdown', 'Time left', 'text', 'Time until the next ring, such as 07:12:30.250 (or 1d 02:00:00.000). Empty when the alarm won’t ring again.'),
+    out('seconds', 'Seconds left', 'num', 'The whole time left in seconds, with millisecond precision. It has no value when the alarm won’t ring again.'),
     out('next', 'Next ring', 'text', 'When the next ring happens, as in “Thu 12 Mar, 07:30:00.000”, in the alarm’s own time zone.'),
     out('count', 'Rings', 'num', 'How many times the alarm has rung since the program started.'),
     ...timeParts('time left until the next ring'),
   ],
   params: [
-    txt('time', 'Time', '07:30', 'Time of day to ring, by the clock of the chosen city (or of this device). Write 07:30, 19:45:30, 19:45:30.250 (with milliseconds) or 7:30 pm.', { maxLength: 16, placeholder: 'e.g. 07:30:00.000 or 7:30 pm' }),
-    sel('repeat', 'Repeat', 'daily', REPEAT, 'Which days the alarm rings. “Once” rings the next time the time is reached and then stays quiet until a setting changes.'),
-    txt('city', 'City', '', 'Optional. A city whose clock sets the alarm, as in the World Clock module. Leave it empty to use this device’s time zone.', { maxLength: 80, placeholder: 'This device (leave empty)', suggest: cityLabels }),
-    num('ring', 'Ring time', 10, 1, 86400, 1, 'How long Ringing stays true when nobody dismisses the alarm, typed as 2 min, 90 s or 1 h (a plain number is seconds). It is counted in simulation time.', 's'),
+    txt('time', 'Time', '07:30', 'The time of day to ring, on the clock of the chosen city (or this device). Write 07:30, 19:45:30, 19:45:30.250 (with milliseconds) or 7:30 pm.', { maxLength: 16, placeholder: 'e.g. 07:30:00.000 or 7:30 pm' }),
+    sel('repeat', 'Repeat', 'daily', REPEAT, 'Which days the alarm rings. “Once” rings the next time that time comes round, then stays quiet until you change a setting.'),
+    txt('city', 'City', '', 'Optional. A city whose clock the alarm follows, like in the World Clock module. Leave it empty to use this device’s time zone.', { maxLength: 80, placeholder: 'This device (leave empty)', suggest: cityLabels }),
+    num('ring', 'Ring time', 10, 1, 86400, 1, 'How long Ringing stays true when nobody dismisses the alarm, typed as 2 min, 90 s or 1 h (a plain number is seconds). It’s counted in simulation time.', 's'),
     details('the time left and the place'),
-    act('testNow', 'TEST RING', 'test', 'Ring right now to try what the alarm drives.'),
-    act('snoozeNow', 'SNOOZE', 'snooze', 'Silence the alarm; it rings again in 5 minutes.'),
+    act('testNow', 'TEST RING', 'test', 'Ring right now, so you can try out whatever the alarm drives.'),
+    act('snoozeNow', 'SNOOZE', 'snooze', 'Silence the alarm. It rings again in 5 minutes.'),
     act('dismissNow', 'DISMISS', 'dismiss', 'Silence the alarm.'),
   ],
   run(c) {
@@ -218,11 +218,11 @@ export const alarm: ModuleDef = {
       tz = city.tz; place = city.name;
     }
     const tod = parseTimeOfDay(c.str('time'));
-    if (tod === null) { c.view({}); return c.fail(`“${c.str('time').trim()}” is not a time of day. Write it as 07:30, 19:45:30, 19:45:30.250 or 7:30 pm.`); }
+    if (tod === null) { c.view({}); return c.fail(`“${c.str('time').trim()}” isn’t a time of day. Write it as 07:30, 19:45:30, 19:45:30.250 or 7:30 pm.`); }
     const repeat = c.str('repeat');
     const now = Date.now();
     let lp;
-    try { lp = localParts(tz, now); } catch { c.view({}); return c.fail(`This browser does not know the time zone ${tz}.`); }
+    try { lp = localParts(tz, now); } catch { c.view({}); return c.fail(`This browser doesn’t know the time zone ${tz}.`); }
 
     // A change to the time, days or zone re-arms the alarm.
     const key = `${tod}|${tz}|${repeat}`;
@@ -279,8 +279,8 @@ export const alarm: ModuleDef = {
   },
   doc: {
     summary: 'Rings at a chosen time of day, on this device’s clock or on any city’s.',
-    runtime: 'Reads the real clock, like World Clock, and works to the millisecond: the alarm time can carry milliseconds, Time left and Next ring always show them, and Hour, Minute, Seconds and Milliseconds are separate outputs of the time left, refreshed every tick. When the clock passes Time on a day allowed by Repeat, Ringing turns true for Ring time (counted in simulation time) or until Dismiss or Snooze. Snooze silences it and rings again 5 minutes later. The alarm only rings while the program is running, and only when it sees the time pass: starting the program after the alarm time does not make it ring. “Once” rings a single time, then waits until Time, Repeat or City is changed. The outputs count down to the next ring.',
-    errors: ['A Time that is not a time of day (such as 25:00) raises an error and clears the outputs.', 'A City that is not in the World Clock list raises an error.', 'A browser without the needed time-zone data raises an error.'],
+    runtime: 'Reads the real clock, like World Clock, and works to the millisecond: the alarm time can carry milliseconds, Time left and Next ring always show them, and Hour, Minute, Seconds and Milliseconds are separate outputs of the time left, refreshed every tick. When the clock passes Time on a day allowed by Repeat, Ringing turns true for Ring time (counted in simulation time) or until Dismiss or Snooze. Snooze silences it and rings again 5 minutes later. The alarm only rings while the program is running, and only when it sees the time pass: starting the program after the alarm time doesn’t make it ring. “Once” rings a single time, then waits until Time, Repeat or City is changed. The outputs count down to the next ring.',
+    errors: ['A Time that isn’t a time of day (such as 25:00) gives an error and clears the outputs.', 'A City that isn’t in the World Clock list gives an error.', 'A browser without the needed time-zone data gives an error.'],
     examples: ['Alarm Ringing → Light: a lamp that is on while the alarm rings.', 'Alarm Ringing → Notify: a message at 07:30 in Tokyo.', 'Timer Done → Alarm Snooze pin: snooze again after a delay.', 'Alarm Minute and Seconds → Text displays: a live countdown face.'],
   },
 };

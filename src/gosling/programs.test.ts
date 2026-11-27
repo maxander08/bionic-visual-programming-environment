@@ -26,7 +26,7 @@ const inputOf = (id: string, port = 'in') => runGraph().nodes.get(id)?.inputs[po
 describe('planner: plain-language requests become working programs', () => {
   const cases: { say: string; types: string[]; edges?: number; lone?: boolean; check?: (e: Engine) => void }[] = [
     {
-      say: 'make a 90 second countdown with a light when it is done',
+      say: 'make a 90 second countdown with a light when it’s done',
       types: ['timer', 'projector', 'light'],
       check: () => {
         expect(nodesOf('timer')[0].params.duration).toBe(90);

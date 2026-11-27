@@ -199,7 +199,7 @@ export async function analyse(id: string, file: File): Promise<FileInfo> {
     if (readable) {
       const r = await readText(file);
       info.text = r.text; info.lines = r.lines; info.textCut = r.cut;
-      if (r.cut) info.warn = 'The file is longer than 1 000 000 characters: Content holds only the first part.';
+      if (r.cut) info.warn = 'The file is longer than 1 000 000 characters, so Content only holds the first part.';
     } else if (kind.id === 'document') {
       if (ext === 'docx') {
         try {
@@ -207,31 +207,31 @@ export async function analyse(id: string, file: File): Promise<FileInfo> {
           const xml = z['word/document.xml'];
           if (!xml) throw new Error('no body');
           info.text = docxText(strFromU8(xml));
-        } catch { info.warn = 'The text of this document could not be read. It may be damaged or password-protected.'; }
-      } else info.note = 'The old binary .DOC format is stored, but its text cannot be read in the browser. Save it as .DOCX to get the text.';
+        } catch { info.warn = 'Couldn’t read the text of this document. It may be damaged or password-protected.'; }
+      } else info.note = 'The old binary .DOC format is stored, but its text can’t be read in the browser. Save it as .DOCX to get the text.';
     } else if (kind.id === 'presentation') {
       try {
         const z = unzipSync(new Uint8Array(await file.arrayBuffer()), { filter: (f) => /^ppt\/slides\/slide\d+\.xml$/.test(f.name) });
         const names = Object.keys(z).sort((a, b) => parseInt(a.replace(/\D/g, ''), 10) - parseInt(b.replace(/\D/g, ''), 10));
         info.slides = names.length;
         info.text = names.map((n, i) => `Slide ${i + 1}\n${slideText(strFromU8(z[n]))}`).join('\n\n');
-      } catch { info.warn = 'The slides of this presentation could not be read. It may be damaged.'; }
+      } catch { info.warn = 'Couldn’t read the slides of this presentation. It may be damaged.'; }
     } else if (kind.id === 'compressed') {
       if (ext === 'zip') {
         try {
           const names: string[] = [];
           unzipSync(new Uint8Array(await file.arrayBuffer()), { filter: (f) => { names.push(f.name); return false; } });
           info.entries = names.filter((n) => !n.endsWith('/')).length;
-        } catch { info.warn = 'This ZIP archive could not be read. It may be damaged.'; }
+        } catch { info.warn = 'Couldn’t read this ZIP archive. It may be damaged.'; }
       } else info.note = 'Only .ZIP archives are looked into. This type is stored but not opened.';
     } else if (kind.id === 'image') {
       const r = await decodeImage(file);
       if (r) { info.image = r.image; info.width = r.width; info.height = r.height; }
-      else info.warn = 'This browser could not decode the picture (TIFF is not supported by most browsers), so there is no Image output.';
+      else info.warn = 'This browser couldn’t decode the picture (most browsers don’t support TIFF), so there’s no Image output.';
     } else if (kind.id === 'audio' || kind.id === 'video') {
       const m = await probeMedia(file, kind.id === 'video');
       info.duration = m.duration; info.width = m.width; info.height = m.height; info.image = m.frame;
-      if (m.duration === undefined) info.note = 'This browser could not read the file’s header (its format is not supported here). The file is stored, but there is no length or size.';
+      if (m.duration === undefined) info.note = 'This browser couldn’t read the file’s header (it doesn’t support that format here). The file is stored, but there’s no length or size.';
     } else if (kind.id === 'font') {
       const r = await readFont(id, file);
       const m = r.meta;
@@ -241,15 +241,15 @@ export async function analyse(id: string, file: File): Promise<FileInfo> {
         info.fontFormat = `${m.container} · ${m.outlines === 'CFF' ? 'CFF (PostScript) outlines' : m.outlines === 'TrueType' ? 'TrueType outlines' : 'unknown outlines'}`;
       }
       if (r.css) { info.cssFamily = r.css; info.image = drawSpecimen(r.css, info.family) ?? undefined; }
-      if (!m && !r.css) info.warn = 'This file is not a font this browser can read. It may be damaged or have the wrong extension, so there is no Specimen.';
-      else if (!r.css) info.warn = 'This browser refused to load the font (it may be damaged or use an unsupported variant), so there is no Specimen or live preview.';
-      else if (m && !m.complete) info.note = 'WOFF2 fonts are compressed. This browser cannot unpack the names inside, so the family comes from the file name and the glyph count is unknown. The font itself works.';
-      else if (!m) info.note = 'The font works, but its names could not be read, so the family comes from the file name.';
-    } else if (kind.id === 'spreadsheet') info.note = 'Workbooks and databases are stored but their cells are not read. Use .CSV for readable content.';
-    else if (kind.id === 'executable') info.note = 'Executables are only described. They are never run.';
-    else if (kind.id === 'pdf') info.note = 'The text inside a PDF is not extracted.';
+      if (!m && !r.css) info.warn = 'This file isn’t a font this browser can read. It may be damaged or have the wrong extension, so there’s no Specimen.';
+      else if (!r.css) info.warn = 'This browser refused to load the font (it may be damaged or use an unsupported variant), so there’s no Specimen or live preview.';
+      else if (m && !m.complete) info.note = 'WOFF2 fonts are compressed. This browser can’t unpack the names inside, so the family comes from the file name and the glyph count is unknown. The font itself works.';
+      else if (!m) info.note = 'The font works, but its names couldn’t be read, so the family comes from the file name.';
+    } else if (kind.id === 'spreadsheet') info.note = 'Workbooks and databases are stored, but their cells aren’t read. Use .CSV for readable content.';
+    else if (kind.id === 'executable') info.note = 'Executables are only described, never run.';
+    else if (kind.id === 'pdf') info.note = 'The text inside a PDF isn’t extracted.';
   } catch {
-    info.warn = 'The file could not be read.';
+    info.warn = 'The file couldn’t be read.';
   }
   return info;
 }
@@ -290,7 +290,7 @@ export async function loadFile(nodeId: string, file: File): Promise<boolean> {
     fileId: id, fileName: file.name, fileExt: info.ext, fileSize: String(file.size), fileMime: file.type, fileModified: String(file.lastModified || 0),
   });
   toast(tr('“{name}” is in the node.', { name: file.name }), 'ok');
-  if (!kept) toast(tr('The file could not be saved in this browser, so it will be gone after a reload.'), 'info');
+  if (!kept) toast(tr('The file couldn’t be saved in this browser, so it’ll be gone after a reload.'), 'info');
   return true;
 }
 

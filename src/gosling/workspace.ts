@@ -262,9 +262,9 @@ export function diagnosticsText(s: Snapshot): string {
     for (const d of s.diagnostics) lines.push(`- ${d.level === 'error' ? '**Error**' : d.level === 'warn' ? 'Warning' : 'Note'}${d.nodeId ? ` in \`${d.nodeId}\`` : ''}: ${d.message}`);
   }
   const waiting = s.nodes.filter((n) => n.missing.length);
-  for (const n of waiting) lines.push(`- ${nodeRef(n)} is idle: it is waiting for a signal on ${n.missing.join(', ')}.`);
+  for (const n of waiting) lines.push(`- ${nodeRef(n)} is idle: it’s waiting for a signal on ${n.missing.join(', ')}.`);
   if (audio.state === 'locked' && s.nodes.some((n) => n.type === 'audio')) lines.push('- Sound is locked until you interact with the page.');
-  if (s.nodes.some((n) => n.type === 'notify') && notificationState() !== 'granted') lines.push(`- Notifications are “${notificationState()}”; a Notify module will not show anything.`);
+  if (s.nodes.some((n) => n.type === 'notify') && notificationState() !== 'granted') lines.push(`- Notifications are “${notificationState()}”; a Notify module won’t show anything.`);
   return lines.join('\n');
 }
 
@@ -278,7 +278,7 @@ export function nodeText(n: NodeInfo, s: Snapshot): string {
   if (s.run !== 'stopped') {
     const vals = n.outputs.filter((o) => o.value !== '—').slice(0, 6);
     if (vals.length) lines.push(`**Right now:** ${vals.map((o) => `${o.label} = ${o.value}`).join(', ')}.`);
-    if (n.missing.length) lines.push(`It is idle because it has no signal on ${n.missing.join(', ')}.`);
+    if (n.missing.length) lines.push(`It’s idle because it has no signal on ${n.missing.join(', ')}.`);
     if (n.evals) lines.push(`It has run ${plural(n.evals, 'time')} so far.`);
   }
   if (n.status) lines.push(`**Status:** ${n.status.level}: ${n.status.message}`);

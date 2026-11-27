@@ -135,7 +135,7 @@ export function FontStage({ file, info, blob }: { file: FileDescriptor; info?: F
     return (
       <div className="pw-card">
         <span className="pw-badge">{'.' + file.ext.toUpperCase()}</span>
-        <p className="callout warn"><Icon name="alert" size={14} />{tr('This browser could not load the font, so it cannot be previewed. The file may be damaged. The Details and Hex tabs still show what is in it.')}</p>
+        <p className="callout warn"><Icon name="alert" size={14} />{tr('This browser couldn’t load the font, so it can’t be previewed. The file may be damaged. The Details and Hex tabs still show what’s in it.')}</p>
       </div>
     );
   }

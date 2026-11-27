@@ -120,7 +120,7 @@ export function compatibility(from: PortType, to: PortType): { ok: boolean; coer
   const pair = `${from}>${to}`;
   const coerce = ['num>bool', 'bool>num', 'num>text', 'bool>text', 'data>text', 'text>data', 'num>data', 'bool>data', 'image>data'];
   if (coerce.includes(pair)) return { ok: true, coerce: true };
-  return { ok: false, coerce: false, reason: `${from} signals cannot drive a ${to} input` };
+  return { ok: false, coerce: false, reason: `${from} signals can’t drive a ${to} input` };
 }
 
 /** Convert a value for a destination port type. Returns undefined when impossible. */

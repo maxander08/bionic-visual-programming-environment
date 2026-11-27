@@ -50,7 +50,7 @@ describe('translation', () => {
     expect(trIn('en', 'Settings')).toBe('Settings');
   });
   it('translates dynamic engine messages through their templates', () => {
-    expect(trIn('zh-Hans', 'Output “out” is not a finite number.')).toBe('输出“out”不是有限数值。');
+    expect(trIn('zh-Hans', 'Output “out” isn’t a finite number.')).toBe('输出“out”不是有限数值。');
     expect(trIn('zh-Hans', 'sin() takes 1 argument(s), got 2.')).toBe('sin() 需要 1 个参数，但给了 2 个。');
     expect(trIn('zh-Hant', 'Camera error: NotFoundError.')).toContain('NotFoundError');
   });
@@ -134,7 +134,7 @@ describe('Set Language module', () => {
     expect(n.outputs.language?.v).toBe('zh-Hant');
     expect(n.outputs.name?.v).toBe('繁體中文');
   });
-  it('in signal mode waits for a truthy Apply', () => {
+  it('in signal mode waits for a true Apply', () => {
     const idle = run({ nodes: [['L', 'setlanguage', { language: 'zh-Hans', mode: 'signal' }]] });
     expect((idle.nodes.get('L')!.viewData as any).n).toBe(0);
     const fired = run({

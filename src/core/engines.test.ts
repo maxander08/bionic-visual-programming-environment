@@ -169,7 +169,7 @@ describe('running in the graph', () => {
     expect(e.out('c', 'value')).toBeCloseTo(1, 9);
     expect(e.out('c', 'values')).toEqual([1, 1].map((v) => expect.closeTo(v, 9)));
   });
-  it('reports an error that names the problem, and recovers when it is fixed', () => {
+  it('reports an error that names the problem, and recovers when it’s fixed', () => {
     const { e, g } = build({ nodes: [['c', 'engine-calculus', { f1: 'sin(' }]], wires: [] });
     e.runFor(100);
     expect(e.nodes.get('c')!.status.level).toBe('error');
@@ -178,7 +178,7 @@ describe('running in the graph', () => {
     e.runFor(100);
     expect(e.nodes.get('c')!.status.level).toBe('ok');
   });
-  it('sends no Value for a limit that does not exist, but still reports', () => {
+  it('sends no Value for a limit that doesn’t exist, but still reports', () => {
     const { e } = build({ nodes: [['c', 'engine-calculus', { mode: 'limit', f1: 'abs(x)/x', to: '0' }]], wires: [] });
     e.runFor(100);
     expect(e.out('c', 'value')).toBeUndefined();
@@ -240,7 +240,7 @@ describe('numerical results', () => {
     expect(integral((x) => x * x, 0, 3, 'trapezoid', 1000).value).toBeCloseTo(9, 3);
     expect(integral((x) => x * x, 3, 0).value).toBeCloseTo(-9, 10);
   });
-  it('finds limits, one-sided limits, infinite limits and limits that do not exist', () => {
+  it('finds limits, one-sided limits, infinite limits and limits that don’t exist', () => {
     expect(limitAt((x) => Math.sin(x) / x, 0, 0).both).toEqual({ k: 'value', v: 1 });
     expect(limitAt((x) => (x * x - 1) / (x - 1), 1, 0).both).toEqual({ k: 'value', v: 2 });
     expect(limitAt((x) => Math.abs(x) / x, 0, 0).both.k).toBe('dne');
@@ -276,7 +276,7 @@ describe('analyses', () => {
     const partial = run({ exprs: ['a x^2 + sin(a)'], params: [{ name: 'a', value: 2 }], wrt: 'a', at: 3 });
     expect(partial.value).toBeCloseTo(9 + Math.cos(2), 10);
   });
-  it('derivative: falls back to a numerical derivative with a note when there is no closed form', () => {
+  it('derivative: falls back to a numerical derivative with a note when there’s no closed form', () => {
     const r = run({ exprs: ['max(x, 0)'], at: 2 });
     expect(r.value).toBeCloseTo(1, 6);
     expect(r.exprs).toEqual(['']);
@@ -302,7 +302,7 @@ describe('analyses', () => {
     expect(t.value).toBeCloseTo(1 + 1 + 0.5 + 1 / 6 + 1 / 24, 10);
     const f = run({ mode: 'series', kind: 'fourier', exprs: ['x'], harmonics: 30, at: 1 });
     expect(f.value).toBeCloseTo(1, 1);
-    expect(run({ mode: 'series', kind: 'taylor', exprs: ['ln(x)'], center: 0 }).error).toMatch(/not defined at x/);
+    expect(run({ mode: 'series', kind: 'taylor', exprs: ['ln(x)'], center: 0 }).error).toMatch(/isn.t defined at x/);
   });
   it('curve analysis: intercepts, extrema, inflection and asymptotes', () => {
     const r = run({ mode: 'curve', exprs: ['x^3 - 3x'], at: 0 });
@@ -320,10 +320,10 @@ describe('analyses', () => {
     expect(run({ mode: 'curve', exprs: ['exp(-x^2)'] }).rows.find((x) => x.k === 'Horizontal asymptotes')?.v).toContain('y = 0');
   });
   it('rejects bad parameters and bad bounds', () => {
-    expect(run({ params: [{ name: 'sin', value: 1 }] }).error).toMatch(/cannot be used/);
+    expect(run({ params: [{ name: 'sin', value: 1 }] }).error).toMatch(/can.t be used/);
     expect(run({ params: [{ name: 'a', value: 1 }, { name: 'a', value: 2 }] }).error).toMatch(/Two parameters/);
     expect(run({ params: [{ name: '', value: 1 }] }).error).toMatch(/no name/);
-    expect(run({ mode: 'integral', upper: 'foo' }).error).toMatch(/cannot be used as a bound/);
+    expect(run({ mode: 'integral', upper: 'foo' }).error).toMatch(/can.t be used as a bound/);
     expect(run({ exprs: ['x +'] }).error).toMatch(/ends too early/);
     expect(run({ exprs: ['   ', ''] }).error).toMatch(/Enter an expression/);
     expect(run({ xMin: 3, xMax: 1 }).error).toMatch(/x max/);

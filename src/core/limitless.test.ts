@@ -42,7 +42,7 @@ describe('repeating decimals are exact and written with an ellipsis', () => {
     expect(q('1', '300')).toBe('0.0033333...');
     expect(q('1', '12')).toBe('0.0833333...');
   });
-  it('does not put an ellipsis on a quotient that ends', () => {
+  it('doesn’t put an ellipsis on a quotient that ends', () => {
     expect(q('1', '8')).toBe('0.125');
     expect(q('1', '1000000')).toBe('0.000001');
     expect(q('7', '2')).toBe('3.5');
@@ -132,7 +132,7 @@ describe('repeating decimals are exact and written with an ellipsis', () => {
   });
 });
 
-describe('there is no limit on how many digits or how big a number is', () => {
+describe('there’s no limit on how many digits or how big a number is', () => {
   it('reads, adds and multiplies numbers of hundreds of thousands of digits', { timeout: 60000 }, () => {
     const n = '9'.repeat(150000);
     const x = D(n);

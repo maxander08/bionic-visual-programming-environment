@@ -491,7 +491,7 @@ export class Engine {
       if (prev === undefined) return;
       n.outputs[port] = undefined;
     } else {
-      if (typeof value === 'number' && !Number.isFinite(value)) { n.status = { level: 'error', message: `Output “${port}” is not a finite number.` }; return; }
+      if (typeof value === 'number' && !Number.isFinite(value)) { n.status = { level: 'error', message: `Output “${port}” isn’t a finite number.` }; return; }
       if (prev && sameValue(prev.v, value) && prev.s === strength && !event) return;
       n.outputs[port] = { v: value, s: strength, t: this.time };
     }
@@ -521,7 +521,7 @@ export class Engine {
     let v = sig.v;
     if (v !== undefined) {
       const c = coerceTo(v, pi.type);
-      if (c === undefined) { dst.status = { level: 'warn', message: `Input “${pi.label}” received a value that cannot be converted to ${pi.type}.` }; v = undefined; }
+      if (c === undefined) { dst.status = { level: 'warn', message: `Input “${pi.label}” received a value that can’t be converted to ${pi.type}.` }; v = undefined; }
       else v = c;
     }
     const s = sig.s * e.weight;

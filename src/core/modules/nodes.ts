@@ -17,13 +17,13 @@ const calc = (c: Ctx, f: () => void) => {
   try { f(); } catch (e) {
     if (e instanceof DecError) return c.fail(e.message);
     // The numbers have no size limit but the memory of the machine: a result too big for it fails this module, not the program.
-    if (e instanceof RangeError) return c.fail('The result needs more memory than this browser can give it.');
+    if (e instanceof RangeError) return c.fail('The result needs more memory than your browser can spare.');
     throw e;
   }
 };
 /** A setting written out with all its digits, for node faces. */
 const face = (v: unknown): string => { const d = toDec(v); return d ? toPlain(d) : String(v); };
-const PREC = num('precision', 'Precision', DEFAULT_PRECISION, 1, MAX_PRECISION, 1, 'How many significant digits a result that never ends and never repeats (√2, sin, e^x) is worked out to; any number of digits may be asked for. A result that ends (1 ÷ 8 = 0.125) or repeats (1 ÷ 3 = 0.333...) is exact and never cut or padded.', 'digits');
+const PREC = num('precision', 'Precision', DEFAULT_PRECISION, 1, MAX_PRECISION, 1, 'How many significant digits to work out for results that never end and never repeat (√2, sin, e^x). Ask for as many as you like. Results that end (1 ÷ 8 = 0.125) or repeat (1 ÷ 3 = 0.333...) are always exact, and never cut or padded.', 'digits');
 const k = (dt: number, tau: number) => (tau <= 0 ? 1 : 1 - Math.exp(-dt / tau));
 const n = (v: unknown) => toNum(v);
 /** Is the magnitude of a larger than that of b? Compared on every digit; values that are not numbers count as 0. */
@@ -47,19 +47,19 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'constant', name: 'Constant', caption: 'Constant', glyph: 'C', chip: (p) => String(p.value),
     inputs: [], outputs: [OUT_ANY], source: true,
-    params: [sel('kind', 'Kind', 'number', [['number', 'Number'], ['text', 'Text'], ['bool', 'Boolean']], 'Type of the emitted value.'), txt('value', 'Value', '1', 'The value to emit. A number keeps every digit you type.', { maxLength: 5000 })],
+    params: [sel('kind', 'Kind', 'number', [['number', 'Number'], ['text', 'Text'], ['bool', 'Boolean']], 'Type of the sent value.'), txt('value', 'Value', '1', 'The value to send out. A number keeps every digit you type.', { maxLength: 5000 })],
     run(c) {
       const v = c.str('value'), kd = c.str('kind');
       if (kd === 'number') { const d = v.trim() === '' ? null : toDec(v); if (!d) return c.fail(`“${v}” is not a number.`); out$(c, 'out', d); }
       else if (kd === 'bool') c.emit('out', v === 'true' || v === '1' || v === 'on');
       else c.emit('out', v);
     },
-    doc: { summary: 'Emits a fixed value.', runtime: 'Emits when the program starts and whenever the value is edited.', errors: ['Kind “number” with non-numeric text raises an error.'] },
+    doc: { summary: 'Emits a fixed value.', runtime: 'Sends out when the program starts and whenever the value is edited.', errors: ['Kind “number” with non-numeric text gives an error.'] },
   },
   {
     ...chipBase, type: 'random', name: 'Random', caption: 'Random', glyph: 'R', chip: (p) => `${face(p.min)}…${face(p.max)}`,
     inputs: [], outputs: [OUT_ANY], source: true, delaying: true,
-    params: [dnum('min', 'Minimum', 0, -1e6, 1e6, 0.1, 'Lower bound.'), dnum('max', 'Maximum', 1, -1e6, 1e6, 0.1, 'Upper bound.'), num('rate', 'Rate', 2, 0.1, 30, 0.1, 'Values per second.', 'Hz'), num('seed', 'Seed', 1, 0, 99999, 1, 'Seed of the repeatable generator.'), bol('integer', 'Integers', false, 'Round to whole numbers.')],
+    params: [dnum('min', 'Minimum', 0, -1e6, 1e6, 0.1, 'Lower bound.'), dnum('max', 'Maximum', 1, -1e6, 1e6, 0.1, 'Upper bound.'), num('rate', 'Rate', 2, 0.1, 30, 0.1, 'Values per second.', 'Hz'), num('seed', 'Seed', 1, 0, 99999, 1, 'The seed for the repeatable random generator.'), bol('integer', 'Integers', false, 'Round to whole numbers.')],
     run(c) {
       calc(c, () => {
         const lo = c.dec('min'), hi = c.dec('max'), ln = D.toNumber(lo), hn = D.toNumber(hi);
@@ -82,12 +82,12 @@ export const nodes: ModuleDef[] = [
       });
       c.wake(1000 / c.num('rate'));
     },
-    doc: { summary: 'A seeded pseudo-random number source.', runtime: 'Draws uniformly between min and max every 1/rate seconds of simulation time. The bounds can be any numbers, with as many digits as you like, and the draw spreads over all of them. The same seed always yields the same sequence after Stop → Run.' },
+    doc: { summary: 'Random numbers from a seed, so you can get the same sequence again.', runtime: 'Picks a random number between min and max every 1/rate seconds of simulation time, with every value equally likely. The limits can be any numbers, with as many digits as you like. The same seed gives you the same sequence every time you Stop and Run again.' },
   },
   {
     ...chipBase, type: 'pulse', name: 'Pulse', caption: 'Pulse', glyph: '⏸', chip: (p) => formatBase(Number(p.period), 'ms', { compact: true }),
     inputs: [], outputs: [out('out', 'Pulse', 'bool', 'True for the pulse width, then false.'), out('count', 'Count', 'num', 'Pulses emitted so far.', 'right')], source: true, delaying: true,
-    params: [num('period', 'Period', 1000, 20, 86400000, 10, 'Time between pulse starts.', 'ms'), num('width', 'Width', 100, 1, 86400000, 10, 'How long the pulse stays true (capped below the period).', 'ms'), num('offset', 'Offset', 0, 0, 86400000, 10, 'Time of the first pulse.', 'ms'), num('max', 'Max pulses', 0, 0, 100000, 1, '0 means unlimited.')],
+    params: [num('period', 'Period', 1000, 20, 86400000, 10, 'Time between pulse starts.', 'ms'), num('width', 'Width', 100, 1, 86400000, 10, 'How long the pulse stays true. It can’t be longer than the period.', 'ms'), num('offset', 'Offset', 0, 0, 86400000, 10, 'Time of the first pulse.', 'ms'), num('max', 'Max pulses', 0, 0, 100000, 1, '0 means unlimited.')],
     run(c) {
       const s = c.state, period = c.num('period'), width = Math.min(c.num('width'), period - 1);
       if (s.next === undefined) { s.next = c.num('offset'); s.high = false; s.count = 0; c.emit('out', false); c.emit('count', 0); }
@@ -99,33 +99,33 @@ export const nodes: ModuleDef[] = [
       const target = s.high ? s.fall : c.num('max') === 0 || s.count < c.num('max') ? s.next : undefined;
       if (target !== undefined) c.wake(Math.max(1, target - c.time));
     },
-    doc: { summary: 'A clock. Emits true pulses at a fixed period.', runtime: 'Pulse k starts at offset + k × period and lasts width ms, but never less than one simulation tick so that downstream modules can see it. Timing is resolved at the tick.' },
+    doc: { summary: 'A clock that sends a true pulse at a steady interval.', runtime: 'Pulse k starts at offset + k × period and lasts width ms, but never less than one simulation tick so that downstream modules can see it. Timing is resolved at the tick.' },
   },
   {
     ...chipBase, type: 'add', name: 'Adder', caption: 'Adder', glyph: '+', chip: (p) => face(p.offset),
     inputs: [inp('a', 'A', 'num', 'First addend.'), inp('b', 'B', 'num', 'Second addend; 0 when not connected.', 'top', true)], outputs: [out('out', 'Sum', 'num', 'a + b + offset.')],
     params: [{ ...dnum('offset', 'Offset', 0, -1e6, 1e6, 0.1, 'Constant added to the sum.'), pinSide: 'left' }],
     run(c) { calc(c, () => out$(c, 'out', D.add(D.add(sig$(c, 'a'), c.has('b') ? sig$(c, 'b') : D.ZERO), c.dec('offset')))); },
-    doc: { summary: 'Adds numbers.', runtime: 'out = a + b + offset, worked out exactly: every digit of every number is kept (3 + 0.14159265 is 3.14159265, 0.1 + 0.2 is 0.3). Missing b counts as 0; a missing a keeps the node idle.' },
+    doc: { summary: 'Adds numbers.', runtime: 'out = a + b + offset, worked out exactly: every digit of every number is kept (3 + 0.14159265 is 3.14159265, 0.1 + 0.2 is 0.3). A missing b counts as 0, and if a is missing the node sits idle.' },
   },
   {
     ...chipBase, type: 'mul', name: 'Multiplier', caption: 'Multiplier', glyph: '×', chip: (p) => face(p.factor),
     inputs: [inp('a', 'A', 'num', 'Value to scale.'), inp('b', 'B', 'num', 'Replaces the factor when connected.', 'top', true)], outputs: [out('out', 'Product', 'num', 'a × (b or factor).')],
-    params: [{ ...dnum('factor', 'Factor', 1, -1e6, 1e6, 0.1, 'Used when b is not connected.'), pinSide: 'left' }],
+    params: [{ ...dnum('factor', 'Factor', 1, -1e6, 1e6, 0.1, 'Used when b isn’t connected.'), pinSide: 'left' }],
     run(c) { calc(c, () => out$(c, 'out', D.mul(sig$(c, 'a'), c.has('b') ? sig$(c, 'b') : c.dec('factor')))); },
-    doc: { summary: 'Multiplies a signal.', runtime: 'out = a × b, or a × factor when b is not connected. The product is exact: every digit of both numbers is kept.' },
+    doc: { summary: 'Multiplies a signal.', runtime: 'out = a × b, or a × factor when b isn’t connected. The product is exact: every digit of both numbers is kept.' },
   },
   {
     ...chipBase, type: 'sub', name: 'Subtractor', caption: 'Subtractor', glyph: '−', chip: (p) => face(p.offset),
     inputs: [inp('a', 'A', 'num', 'Minuend: the value to subtract from.'), inp('b', 'B', 'num', 'Subtrahend; 0 when not connected.', 'top', true)], outputs: [out('out', 'Difference', 'num', 'a − b − offset.')],
     params: [{ ...dnum('offset', 'Offset', 0, -1e6, 1e6, 0.1, 'Constant subtracted from the difference.'), pinSide: 'left' }],
     run(c) { calc(c, () => out$(c, 'out', D.sub(D.sub(sig$(c, 'a'), c.has('b') ? sig$(c, 'b') : D.ZERO), c.dec('offset')))); },
-    doc: { summary: 'Subtracts numbers.', runtime: 'out = a − b − offset, worked out exactly: every digit of every number is kept. Missing b counts as 0; a missing a keeps the node idle.' },
+    doc: { summary: 'Subtracts numbers.', runtime: 'out = a − b − offset, worked out exactly: every digit of every number is kept. A missing b counts as 0, and if a is missing the node sits idle.' },
   },
   {
     ...chipBase, type: 'div', name: 'Divisor', caption: 'Divisor', glyph: '÷', chip: (p) => face(p.divisor),
     inputs: [inp('a', 'A', 'num', 'Dividend: the value to divide.'), inp('b', 'B', 'num', 'Replaces the divisor when connected.', 'top', true)], outputs: [out('out', 'Quotient', 'num', 'a ÷ (b or divisor).')],
-    params: [{ ...dnum('divisor', 'Divisor', 1, -1e6, 1e6, 0.1, 'Used when b is not connected.'), pinSide: 'left' }],
+    params: [{ ...dnum('divisor', 'Divisor', 1, -1e6, 1e6, 0.1, 'Used when b isn’t connected.'), pinSide: 'left' }],
     run(c) {
       calc(c, () => {
         const a = sig$(c, 'a'), d = c.has('b') ? sig$(c, 'b') : c.dec('divisor');
@@ -133,12 +133,12 @@ export const nodes: ModuleDef[] = [
         out$(c, 'out', D.div(a, d));
       });
     },
-    doc: { summary: 'Divides a signal.', runtime: 'out = a ÷ b, or a ÷ divisor when b is not connected. The quotient is exact, however many digits it has. One that ends (1 ÷ 8 = 0.125) is written out in full. One that never ends repeats, and is kept as the repeating number it is: 1 ÷ 3 is 0.33333... with an ellipsis after the repeating digits, and 1 ÷ 3 × 3 is exactly 1.', errors: ['A divisor of 0 raises an error and emits nothing.'] },
+    doc: { summary: 'Divides a signal.', runtime: 'out = a ÷ b, or a ÷ divisor if nothing is connected to b. The answer is always exact. If it ends (1 ÷ 8 = 0.125), you get every digit. If it never ends, it repeats, and it’s kept as the repeating number it is: 1 ÷ 3 is 0.33333..., with an ellipsis after the repeating digits, and 1 ÷ 3 × 3 is exactly 1.', errors: ['A divisor of 0 gives an error and sends out nothing.'] },
   },
   {
     ...chipBase, type: 'invert', name: 'Inverter', caption: 'Inverter', glyph: '−', chip: (p) => String(p.mode),
     inputs: [IN_ANY('Number or boolean.')], outputs: [OUT_ANY],
-    params: [sel('mode', 'Mode', 'negate', [['negate', 'Negate (−x)'], ['complement', 'Complement (1 − x)']], 'Numeric inversion. Booleans are always logically inverted.')],
+    params: [sel('mode', 'Mode', 'negate', [['negate', 'Negate (−x)'], ['complement', 'Complement (1 − x)']], 'Numbers are negated. True/false values are always flipped.')],
     run(c) {
       const v = c.get('in');
       if (typeof v === 'boolean') return c.emit('out', !v);
@@ -146,7 +146,7 @@ export const nodes: ModuleDef[] = [
       if (!x) return c.warn('Input is not numeric.');
       out$(c, 'out', c.str('mode') === 'negate' ? D.neg(x) : D.sub(D.ONE, x));
     },
-    doc: { summary: 'Inverts a number or boolean.', runtime: 'Boolean → NOT. Number → −x or 1 − x depending on mode.' },
+    doc: { summary: 'Negates a number, or flips a true/false value.', runtime: 'Boolean → NOT. Number → −x or 1 − x depending on mode.' },
   },
   {
     ...chipBase, type: 'math', name: 'Math', caption: 'Math', glyph: 'M', chip: (p) => String(p.fn),
@@ -177,7 +177,7 @@ export const nodes: ModuleDef[] = [
         out$(c, 'out', r);
       });
     },
-    doc: { summary: 'Applies a mathematical function.', runtime: 'Evaluates the selected function on a (and b) with exact decimals. abs, square, floor, round, ceil, min, max, mod and a power with a whole exponent (negative ones too, such as 3 to the power −1 = 0.33333...) are exact, and so is a square root that ends or repeats; sqrt, sin, cos, tanh, exp, log and a power with a fractional exponent never end and never repeat, so they are worked out to the Precision setting (50 significant digits by default, any number you like). sin and cos take radians.', errors: ['Results that are not finite (e.g. sqrt of a negative) raise an error and emit nothing.'] },
+    doc: { summary: 'Applies a mathematical function.', runtime: 'Applies the chosen function to a (and b) using exact decimals. abs, square, floor, round, ceil, min, max, mod, and powers with a whole-number exponent are exact. That includes negative exponents (3 to the power −1 = 0.33333...) and square roots that end or repeat. sqrt, sin, cos, tanh, exp, log, and powers with a fractional exponent go on forever without repeating, so they’re worked out to the Precision setting (50 significant digits by default, or any number you like). sin and cos use radians.', errors: ['Results that aren’t finite (e.g. sqrt of a negative) give an error and send out nothing.'] },
   },
   {
     ...chipBase, type: 'register', name: 'Register', caption: 'Register', glyph: '○', chip: () => 'HOLD', delaying: true,
@@ -187,23 +187,23 @@ export const nodes: ModuleDef[] = [
       if (c.has('store') ? c.changed('store') && c.get('store') === true : c.changed('in')) { c.state.v = c.get('in'); c.state.has = true; }
       if (c.state.has) c.emit('out', c.state.v, c.strength, true);
     },
-    doc: { summary: 'Sample-and-hold. Keeps a value until told to latch a new one.', runtime: 'On the rising edge of Store, copies the input to the output. Between triggers the output holds. Counts as state for feedback loops.' },
+    doc: { summary: 'Sample-and-hold: keeps a value until you tell it to grab a new one.', runtime: 'On the rising edge of Store, copies the input to the output. Between triggers the output holds. Counts as state for feedback loops.' },
   },
   {
     ...chipBase, type: 'relay', name: 'Gate', caption: 'Relay', glyph: '╤', chip: (p) => (p.invert ? 'BLOCK' : 'OPEN?'), 
     inputs: [IN_ANY('Signal to pass.'), inp('open', 'Open', 'bool', 'Gate control. When not connected the gate uses its default.', 'left', true)], outputs: [OUT_ANY],
-    params: [bol('openDefault', 'Open by default', true, 'Used when Open is not connected.'), bol('invert', 'Invert control', false, 'When on, the gate passes while Open is false.')],
+    params: [bol('openDefault', 'Open by default', true, 'Used when Open isn’t connected.'), bol('invert', 'Invert control', false, 'When on, the gate lets signals through while Open is false.')],
     run(c) {
       let open = c.has('open') ? toBool(c.get('open')) : c.bool('openDefault');
       if (c.bool('invert')) open = !open;
       if (open) c.emit('out', c.get('in'), c.strength, true);
     },
-    doc: { summary: 'Passes a signal only while the gate is open.', runtime: 'When open, input changes are forwarded. When closed nothing is emitted and the output keeps its last value. Opening the gate forwards the current input.' },
+    doc: { summary: 'Passes a signal only while the gate is open.', runtime: 'When open, input changes are forwarded. When closed nothing is sent and the output keeps its last value. Opening the gate forwards the current input.' },
   },
   {
     ...chipBase, type: 'inductor', name: 'Smooth', caption: 'Inductor', glyph: 'Ω', chip: (p) => formatBase(Number(p.tau), 'ms', { compact: true }), delaying: true,
     inputs: [inp('in', 'Input', 'num', 'Target value.')], outputs: [out('out', 'Output', 'num', 'Low-pass filtered value.')],
-    params: [num('tau', 'Time constant', 500, 1, 86400000, 10, 'Time to cover about 63% of the distance to the input.', 'ms')],
+    params: [num('tau', 'Time constant', 500, 1, 86400000, 10, 'How long it takes to get about 63% of the way to the input.', 'ms')],
     run(c) {
       const s = c.state, target = n(c.get('in'));
       s.y ??= 0;
@@ -212,12 +212,12 @@ export const nodes: ModuleDef[] = [
       c.emit('out', s.y);
       if (s.y !== target) c.wake(c.tickMs);
     },
-    doc: { summary: 'Smooths a signal with a first-order low-pass filter.', runtime: 'y ← y + (x − y)(1 − e^(−Δt/τ)) in simulation time. Starts at 0 and settles on the input.' },
+    doc: { summary: 'Smooths out a signal with a low-pass filter.', runtime: 'y ← y + (x − y)(1 − e^(−Δt/τ)) in simulation time. Starts at 0 and settles on the input.' },
   },
   {
     ...chipBase, type: 'threshold', name: 'Threshold', caption: 'Filter', glyph: '>', chip: (p) => `${p.mode === 'below' ? '<' : '>'} ${face(p.threshold)}`, delaying: false,
     inputs: [inp('in', 'Input', 'num', 'Value to compare.')], outputs: [out('over', 'Over', 'bool', 'True when the condition holds.'), out('delta', 'Delta', 'num', 'Input minus threshold.', 'right')],
-    params: [dnum('threshold', 'Threshold', 0.5, -1e6, 1e6, 0.01, 'Comparison level.'), dnum('hysteresis', 'Hysteresis', 0, 0, 1e6, 0.01, 'Once true, the input must pass the threshold by this much to turn false.'), sel('mode', 'Condition', 'above', [['above', 'Input ≥ threshold'], ['below', 'Input ≤ threshold']], 'Direction of the comparison.')],
+    params: [dnum('threshold', 'Threshold', 0.5, -1e6, 1e6, 0.01, 'Comparison level.'), dnum('hysteresis', 'Hysteresis', 0, 0, 1e6, 0.01, 'Once it’s true, the input has to cross back past the threshold by this much to turn false.'), sel('mode', 'Condition', 'above', [['above', 'Input ≥ threshold'], ['below', 'Input ≤ threshold']], 'Direction of the comparison.')],
     run(c) {
       calc(c, () => {
         const x = toDec(c.get('in'));
@@ -247,7 +247,7 @@ export const nodes: ModuleDef[] = [
         c.emit('out', r);
       });
     },
-    doc: { summary: 'Compares two values.', runtime: 'Numbers compare numerically, digit for digit (equality within tolerance), so 0.1 + 0.2 equals 0.3 and two numbers that differ only in the 30th digit are still different. Otherwise values compare as text.' },
+    doc: { summary: 'Compares two values.', runtime: 'Numbers are compared numerically, digit for digit (equality within tolerance), so 0.1 + 0.2 equals 0.3, and two numbers that only differ in the 30th digit are still different. Anything else is compared as text.' },
   },
   {
     ...chipBase, type: 'combine', name: 'Combine', caption: 'Combiner', glyph: '⊕', chip: (p) => String(p.mode),
@@ -268,12 +268,12 @@ export const nodes: ModuleDef[] = [
         out$(c, 'out', r);
       });
     },
-    doc: { summary: 'Merges up to three inputs.', runtime: 'Only connected inputs that have a signal take part. Numeric modes are exact (a mean that never ends repeats, and is kept exactly: 0.33333...) and reject non-numeric values with a warning.' },
+    doc: { summary: 'Merges up to three inputs.', runtime: 'Only inputs that are connected and carrying a signal are counted. The numeric modes are exact (a mean that never ends repeats, and is kept exactly: 0.33333...), and show a warning if they get something that isn’t a number.' },
   },
   {
     ...chipBase, type: 'delay', name: 'Delay', caption: 'Delay', glyph: '⧖', chip: (p) => formatBase(Number(p.ms), 'ms', { compact: true }), delaying: true,
     inputs: [IN_ANY('Signal to delay.')], outputs: [OUT_ANY],
-    params: [num('ms', 'Delay', 500, 0, 86400000, 10, 'How long each value is delayed, in simulation time.', 'ms'), sel('mode', 'Mode', 'shift', [['shift', 'Shift every value'], ['settle', 'Settle (emit after quiet)']], 'Shift keeps every value in order. Settle forgets intermediate values and emits only after the input has been quiet for the delay.')],
+    params: [num('ms', 'Delay', 500, 0, 86400000, 10, 'How long each value is delayed, in simulation time.', 'ms'), sel('mode', 'Mode', 'shift', [['shift', 'Shift every value'], ['settle', 'Settle (emit after quiet)']], 'Shift keeps every value, in order. Settle forgets the values in between and only sends something once the input has been quiet for the delay.')],
     run(c) {
       const s = c.state;
       if (c.reason === 'input' || c.changed('in')) {
@@ -284,12 +284,12 @@ export const nodes: ModuleDef[] = [
       }
       if (s.pending && c.time >= s.pending.at) { c.emit('out', s.pending.v, s.pending.s, true); s.pending = undefined; }
     },
-    doc: { summary: 'Delays a signal by a fixed time. Legal in feedback loops.', runtime: 'Shift: every input value re-appears exactly “delay” ms later, in order. Settle: only the latest value is emitted once the input stays unchanged for “delay” ms.', errors: ['A delay of 0 passes values through immediately.'] },
+    doc: { summary: 'Delays a signal by a fixed time. Allowed in feedback loops.', runtime: 'Shift: every input value re-appears exactly “delay” ms later, in order. Settle: only the latest value is sent once the input stays unchanged for “delay” ms.', errors: ['A delay of 0 passes values through immediately.'] },
   },
   {
     ...chipBase, type: 'counter', name: 'Counter', caption: 'Counter', glyph: '#', chip: (p) => `+${face(p.step)}`, delaying: true, source: true,
-    inputs: [inp('inc', 'Increment', 'any', 'Each arriving truthy value adds one step.', 'top', true), inp('dec', 'Decrement', 'any', 'Each arriving truthy value subtracts one step.', 'left', true), inp('reset', 'Reset', 'bool', 'Rising edge returns to the start value.', 'left', true)], outputs: [out('out', 'Count', 'num', 'Current count.')],
-    params: [dnum('start', 'Start', 0, -1e9, 1e9, 1, 'Initial and reset value.'), dnum('step', 'Step', 1, -1e6, 1e6, 1, 'Amount added per event.'), dnum('min', 'Minimum', 0, -1e9, 1e9, 1, 'Lower limit.'), dnum('max', 'Maximum', 100, -1e9, 1e9, 1, 'Upper limit.'), bol('wrap', 'Wrap around', false, 'Wrap to the opposite limit instead of saturating.')],
+    inputs: [inp('inc', 'Increment', 'any', 'Each arriving true value adds one step.', 'top', true), inp('dec', 'Decrement', 'any', 'Each arriving true value subtracts one step.', 'left', true), inp('reset', 'Reset', 'bool', 'Rising edge returns to the start value.', 'left', true)], outputs: [out('out', 'Count', 'num', 'Current count.')],
+    params: [dnum('start', 'Start', 0, -1e9, 1e9, 1, 'Initial and reset value.'), dnum('step', 'Step', 1, -1e6, 1e6, 1, 'Amount added per event.'), dnum('min', 'Minimum', 0, -1e9, 1e9, 1, 'Lower limit.'), dnum('max', 'Maximum', 100, -1e9, 1e9, 1, 'Upper limit.'), bol('wrap', 'Wrap around', false, 'Wrap around to the opposite limit instead of stopping at the edge.')],
     run(c) {
       calc(c, () => {
         const s = c.state;
@@ -304,12 +304,12 @@ export const nodes: ModuleDef[] = [
         out$(c, 'out', s.v);
       });
     },
-    doc: { summary: 'Counts events.', runtime: 'Inc/Dec events are arrivals of a truthy value, so a pulse train counts once per pulse. The count is exact (0.1 added ten times is 1) and is clamped to [min, max] or wraps.' },
+    doc: { summary: 'Counts events.', runtime: 'Inc/Dec events are arrivals of a true value, so a pulse train counts once per pulse. The count is exact (0.1 added ten times is 1), and it’s clamped to [min, max] or wraps.' },
   },
   {
     ...chipBase, type: 'sequence', name: 'Sequence', caption: 'Sequencer', glyph: 'SEQ', chip: (p) => `${parseList(String(p.values)).length} steps`, delaying: true, source: true,
-    inputs: [inp('next', 'Next', 'any', 'Each arriving truthy value advances one step.', 'top', true), inp('reset', 'Reset', 'bool', 'Rising edge returns to step 1.', 'left', true)], outputs: [OUT_ANY, out('index', 'Index', 'num', 'Current step number, from 0.', 'right')],
-    params: [txt('values', 'Values', '1, 2, 3', 'Comma-separated values. Numbers and true/false are parsed; everything else is text.'), bol('loop', 'Loop', true, 'Return to the start after the last step; otherwise stop on the last.'), num('auto', 'Auto advance', 0, 0, 600000, 10, 'If above 0, advance by itself at this interval.', 'ms')],
+    inputs: [inp('next', 'Next', 'any', 'Each arriving true value advances one step.', 'top', true), inp('reset', 'Reset', 'bool', 'Rising edge returns to step 1.', 'left', true)], outputs: [OUT_ANY, out('index', 'Index', 'num', 'Current step number, from 0.', 'right')],
+    params: [txt('values', 'Values', '1, 2, 3', 'Comma-separated values. Numbers and true/false are recognised, and everything else is treated as text.'), bol('loop', 'Loop', true, 'Go back to the start after the last step. Off stops on the last step.'), num('auto', 'Auto advance', 0, 0, 600000, 10, 'If above 0, it moves to the next step by itself at this interval.', 'ms')],
     run(c) {
       const s = c.state, vals = parseList(c.str('values'));
       if (!vals.length) return c.fail('Define at least one value.');
@@ -323,7 +323,7 @@ export const nodes: ModuleDef[] = [
       c.emit('out', vals[s.i], 1, adv);
       c.emit('index', s.i);
     },
-    doc: { summary: 'Steps through a list of values.', runtime: 'Emits the first value on start; each Next event (or auto-advance interval) moves to the following value.' },
+    doc: { summary: 'Steps through a list of values.', runtime: 'Sends out the first value on start; each Next event (or auto-advance interval) moves to the following value.' },
   },
   {
     ...chipBase, type: 'branch', name: 'Branch', caption: 'Conditional', glyph: '◑', chip: () => 'IF', 
@@ -339,7 +339,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'plastic', name: 'Plastic Nerve', caption: 'Plastic Nerve', glyph: '⇄', chip: (p) => `${face(p.inMin)}…${face(p.inMax)} → ${face(p.outMin)}…${face(p.outMax)}`,
     inputs: [inp('in', 'Input', 'num', 'Value to remap.')], outputs: [out('out', 'Output', 'num', 'Remapped value.')],
-    params: [dnum('inMin', 'Input min', 0, -1e6, 1e6, 0.1, 'Bottom of the input range.'), dnum('inMax', 'Input max', 1, -1e6, 1e6, 0.1, 'Top of the input range.'), dnum('outMin', 'Output min', 0, -1e6, 1e6, 0.1, 'Value produced at input min.'), dnum('outMax', 'Output max', 100, -1e6, 1e6, 0.1, 'Value produced at input max.'), sel('curve', 'Curve', 'linear', [['linear', 'Linear'], ['ease-in', 'Ease in (t²)'], ['ease-out', 'Ease out'], ['smooth', 'Smoothstep']], 'Shape of the mapping.'), bol('clamp', 'Clamp', true, 'Keep the output inside the output range.')],
+    params: [dnum('inMin', 'Input min', 0, -1e6, 1e6, 0.1, 'Bottom of the input range.'), dnum('inMax', 'Input max', 1, -1e6, 1e6, 0.1, 'Top of the input range.'), dnum('outMin', 'Output min', 0, -1e6, 1e6, 0.1, 'The value you get at input min.'), dnum('outMax', 'Output max', 100, -1e6, 1e6, 0.1, 'The value you get at input max.'), sel('curve', 'Curve', 'linear', [['linear', 'Linear'], ['ease-in', 'Ease in (t²)'], ['ease-out', 'Ease out'], ['smooth', 'Smoothstep']], 'Shape of the mapping.'), bol('clamp', 'Clamp', true, 'Keep the output inside the output range.')],
     run(c) {
       calc(c, () => {
         const x = sig$(c, 'in'), a = c.dec('inMin'), b = c.dec('inMax');
@@ -357,7 +357,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'hyponerve', name: 'Hyponerve', caption: 'Hyponerve', glyph: 'Δ', chip: (p) => String(p.rule), 
     inputs: [IN_ANY('Signal to watch.')], outputs: [OUT_ANY],
-    params: [sel('rule', 'Emit when', 'change', [['change', 'Value changes'], ['delta', 'Changes by ≥ epsilon'], ['rise', 'Number rises'], ['fall', 'Number falls'], ['cross-up', 'Crosses threshold upward'], ['cross-down', 'Crosses threshold downward']], 'Rule that decides whether a new value passes.'), dnum('epsilon', 'Epsilon', 0.1, 0, 1e6, 0.01, 'Minimum change for the delta rule (measured from the last emitted value).'), dnum('threshold', 'Threshold', 0.5, -1e6, 1e6, 0.01, 'Level for the crossing rules.')],
+    params: [sel('rule', 'Emit when', 'change', [['change', 'Value changes'], ['delta', 'Changes by ≥ epsilon'], ['rise', 'Number rises'], ['fall', 'Number falls'], ['cross-up', 'Crosses threshold upward'], ['cross-down', 'Crosses threshold downward']], 'Rule that decides whether a new value passes.'), dnum('epsilon', 'Epsilon', 0.1, 0, 1e6, 0.01, 'The smallest change that counts for the delta rule, measured from the last value sent.'), dnum('threshold', 'Threshold', 0.5, -1e6, 1e6, 0.01, 'Level for the crossing rules.')],
     run(c) {
       calc(c, () => {
         const s = c.state, v = c.get('in'), x = toDec(v), rule = c.str('rule');
@@ -375,7 +375,7 @@ export const nodes: ModuleDef[] = [
         if (pass) { s.emitted = x; c.emit('out', v, c.strength, true); }
       });
     },
-    doc: { summary: 'Emits only when the signal changes according to a rule — a change detector.', runtime: 'Compares each arriving value with the previous one (delta compares with the last emitted value). The first value passes for change/delta and is only a reference for the other rules.', examples: ['rule = cross-up, threshold 0.5: emits once as the signal climbs through 0.5.'] },
+    doc: { summary: 'Only sends something when the signal changes according to a rule. A change detector.', runtime: 'Compares each arriving value with the previous one (delta compares with the last sent value). The first value passes for change/delta and is only a reference for the other rules.', examples: ['rule = cross-up, threshold 0.5: sends out once as the signal climbs through 0.5.'] },
   },
   {
     ...chipBase, type: 'hypernerve', name: 'Hypernerve', caption: 'Hypernerve', glyph: '⇶', chip: (p) => String(p.policy), 
@@ -394,12 +394,12 @@ export const nodes: ModuleDef[] = [
       c.emit('out', c.get(w), c.sig(w)!.s, true);
       c.emit('winner', w);
     },
-    doc: { summary: 'Resolves competing inputs with a priority or override policy.', runtime: 'Priority picks the first connected input with a signal. Strongest compares signal strength, then magnitude. Most recent picks the input updated last. Override lets C beat everything while it has a signal.' },
+    doc: { summary: 'Settles which input wins when several compete, using a priority or override rule.', runtime: 'Priority picks the first connected input with a signal. Strongest compares signal strength, then magnitude. Most recent picks the input updated last. Override lets C beat everything while it has a signal.' },
   },
   {
     ...chipBase, type: 'firing', name: 'Firing Rate Control', caption: 'Rate Control', glyph: 'Hz', chip: (p) => `≤ ${fmtNum(Number(p.rate))} Hz`, delaying: true,
     inputs: [IN_ANY('Signal to regulate.')], outputs: [OUT_ANY],
-    params: [num('rate', 'Max rate', 2, 0.1, 100, 0.1, 'Highest emission frequency.', 'Hz'), sel('mode', 'Mode', 'throttle', [['throttle', 'Throttle (send latest later)'], ['drop', 'Drop extras']], 'Throttle delivers the newest value when the next slot opens. Drop discards values arriving too early.')],
+    params: [num('rate', 'Max rate', 2, 0.1, 100, 0.1, 'Highest emission frequency.', 'Hz'), sel('mode', 'Mode', 'throttle', [['throttle', 'Throttle (send latest later)'], ['drop', 'Drop extras']], 'Throttle delivers the newest value when the next slot opens. Drop throws away values that arrive too early.')],
     run(c) {
       const s = c.state, period = 1000 / c.num('rate');
       const fresh = c.reason === 'input' || c.changed('in');
@@ -407,12 +407,12 @@ export const nodes: ModuleDef[] = [
       if (s.latest && (s.last === undefined || c.time - s.last >= period - 1e-6)) { c.emit('out', s.latest.v, s.latest.s, true); s.last = c.time; s.latest = undefined; }
       else if (s.latest) { if (c.str('mode') === 'drop') s.latest = undefined; else c.wake(period - (c.time - s.last)); }
     },
-    doc: { summary: 'Limits how often a signal passes — a firing-rate limiter.', runtime: 'At most one value per 1/rate seconds of simulation time. Throttle holds the newest value until the slot opens; Drop discards early values.' },
+    doc: { summary: 'Limits how often a signal gets through. A firing-rate limiter.', runtime: 'At most one value per 1/rate seconds of simulation time. Throttle holds the newest value until the slot opens; Drop discards early values.' },
   },
   {
     ...chipBase, type: 'envelope', name: 'Envelope', caption: 'Envelope', glyph: 'ENV', chip: (p) => `A${fmtNum(Number(p.attack))} R${fmtNum(Number(p.release))}`, delaying: true,
     inputs: [inp('gate', 'Gate', 'bool', 'True starts attack/decay and holds sustain; false starts release.')], outputs: [out('out', 'Level', 'num', 'Envelope level, 0–peak.'), out('phase', 'Phase', 'text', 'idle, attack, decay, sustain or release.', 'right')],
-    params: [num('attack', 'Attack', 100, 1, 60000, 1, 'Time to rise to the peak.', 'ms'), num('decay', 'Decay', 200, 1, 60000, 1, 'Time to fall from peak to sustain.', 'ms'), num('sustain', 'Sustain', 0.6, 0, 1, 0.01, 'Held fraction of the peak while the gate stays true.'), num('release', 'Release', 400, 1, 60000, 1, 'Time to fall to zero after the gate closes.', 'ms'), num('peak', 'Peak', 1, 0, 1000, 0.1, 'Maximum level.')],
+    params: [num('attack', 'Attack', 100, 1, 60000, 1, 'Time to rise to the peak.', 'ms'), num('decay', 'Decay', 200, 1, 60000, 1, 'Time to fall from peak to sustain.', 'ms'), num('sustain', 'Sustain', 0.6, 0, 1, 0.01, 'The fraction of the peak that’s held while the gate stays true.'), num('release', 'Release', 400, 1, 60000, 1, 'Time to fall to zero after the gate closes.', 'ms'), num('peak', 'Peak', 1, 0, 1000, 0.1, 'Maximum level.')],
     run(c) {
       const s = c.state;
       s.phase ??= 'idle'; s.level ??= 0;
@@ -441,12 +441,12 @@ export const nodes: ModuleDef[] = [
       c.view({ level: s.level, phase: s.phase });
       if (s.phase === 'attack' || s.phase === 'decay' || s.phase === 'release') c.wake(c.tickMs);
     },
-    doc: { summary: 'An attack–decay–sustain–release envelope driven by a gate.', runtime: 'Gate true: rise to peak over attack, fall to peak × sustain over decay, hold. Gate false: fall from the current level to 0 over release. Level is computed from simulation time, so it is independent of frame rate.' },
+    doc: { summary: 'An attack–decay–sustain–release envelope driven by a gate.', runtime: 'Gate true: rise to peak over attack, fall to peak × sustain over decay, hold. Gate false: fall from the current level to 0 over release. Level is computed from simulation time, so it’s independent of frame rate.' },
   },
   {
     ...chipBase, type: 'nap', name: 'Nap', caption: 'Nap', glyph: 'Zz', chip: (p) => (p.mode === 'suspend' ? 'SUSPEND' : `${fmtNum(Number(p.duration))} ms`), delaying: true,
     inputs: [IN_ANY('Signal to pass.'), inp('sleep', 'Sleep', 'bool', 'Suspend mode: holds the signal while true.', 'left', true)], outputs: [OUT_ANY],
-    params: [sel('mode', 'Mode', 'refractory', [['refractory', 'Refractory (ignore after firing)'], ['suspend', 'Suspend (hold while asleep)']], 'Refractory: after passing a value the node sleeps for the duration and drops inputs. Suspend: while Sleep is true the latest input is held and released on waking.'), num('duration', 'Duration', 500, 0, 600000, 10, 'Refractory sleep length.', 'ms'), num('maxSleep', 'Max sleep', 5000, 10, 600000, 10, 'Suspend mode: longest hold before forced wake-up.', 'ms')],
+    params: [sel('mode', 'Mode', 'refractory', [['refractory', 'Refractory (ignore after firing)'], ['suspend', 'Suspend (hold while asleep)']], 'Refractory: after passing a value, the node sleeps for the duration and ignores inputs. Suspend: while Sleep is true, the latest input is held and released when the node wakes up.'), num('duration', 'Duration', 500, 0, 600000, 10, 'Refractory sleep length.', 'ms'), num('maxSleep', 'Max sleep', 5000, 10, 600000, 10, 'Suspend mode: the longest it will hold before it’s forced awake.', 'ms')],
     run(c) {
       const s = c.state;
       if (c.str('mode') === 'refractory') {
@@ -462,7 +462,7 @@ export const nodes: ModuleDef[] = [
         if (s.held) { c.emit('out', s.held.v, s.held.s, true); s.held = undefined; }
       }
     },
-    doc: { summary: 'Suspends processing according to explicit timing rules.', runtime: 'Refractory: the first value passes, then inputs are ignored for the duration. Suspend: while Sleep is true the newest input is held; when Sleep turns false (or max sleep elapses) it is released.' },
+    doc: { summary: 'Pauses processing according to timing rules you set.', runtime: 'Refractory: the first value passes, then inputs are ignored for the duration. Suspend: while Sleep is true the newest input is held; when Sleep turns false (or max sleep elapses) it’s released.' },
   },
   {
     ...chipBase, type: 'wave', name: 'Wave', caption: 'Wave Generator', glyph: '∿', chip: (p) => `${p.shape} ${fmtNum(Number(p.freq))} Hz`, source: true, delaying: true,
@@ -478,11 +478,11 @@ export const nodes: ModuleDef[] = [
       c.emit('out', c.num('offset') + a * u);
       c.wake(c.tickMs);
     },
-    doc: { summary: 'A low-frequency oscillator producing a numeric waveform.', runtime: 'Phase advances by f × Δt in simulation time, so the waveform is independent of frame rate. Frequencies above half the tick rate alias.' },
+    doc: { summary: 'A low-frequency oscillator that produces a numeric waveform.', runtime: 'Phase advances by f × Δt in simulation time, so the waveform is independent of frame rate. Frequencies above half the tick rate alias.' },
   },
   {
     category: 'Node', family: 'node', type: 'equation', name: 'Equation', caption: 'Equation', glyph: 'f(x)', size: 'small', source: true, keywords: 'formula function graph plot curve expression sin cos math store',
-    inputs: [inp('x', 'X', 'num', 'Evaluate the first equation at this x for the y(x) output. Optional: the “Evaluate at x” setting is used when it is not connected.', 'top', true)],
+    inputs: [inp('x', 'X', 'num', 'Evaluate the first equation at this x for the y(x) output. Optional: the “Evaluate at x” setting is used when it isn’t connected.', 'top', true)],
     outputs: [out('eq', 'Equation', 'data', 'The equation stored as data (expressions, plot range, time). Route it to a Meter to see its graph.'), out('text', 'Equation text', 'text', 'The equation as text: the expressions as typed, one per line.'), out('y', 'y(x)', 'num', 'Value of the first equation at x.', 'right')],
     params: [
       txt('expr', 'Equation', 'sin(x)', `Any expression in x (and t, the simulation time in seconds). Write one equation per line or separate them with “;” to graph several curves. A leading “y =” is allowed. Functions: ${FUNCTION_NAMES.join(', ')}. Constants: pi, e, tau, phi. Operators: + − * / ^ %, and implicit products such as 2x or 3sin(x).`, { multiline: true, maxLength: 600, placeholder: 'y = sin(x)' }),
@@ -491,8 +491,8 @@ export const nodes: ModuleDef[] = [
       bol('yAuto', 'Auto y range', true, 'Fit the vertical range to the curves (ignoring asymptotes). Off: use y min and y max.'),
       num('yMin', 'y min', -1, -1e6, 1e6, 0.1, 'Bottom edge of the graph when Auto y range is off.'),
       num('yMax', 'y max', 1, -1e6, 1e6, 0.1, 'Top edge of the graph when Auto y range is off.'),
-      num('samples', 'Samples', 200, 20, 2000, 10, 'Points computed per curve. More points draw sharper curves.'),
-      num('x', 'Evaluate at x', 0, -1e6, 1e6, 0.1, 'The x used for the y(x) output when X is not connected.'),
+      num('samples', 'Samples', 200, 20, 2000, 10, 'Points computed per curve. More points give smoother curves.'),
+      num('x', 'Evaluate at x', 0, -1e6, 1e6, 0.1, 'The x used for the y(x) output when X isn’t connected.'),
     ],
     run(c) {
       const exprs = splitEquations(c.str('expr'));
@@ -509,22 +509,22 @@ export const nodes: ModuleDef[] = [
       const x = c.has('x') ? n(c.get('x')) : c.num('x');
       const y = fns[0].fn({ x, t });
       if (Number.isFinite(y)) c.emit('y', y);
-      else { c.emit('y', undefined); c.warn(`y(${fmtNum(x)}) is not a finite number.`); }
+      else { c.emit('y', undefined); c.warn(`y(${fmtNum(x)}) isn’t a finite number.`); }
       c.view({ count: exprs.length, y: Number.isFinite(y) ? y : undefined });
       if (usesT) c.wake(c.tickMs);
     },
     doc: {
       summary: 'Stores one or more equations as data. Route its Equation output to a Meter to draw the graph.',
-      runtime: 'The equation is edited only in the right sidebar (inspector); the node just displays it. Parses the expressions with a built-in safe evaluator (no scripts are run) and emits them with the plot range. Meter samples them over x min…x max and draws the curves on dimmed gray axes. The y(x) output evaluates the first equation at the X input. Equations that use t re-evaluate every tick, so graphs animate in simulation time.',
-      errors: ['A syntax error, unknown name, wrong number of arguments or empty equation raises an error that names the problem.', 'x max not greater than x min raises an error.', 'y(x) not being a finite number (for example sqrt of a negative) raises a warning and clears the y output; the graph shows a gap there.'],
+      runtime: 'The equation is edited only in the right sidebar (inspector); the node just displays it. Parses the expressions with a built-in safe evaluator (no scripts are run) and sends out them with the plot range. Meter samples them over x min…x max and draws the curves on dimmed gray axes. The y(x) output evaluates the first equation at the X input. Equations that use t re-evaluate every tick, so graphs animate in simulation time.',
+      errors: ['A syntax error, unknown name, wrong number of arguments or empty equation gives an error that names the problem.', 'x max not greater than x min gives an error.', 'y(x) not being a finite number (for example sqrt of a negative) gives a warning and clears the y output; the graph shows a gap there.'],
       examples: ['sin(x)', 'y = x^2 - 3x + 1', 'sin(x); cos(x) (two curves)', 'sin(x - 2t) (a travelling wave)', 'exp(-x^2/4) * cos(3x)'],
     },
   },
   {
     ...chipBase, type: 'event', name: 'Send Event', caption: 'Event Sender', glyph: '⚑', chip: (p) => String(p.name),
-    inputs: [inp('trigger', 'Trigger', 'any', 'A truthy arrival fires the event.')], outputs: [out('event', 'Event', 'text', 'The event name, emitted once per trigger.')],
-    params: [txt('name', 'Event name', 'go', 'Text emitted when triggered. State machines match transitions on it.', { maxLength: 80 })],
+    inputs: [inp('trigger', 'Trigger', 'any', 'A true value fires the event.')], outputs: [out('event', 'Event', 'text', 'The event name, sent once per trigger.')],
+    params: [txt('name', 'Event name', 'go', 'The text sent when this is triggered. State machines use it to match transitions.', { maxLength: 80 })],
     run(c) { if (c.changed('trigger') && toBool(c.get('trigger'))) c.emit('event', c.str('name'), c.strength, true); },
-    doc: { summary: 'Turns a trigger into a named event that other modules (like State) can react to.', runtime: 'Every truthy arrival emits the event name as an event, even if the previous one was identical.' },
+    doc: { summary: 'Turns a trigger into a named event that other modules (like State) can react to.', runtime: 'Every true value sends out the event name as an event, even if the previous one was identical.' },
   },
 ];

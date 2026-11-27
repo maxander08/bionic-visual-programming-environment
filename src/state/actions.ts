@@ -44,7 +44,7 @@ export function duplicateProgram() {
   const p = st().project;
   const copy: Project = { ...p, id: uid('p'), name: tr('{name} copy', { name: p.name }).slice(0, 80), created: Date.now(), modified: Date.now() };
   backupCurrent();
-  st().openProject(copy, tr("Duplicated. You are now editing the copy; the original is under Saved programs."));
+  st().openProject(copy, tr("Duplicated. You’re now editing the copy. The original is under Saved programs."));
 }
 
 export function saveToBrowser() {

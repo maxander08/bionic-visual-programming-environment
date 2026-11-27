@@ -160,7 +160,7 @@ function ParamRow({ p, value, onChange, onAction, driven }: { p: ParamDef; value
     <div className={`field ${p.kind === 'bool' ? 'inline' : ''}`}>
       <label htmlFor={id}>{p.kind === 'action' ? tr("Action") : p.label}</label>
       {driven ? <fieldset className="driven" disabled>{control}</fieldset> : control}
-      {driven && <p className="doc driven-note">{tr("Driven by the “{label}” pin: the connected signal is in effect. Disconnect the pin to edit this setting.", { label: p.label })}</p>}
+      {driven && <p className="doc driven-note">{tr("This setting is driven by the “{label}” pin, so the connected signal is in control. Disconnect the pin to edit it here.", { label: p.label })}</p>}
       <p className="doc">{p.doc}{meta && <span className="meta"> {meta}</span>}</p>
     </div>
   );
@@ -168,7 +168,7 @@ function ParamRow({ p, value, onChange, onAction, driven }: { p: ParamDef; value
 
 function ClockInfo({ city }: { city: string }) {
   const c = findCity(city);
-  if (!c) return <p className="callout warn"><Icon name="alert" size={14} />{tr("“{city}” is not a known city yet. Start typing and pick one of the suggestions.", { city: city.trim() || '…' })}</p>;
+  if (!c) return <p className="callout warn"><Icon name="alert" size={14} />{tr("“{city}” isn’t a known city yet. Start typing and pick one of the suggestions.", { city: city.trim() || '…' })}</p>;
   let off = '';
   try { off = fmtOffset(readClock(c.tz, Date.now(), false, false).offset); } catch { /* unknown zone */ }
   return <p className="doc"><b>{cityLabel(c, getLang())}</b> · {c.tz}{off ? tr(' · {off} now', { off }) : ''} · {tr("population")} {c.pop.toLocaleString('en-US')}</p>;
@@ -256,7 +256,7 @@ function useSensor(id: string) {
 
 function OutputStatus({ def }: { def: ModuleDef }) {
   const [, force] = useState(0);
-  if (def.type === 'audio') return <p className={`status-line ${audio.state === 'running' ? 'ok' : 'warn'}`}>{tr("Speaker:")} {audio.state === 'running' ? tr('unlocked and ready') : audio.state === 'locked' ? tr("locked until you press Run or Step (browser rule)") : tr("Web Audio is not available")}.</p>;
+  if (def.type === 'audio') return <p className={`status-line ${audio.state === 'running' ? 'ok' : 'warn'}`}>{tr("Speaker:")} {audio.state === 'running' ? tr('unlocked and ready') : audio.state === 'locked' ? tr("locked until you press Run or Step (that’s a browser rule)") : tr("Web Audio isn’t available")}.</p>;
   if (def.type === 'haptic') return <p className={`status-line ${vibrationSupported() ? 'ok' : 'warn'}`}>{tr("Vibration:")} {vibrationSupported() ? tr('supported on this device') : tr('not supported on this device or browser')}.</p>;
   if (def.type === 'notify') {
     const s = notificationState();
@@ -278,8 +278,8 @@ function SensorStatus({ node, def }: { node: NodeInst; def: ModuleDef }) {
   const running = useStore((x) => x.run) !== 'stopped';
   let text: string, kind: string;
   if (def.type === 'touch') { text = tr("Manual input: press the pad inside the node."); kind = 'ok'; }
-  else if (sim) { text = tr("Simulated source: deterministic, no hardware needed."); kind = 'ok'; }
-  else if (!running) { text = tr("Not connected. Press Run to request access to the real device."); kind = 'warn'; }
+  else if (sim) { text = tr("Simulated source: always behaves the same way, and needs no hardware."); kind = 'ok'; }
+  else if (!running) { text = tr("Not connected. Press Run to ask for access to the real device."); kind = 'warn'; }
   else if (s) { text = tr(s.message || s.state); kind = s.state === 'live' ? 'ok' : s.state === 'requesting' ? 'info' : 'err'; }
   else { text = tr("Starting…"); kind = 'info'; }
   return <p className={`status-line ${kind}`}><b>{tr("Input:")}</b> {tr(text)}</p>;
@@ -304,12 +304,12 @@ function VisionFile({ node }: { node: NodeInst }) {
             st.setNodeParams(node.id, { source: 'file', fileData: cv.toDataURL('image/jpeg', 0.8) });
             st.toast(tr("Image stored in the program (downscaled to 160 px)."), 'ok');
           };
-          im.onerror = () => st.toast(tr("That file is not a readable image."), 'error');
+          im.onerror = () => st.toast(tr("That file isn’t a readable image."), 'error');
           im.src = String(r.result);
         };
         r.readAsDataURL(f);
       }} />
-      <p className="doc">{node.params.fileData ? tr("An image is stored in this program. Choose another to replace it.") : tr("Pick an image; it is downscaled and kept inside the program, so it works offline.")}</p>
+      <p className="doc">{node.params.fileData ? tr("An image is stored in this program. Choose another to replace it.") : tr("Pick an image. It’s shrunk and kept inside the program, so it works offline.")}</p>
     </div>
   );
 }
@@ -361,7 +361,7 @@ function CompoundPanel({ node, cdef }: { node: NodeInst; cdef: CompoundDef }) {
         </div>
       ))}
       <h4 className="mini">{tr("Exposed settings")}</h4>
-      <p className="doc">{tr("Tick inner settings to make them configurable on every instance of this compound.")}</p>
+      <p className="doc">{tr("Tick the inner settings you want to be adjustable on every copy of this compound.")}</p>
       {Object.values(cdef.graph.nodes).map((n) => {
         const d = getDef(n.type, undefined, n.params);
         if (!d) return null;
@@ -413,8 +413,8 @@ function NodePanel({ id }: { id: string }) {
         </div>
       </header>
       {diag.length > 0 && <div className="callouts">{diag.map((d, i) => <p key={i} className={`callout ${d.level}`}><Icon name="alert" size={14} />{tr(d.message)}</p>)}</div>}
-      {live && missing.length > 0 && !node.disabled && <p className="callout info"><Icon name="alert" size={14} />{tr(missing.length > 1 ? "Waiting for required inputs: {list}. The module stays idle until they have a signal." : "Waiting for required input: {list}. The module stays idle until it has a signal.", { list: missing.join(', ') })}</p>}
-      {node.disabled && <p className="callout info"><Icon name="alert" size={14} />{tr("Disabled: this module does not run and emits nothing.")}</p>}
+      {live && missing.length > 0 && !node.disabled && <p className="callout info"><Icon name="alert" size={14} />{tr(missing.length > 1 ? "Waiting for required inputs: {list}. The module stays idle until they get a signal." : "Waiting for a required input: {list}. The module stays idle until it gets a signal.", { list: missing.join(', ') })}</p>}
+      {node.disabled && <p className="callout info"><Icon name="alert" size={14} />{tr("Disabled: this module doesn’t run and sends nothing.")}</p>}
       <SensorStatus node={node} def={def} />
       <OutputStatus def={def} />
       {rt && rt.evals > 0 && <p className="runline">{tr("Evaluated")} {rt.evals}×{rt.lastFire >= 0 ? tr(" · last output at ") + fmtNum(rt.lastFire / 1000, 2) + ' s simulated' : tr(" · no output signal")}</p>}
@@ -422,7 +422,7 @@ function NodePanel({ id }: { id: string }) {
       {node.type === 'projector' && <Section title={tr("Projector")}><ProjectorPanel id={id} /></Section>}
       {node.type === 'actor-fileconv' && <Section title={tr("Conversion")}><FileConverterPanel node={node} /></Section>}
       {node.type === 'actor-unitconv' && <Section title={tr("Result")}><UnitConverterPanel node={node} /></Section>}
-      {node.type === 'actor-numfmt' && <Section title={tr("Result")}><ExactValuePanel node={node} field="text" hint={tr('The full result, every digit. The node face shows only as much as fits.')} /></Section>}
+      {node.type === 'actor-numfmt' && <Section title={tr("Result")}><ExactValuePanel node={node} field="text" hint={tr('The full result, every digit. The node face only shows as much as fits.')} /></Section>}
       {node.type === 'engine-calculus' && <Section title={tr("Analysis")}><CalculusPanel node={node} /></Section>}
       {node.type === 'decimal' && <Section title={tr("Exact value")}><ExactValuePanel node={node} field="chip" hint={tr('Every digit of the number, never rounded. Use a Number Formatter to round it.')} /></Section>}
       {FILE_KIND_BY_TYPE.has(node.type) && <Section title={tr("File")}><FileInspector node={node} kind={FILE_KIND_BY_TYPE.get(node.type)!} /></Section>}
@@ -463,8 +463,8 @@ function EdgePanel({ id }: { id: string }) {
         <div className="btn-row"><button className="btn sm danger" onClick={() => st.removeEdge(id)}><Icon name="trash" size={13} />{tr("Disconnect")}</button></div>
       </header>
       <Section title={tr("Signal processing")}>
-        <ParamRow p={{ key: 'weight', label: tr("Strength weight"), kind: 'number', min: 0, max: 4, step: 0.05, default: 1, doc: tr("Multiplies the strength of every signal on this connection. 0 silences it; Attention, Hypernerve and Reward read strength.") }} value={edge.weight} onChange={(v) => st.setEdge(id, { weight: Number(v) }, 'w')} />
-        <ParamRow p={{ key: 'delay', label: tr("Propagation delay"), kind: 'number', min: 0, max: 86400000, step: 10, default: 0, unit: 'ms', time: 'ms', doc: tr("Simulation milliseconds each signal waits on this connection. Delayed connections also make feedback loops legal.") }} value={edge.delay} onChange={(v) => st.setEdge(id, { delay: Number(v) }, 'd')} />
+        <ParamRow p={{ key: 'weight', label: tr("Strength weight"), kind: 'number', min: 0, max: 4, step: 0.05, default: 1, doc: tr("Multiplies the strength of every signal on this connection. 0 silences it. Attention, Hypernerve and Reward pay attention to strength.") }} value={edge.weight} onChange={(v) => st.setEdge(id, { weight: Number(v) }, 'w')} />
+        <ParamRow p={{ key: 'delay', label: tr("Propagation delay"), kind: 'number', min: 0, max: 86400000, step: 10, default: 0, unit: 'ms', time: 'ms', doc: tr("How many simulation milliseconds each signal waits on this connection. A delayed connection also makes a feedback loop allowed.") }} value={edge.delay} onChange={(v) => st.setEdge(id, { delay: Number(v) }, 'd')} />
         <ParamRow p={{ key: 'enabled', label: tr("Enabled"), kind: 'bool', default: true, doc: tr("Disabled connections carry nothing and are drawn dashed.") }} value={edge.enabled} onChange={(v) => st.setEdge(id, { enabled: !!v })} />
       </Section>
       <Section title={tr("Live signal")}>
@@ -488,7 +488,7 @@ function ProgramPanel() {
       </header>
       <Section title={tr("Details")}>
         <div className="field"><label htmlFor="pn">{tr("Name")}</label><input id="pn" type="text" value={project.name} maxLength={80} onChange={(e) => st.rename(e.target.value)} /></div>
-        <div className="field"><label htmlFor="pa">{tr("Author")}</label><input id="pa" type="text" value={project.author} maxLength={60} placeholder={tr("optional")} onChange={(e) => st.setMeta({ author: e.target.value })} /><p className="doc">{tr("A label only. It does not prove who made the program.")}</p></div>
+        <div className="field"><label htmlFor="pa">{tr("Author")}</label><input id="pa" type="text" value={project.author} maxLength={60} placeholder={tr("optional")} onChange={(e) => st.setMeta({ author: e.target.value })} /><p className="doc">{tr("Just a label. It doesn’t prove who made the program.")}</p></div>
         <div className="field"><label htmlFor="pd">{tr("Description")}</label><textarea id="pd" rows={4} value={project.description} maxLength={600} placeholder={tr("What does this program do?")} onChange={(e) => st.setMeta({ description: e.target.value })} /></div>
       </Section>
       <Section title={tr('Diagnostics ({n})', { n: diag.length })}>
@@ -501,7 +501,7 @@ function ProgramPanel() {
       <Section title={tr("Quick start")} open={!Object.keys(project.graph.nodes).length}>
         <ol className="tips">
           <li>{tr("Drag a module from the library onto the workspace.")}</li>
-          <li>{tr("Drag from a small tab on a module’s edge to a tab on another to connect them. Compatible ports light up.")}</li>
+          <li>{tr("To connect two modules, drag from a small tab on one module’s edge to a tab on another. Compatible ports light up.")}</li>
           <li>{tr("Select a module to edit it here. Press Run to execute.")}</li>
           <li>{tr("Share a program as a short code from the Share button.")}</li>
         </ol>
@@ -524,7 +524,7 @@ function MultiPanel({ ids }: { ids: string[] }) {
           <button className="btn danger" onClick={() => st.removeSelection()}><Icon name="trash" size={14} />{tr("Delete")}</button>
         </div>
       </header>
-      <p className="doc pad12">{tr("Grouping wraps the selection into one reusable compound. Connections that cross the boundary become its inputs and outputs.")}</p>
+      <p className="doc pad12">{tr("Grouping wraps your selection into one reusable compound. Connections that cross its edge become its inputs and outputs.")}</p>
     </>
   );
 }

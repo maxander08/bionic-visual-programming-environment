@@ -34,7 +34,7 @@ export type DecParse = { ok: true; dec: Dec } | { ok: false; error: string };
 const NUM_RE = /^([+\-\u2212])?(\d*)(?:\.(\d*))?(?:[eE]([+\-\u2212]?\d+))?$/;
 const ZERO = (scale = 0): Dec => ({ neg: false, digits: '0', scale });
 const P10 = (n: number): bigint => 10n ** BigInt(n);
-const TOO_LONG = 'That number needs more memory than this browser can give it.';
+const TOO_LONG = 'That number needs more memory than your browser can spare.';
 
 /** The ellipsis that follows the repeating digits of a number that never ends: 1.44444... */
 export const ELLIPSIS = '...';
@@ -451,7 +451,7 @@ export function decFromValue(v: unknown): DecParse {
   if (typeof v === 'number') return Number.isFinite(v) ? { ok: true, dec: fromNumber(v) } : { ok: false, error: `${String(v)} is not a number.` };
   if (typeof v === 'boolean') return { ok: true, dec: fromNumber(v ? 1 : 0) };
   if (typeof v === 'string') return parseDec(v);
-  return { ok: false, error: 'This kind of signal is not a number.' };
+  return { ok: false, error: 'This kind of signal isn’t a number.' };
 }
 
 /** The formatting choices held in a Number Formatter's settings. */

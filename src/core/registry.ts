@@ -24,15 +24,15 @@ import { isEquation } from './equation';
 const info: ModuleDef[] = [
   {
     type: 'comment', name: 'Comment', caption: 'Comment', category: 'Info', family: 'info', glyph: '//', size: 'small', keywords: 'note annotation text label',
-    title: () => '//', inputs: [], outputs: [], params: [txt('text', 'Note', 'Note to self', 'Free text shown on the workspace. It has no effect on execution.', { multiline: true, maxLength: 500 })],
+    title: () => '//', inputs: [], outputs: [], params: [txt('text', 'Note', 'Note to self', 'Free text shown on the workspace. It doesn’t affect how the program runs.', { multiline: true, maxLength: 500 })],
     run() {},
-    doc: { summary: 'An annotation. It never takes part in execution.', runtime: 'None. Long notes wrap and are clipped inside the node; the full text is in the inspector.' },
+    doc: { summary: 'A note for yourself. It never affects how the program runs.', runtime: 'None. Long notes wrap and get clipped inside the node. The full text is in the inspector.' },
   },
   {
     type: 'by', name: 'By', caption: 'Biomark', category: 'Info', family: 'info', glyph: 'BY', size: 'chip', keywords: 'author signature credit owner',
-    chip: (p) => String(p.author || '—'), inputs: [], outputs: [], params: [txt('author', 'Author', 'anonymous', 'Credit shown on the program. It is a label, not a verified identity.', { maxLength: 60 })],
+    chip: (p) => String(p.author || '—'), inputs: [], outputs: [], params: [txt('author', 'Author', 'anonymous', 'Credit shown on the program. It’s just a label, not a verified identity.', { maxLength: 60 })],
     run() {},
-    doc: { summary: 'Credits an author on the workspace.', runtime: 'None. This is plain text: it is not a signature and does not prove who made the program.' },
+    doc: { summary: 'Puts an author’s name on the workspace.', runtime: 'None. This is plain text. It’s not a signature, and it doesn’t prove who made the program.' },
   },
 ];
 
@@ -68,9 +68,9 @@ const joinText = (...parts: string[]) => parts.filter(Boolean).join(getLang() ==
 function settingPin(p: ParamDef): PortDef | null {
   if (p.kind === 'action' || p.hidden || p.pin === false) return null;
   const hint =
-    p.kind === 'number' && p.time ? tr('A time: text such as 2h 40min or 1:30:00, or a number of {unit}. Values from {min} to {max} are kept; others are clamped.', { unit: p.time === 'ms' ? tr('milliseconds') : tr('seconds'), min: formatBase(p.min, p.time), max: formatBase(p.max, p.time) })
+    p.kind === 'number' && p.time ? tr('A time: text like 2h 40min or 1:30:00, or a number of {unit}. Anything from {min} to {max} is used as is, and anything outside that range is moved to the nearest limit.', { unit: p.time === 'ms' ? tr('milliseconds') : tr('seconds'), min: formatBase(p.min, p.time), max: formatBase(p.max, p.time) })
     : p.kind === 'number' && !Number.isFinite(p.min) && !Number.isFinite(p.max) ? tr('Any number, with as many digits as you like{unit}.', { unit: p.unit ? ' ' + p.unit : '' })
-    : p.kind === 'number' ? tr('Number from {min} to {max}{unit}; values outside are clamped.', { min: fmtBound(p.min), max: fmtBound(p.max), unit: p.unit ? ' ' + p.unit : '' })
+    : p.kind === 'number' ? tr('A number from {min} to {max}{unit}. Anything outside that range is clamped.', { min: fmtBound(p.min), max: fmtBound(p.max), unit: p.unit ? ' ' + p.unit : '' })
     : p.kind === 'bool' ? tr('True or false.')
     : p.kind === 'select' ? tr('Text, one of: {list}.', { list: p.options.map((o) => o.value).join(', ') })
     : p.kind === 'text' && p.pinType === 'data' ? tr('An Equation (the Equation output of an Equation node): its first expression is used. Text is read as the expression itself.')

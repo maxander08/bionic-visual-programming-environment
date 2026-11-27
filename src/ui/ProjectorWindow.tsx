@@ -162,7 +162,7 @@ function FileStage({ v }: { v: View }) {
   const mode = picked && modes.includes(picked) ? picked : modes[0];
   const meta = [file.ext ? file.ext.toUpperCase() : '', fmtBytes(file.size), info?.width && info.height ? `${info.width} × ${info.height}` : '', info?.duration !== undefined ? fmtDuration(info.duration) : ''].filter(Boolean).join(' · ');
 
-  const cantPlay = <FileCard file={file} info={info} note={playFailed ?? 'The file’s bytes are not available, so it cannot be shown here.'} />;
+  const cantPlay = <FileCard file={file} info={info} note={playFailed ?? 'The file’s bytes aren’t available, so it can’t be shown here.'} />;
   // While the bytes are still being looked at, the best tab is not known yet; wait rather than flash a different one.
   const pending = present && (!blob.done || (sniffOn && !!bytes && sniffed === undefined) || (isXlsx && !!bytes && sheet === undefined) || (listable && !!bytes && listing === undefined));
   let body;
@@ -173,17 +173,17 @@ function FileStage({ v }: { v: View }) {
       else if (!blob.url || !blob.blob) body = file.type === 'image' && v.image ? <div className="pw-img"><ImageCanvas img={v.image as ImageSig} /></div> : cantPlay;
       else if (playFailed) body = cantPlay;
       else if (file.type === 'font') body = <FontStage file={file} info={info} blob={blob.blob} />;
-      else if (file.type === 'image') body = <div className="pw-img"><img src={blob.url} alt={file.name} onError={() => v.image ? undefined : setPlayFailed('This browser could not draw this picture. The Hex and Details tabs still show what is in it.')} /></div>;
+      else if (file.type === 'image') body = <div className="pw-img"><img src={blob.url} alt={file.name} onError={() => v.image ? undefined : setPlayFailed('This browser couldn’t draw this picture. The Hex and Details tabs still show what’s in it.')} /></div>;
       else if (file.type === 'pdf') body = <iframe className="pw-frame" src={blob.url} title={file.name} />;
-      else if (file.type === 'audio') body = <div className="pw-media"><span className="pw-badge">{'.' + file.ext.toUpperCase()}</span><audio controls src={blob.url} aria-label={file.name} onError={() => setPlayFailed('This browser cannot play this audio format. Download the file to play it elsewhere, or use the Hex tab to look inside.')} /></div>;
-      else body = <video className="pw-video" controls src={blob.url} aria-label={file.name} onError={() => setPlayFailed('This browser cannot play this video format. Download the file to play it elsewhere, or use the Hex tab to look inside.')} />;
+      else if (file.type === 'audio') body = <div className="pw-media"><span className="pw-badge">{'.' + file.ext.toUpperCase()}</span><audio controls src={blob.url} aria-label={file.name} onError={() => setPlayFailed('This browser can’t play this audio format. Download the file to play it elsewhere, or use the Hex tab to look inside.')} /></div>;
+      else body = <video className="pw-video" controls src={blob.url} aria-label={file.name} onError={() => setPlayFailed('This browser can’t play this video format. Download the file to play it elsewhere, or use the Hex tab to look inside.')} />;
       break;
     case 'text': case 'source': body = <TextStage text={text ?? ''} cut={textCut} name={file.name} label={mode === 'source' ? tr('Source code') : undefined} />; break;
     case 'preview': body = <iframe className="pw-frame light" sandbox="" srcDoc={text} title={file.name} />; break;
     case 'table': body = isXlsx && sheet ? <GridTable rows={sheet} note="Only the first sheet of the workbook is shown." /> : <CsvTable text={text ?? ''} />; break;
     case 'entries': body = <EntriesStage listing={listing} expected={file.ext === 'zip' ? info?.entries : undefined} />; break;
     case 'hex': body = bytes ? <HexStage blob={bytes} /> : null; break;
-    default: body = <FileCard file={file} info={info} note={present ? undefined : 'This file is not in this browser any more. Programs that were shared or imported do not carry their files: drop it on its Files node again.'} />;
+    default: body = <FileCard file={file} info={info} note={present ? undefined : 'This file isn’t in this browser any more. Programs that were shared or imported don’t carry their files, so drop it on its Files node again.'} />;
   }
 
   return (
@@ -250,7 +250,7 @@ export function ProjectorWindow({ onClose }: { onClose: () => void }) {
   const fullscreen = () => {
     const el = document.querySelector<HTMLElement>('.modal.full');
     if (document.fullscreenElement) void document.exitFullscreen();
-    else void el?.requestFullscreen?.().catch(() => toast(tr('This browser would not go full screen.'), 'info'));
+    else void el?.requestFullscreen?.().catch(() => toast(tr('This browser wouldn’t go full screen.'), 'info'));
   };
   return (
     <Modal title={title} onClose={onClose} full label={tr('Projector, full size')}

@@ -203,13 +203,13 @@ export function readUnit(text: string): { prefix: string; unit: UnitDef }[] {
  */
 export function parseQuantity(input: string, prefer?: string): ParseResult {
   const m = NUMBER.exec(normalize(input).trim());
-  if (!m) return { ok: false, error: `“${input.trim().slice(0, 24)}” is not a quantity. Write an amount followed by a unit, like 2.5km.` };
+  if (!m) return { ok: false, error: `“${input.trim().slice(0, 24)}” isn’t a quantity. Write an amount followed by a unit, like 2.5km.` };
   const amount = Number(m[1]);
-  if (!Number.isFinite(amount)) return { ok: false, error: `“${m[1]}” is not a finite number.` };
+  if (!Number.isFinite(amount)) return { ok: false, error: `“${m[1]}” isn’t a finite number.` };
   const rest = m[2].trim();
   if (rest === '') return { ok: true, amount };
   const cands = readUnit(rest);
-  if (!cands.length) return { ok: false, error: `“${rest.slice(0, 16)}” is not a known unit.` };
+  if (!cands.length) return { ok: false, error: `“${rest.slice(0, 16)}” isn’t a known unit.` };
   cands.sort((a, b) => Number(b.unit.group === prefer) - Number(a.unit.group === prefer) || a.prefix.length - b.prefix.length);
   const { prefix, unit } = cands[0];
   return { ok: true, amount, q: { amount, prefix, unit: unit.sym, group: unit.group, base: toBase(amount, prefix, unit.sym) } };

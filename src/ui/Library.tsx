@@ -137,7 +137,7 @@ export function Library() {
         {tab === 'presets' && (
           <>
             <h3 className="sec">{tr("Inference packages")}</h3>
-            <p className="muted pad12 tight">{tr("Packages run inside a Knowledge or Imagination nucleus. Each states its technique and limits.")}</p>
+            <p className="muted pad12 tight">{tr("Packages run inside a Knowledge or Imagination nucleus. Each one describes its technique and limits.")}</p>
             <ul className="preset-list">
               {PACKAGES.map((p) => {
                 const host = mods.find((m) => m.type === p.host)!;

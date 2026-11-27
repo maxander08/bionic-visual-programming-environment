@@ -185,7 +185,7 @@ export function sumSeries(term: Fn, n0: number, count: number, infinite: boolean
   let s = 0, c = 0;
   for (let i = 0; i < N_; i++) {
     const t = term(n0 + i);
-    if (!Number.isFinite(t)) return { value: NaN, partial: NaN, verdict: 'undefined', test: 'The terms are not defined for every n.' };
+    if (!Number.isFinite(t)) return { value: NaN, partial: NaN, verdict: 'undefined', test: 'The terms aren’t defined for every n.' };
     const y = t - c, u = s + y;
     c = u - s - y;
     s = u;
@@ -196,7 +196,7 @@ export function sumSeries(term: Fn, n0: number, count: number, infinite: boolean
   if (!infinite) return { value: partial, partial, verdict: 'partial', test: 'Finite sum of the first terms.' };
   const last = Math.abs(a[N_ - 1]), half = Math.abs(a[Math.floor(N_ / 2)]);
   if (a.slice(-8).every((t) => Math.abs(t) < 1e-300)) return { value: partial, partial, verdict: 'converges', test: 'The terms become exactly zero.' };
-  if (last > 1e-3 && last >= 0.9 * half) return { value: partial, partial, verdict: 'diverges', test: 'Divergence test: the terms do not approach 0.' };
+  if (last > 1e-3 && last >= 0.9 * half) return { value: partial, partial, verdict: 'diverges', test: 'Divergence test: the terms don’t approach 0.' };
   const rs: number[] = [];
   for (let i = N_ - 6; i < N_ - 1; i++) if (a[i] !== 0 && i >= 0) rs.push(Math.abs(a[i + 1] / a[i]));
   rs.sort((p, q) => p - q);
@@ -362,13 +362,13 @@ function run(spec: CalcSpec): CalcResult {
   for (const p of spec.params) {
     const name = p.name.trim();
     if (!name) throw new Error('A parameter has no name.');
-    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name) || RESERVED.has(name.toLowerCase())) throw new Error(`The parameter name “${name}” cannot be used: write letters, digits and _, starting with a letter, and not a name that already means something (x, t, pi, sin…).`);
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name) || RESERVED.has(name.toLowerCase())) throw new Error(`“${name}” can’t be used as a parameter name. Use letters, digits and _, starting with a letter, and avoid names that already mean something (x, t, pi, sin…).`);
     if (name in consts) throw new Error(`Two parameters are called “${name}”.`);
     consts[name] = p.value;
     names.add(name);
   }
   const wrt = spec.wrt.trim() || 'x';
-  if (spec.mode === 'derivative' && !names.has(wrt)) throw new Error(`“${wrt}” is not a variable of the expression: differentiate with respect to x, t or the name of a parameter.`);
+  if (spec.mode === 'derivative' && !names.has(wrt)) throw new Error(`“${wrt}” isn’t a variable in this expression. Differentiate with respect to x, t or the name of a parameter.`);
   const sumMode = spec.mode === 'series' && spec.kind === 'sum';
   const scope = new Set(names);
   const bindConsts = { ...consts };
@@ -394,8 +394,8 @@ function run(spec: CalcSpec): CalcResult {
     if (/^\+?(inf|infinity|∞)$/.test(s)) return Infinity;
     if (/^(-|−)(inf|infinity|∞)$/.test(s)) return -Infinity;
     let v = NaN;
-    try { v = compile(simplify(bind(parseExpr(text, new Set(names)), bindConsts)))({ ...env, t: spec.t }); } catch (e) { throw new Error(`The value “${text.trim()}” cannot be used as a bound or limit point: ${tr(e instanceof Error ? e.message : String(e))}`); }
-    if (Number.isNaN(v)) throw new Error(`The value “${text.trim()}” is not a number.`);
+    try { v = compile(simplify(bind(parseExpr(text, new Set(names)), bindConsts)))({ ...env, t: spec.t }); } catch (e) { throw new Error(`“${text.trim()}” can’t be used as a bound or limit point: ${tr(e instanceof Error ? e.message : String(e))}`); }
+    if (Number.isNaN(v)) throw new Error(`“${text.trim()}” isn’t a number.`);
     return v;
   };
   const name = (it: Item) => `ƒ${SUB(it.i + 1)}`;
@@ -537,7 +537,7 @@ function run(spec: CalcSpec): CalcResult {
           const n0 = Math.round(spec.start), cnt = clampInt(spec.terms, 2, 20000);
           const r = sumSeries(it.f, n0, cnt, spec.infinite);
           rows.push({ k: 'Series', v: `Σ ${shown(it)}, n = ${n0} … ${spec.infinite ? '∞' : n0 + cnt - 1}` });
-          if (r.verdict === 'undefined') throw new Error(`The terms of ${name(it)} are not defined for every n.`);
+          if (r.verdict === 'undefined') throw new Error(`The terms of ${name(it)} aren’t defined for every n.`);
           rows.push({ k: 'Convergence', v: r.verdict === 'converges' ? 'Converges' : r.verdict === 'diverges' ? 'Diverges' : r.verdict === 'partial' ? 'Finite sum' : 'Undecided', t: true });
           rows.push({ k: 'Test used', v: r.test, t: true });
           if (r.verdict === 'converges' || r.verdict === 'partial') rows.push({ k: 'Sum', v: fmtN(r.value) });
@@ -557,7 +557,7 @@ function run(spec: CalcSpec): CalcResult {
               if (size(d) > 20000) { note = String(k - 1); break; }
             }
             const c = mk(simplify(bind(d, bindConsts)))(a) / fact;
-            if (!Number.isFinite(c)) { if (k === 0) throw new Error(`${name(it)} is not defined at x = ${fmtN(a)}.`); note = String(k - 1); break; }
+            if (!Number.isFinite(c)) { if (k === 0) throw new Error(`${name(it)} isn’t defined at x = ${fmtN(a)}.`); note = String(k - 1); break; }
             coefs.push(Math.abs(c) < 1e-14 ? 0 : c);
           }
           const shift: Ast = a === 0 ? V('x') : bin('-', V('x'), N(a));
@@ -647,7 +647,7 @@ function run(spec: CalcSpec): CalcResult {
         const probe = xs.filter((x) => x > 0 && x <= Math.min(xMax, -xMin)), pairs = probe.filter((_, k) => k % 7 === 0).map((x) => [f(x), f(-x)]).filter(([p, q]) => Number.isFinite(p) && Number.isFinite(q));
         const sc = Math.max(1, ...pairs.map(([p]) => Math.abs(p)));
         const even = pairs.length > 3 && pairs.every(([p, q]) => Math.abs(p - q) < 1e-9 * sc), odd = pairs.length > 3 && pairs.every(([p, q]) => Math.abs(p + q) < 1e-9 * sc);
-        rows.push({ k: 'Symmetry', v: even && odd ? 'Zero function' : even ? 'Even (mirror in the y-axis)' : odd ? 'Odd (turns into itself about the origin)' : 'None found', t: true });
+        rows.push({ k: 'Symmetry', v: even && odd ? 'Zero function' : even ? 'Even (mirror in the y-axis)' : odd ? 'Odd (symmetric about the origin)' : 'None found', t: true });
         if (xMin <= 0 && xMax >= 0) { const y0 = f(0); if (Number.isFinite(y0)) rows.push({ k: 'y-intercept', v: fmtN(y0) }); }
         // zeros
         const scale = Math.max(1e-9, ...ys.filter(Number.isFinite).map(Math.abs).sort((p, q) => p - q).slice(0, Math.max(1, Math.floor(ys.length * 0.9))).slice(-1));

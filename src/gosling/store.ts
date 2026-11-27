@@ -96,7 +96,7 @@ export const useGosling = create<State>((set, get) => {
       set(o ? { open: o } : { open: o, voiceMode: false });
       if (o && !get().msgs.length) {
         const s = takeSnapshot();
-        push({ role: 'gosling', via: 'local', text: `Hi, I'm **Gosling**, your copilot in Nicque. I can see your workspace live${s.nodeCount ? `: right now there ${s.nodeCount === 1 ? 'is 1 module' : `are ${s.nodeCount} modules`} on “${s.program.name}” and the program is ${s.run}` : ' and it is empty at the moment'}. Ask me anything, or tell me what to build.`, chips: s.nodeCount ? ['Overview', 'What timers are running?', 'Any problems?', 'What can you do?'] : ['Add a timer and a projector, connected', 'What can you do?', 'Build the loud light recipe'] });
+        push({ role: 'gosling', via: 'local', text: `Hi, I'm **Gosling**, your copilot in Nicque. I can see your workspace live${s.nodeCount ? `: right now there ${s.nodeCount === 1 ? 'is 1 module' : `are ${s.nodeCount} modules`} on “${s.program.name}” and the program is ${s.run}` : ' and it’s empty at the moment'}. Ask me anything, or tell me what to build.`, chips: s.nodeCount ? ['Overview', 'What timers are running?', 'Any problems?', 'What can you do?'] : ['Add a timer and a projector, connected', 'What can you do?', 'Build the loud light recipe'] });
       }
       persist();
     },

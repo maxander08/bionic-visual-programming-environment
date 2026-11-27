@@ -29,7 +29,7 @@ function Group({ onClose }: { onClose: () => void }) {
   const ids = useStore((s) => s.selection);
   return (
     <Modal title={tr("Group as compound")} onClose={onClose}>
-      <p className="prose">{tr(ids.length === 1 ? "{n} module will be wrapped into one reusable compound. Connections that cross the boundary become its inputs and outputs." : "{n} modules will be wrapped into one reusable compound. Connections that cross the boundary become its inputs and outputs.", { n: ids.length })}</p>
+      <p className="prose">{tr(ids.length === 1 ? "{n} module will be wrapped into one reusable compound. Connections that cross its edge become its inputs and outputs." : "{n} modules will be wrapped into one reusable compound. Connections that cross its edge become its inputs and outputs.", { n: ids.length })}</p>
       <div className="field"><label htmlFor="gname">{tr("Name")}</label><input id="gname" data-autofocus type="text" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { onClose(); useStore.getState().groupSelection(name); } }} /></div>
       <div className="btn-row end"><button className="btn" onClick={onClose}>{tr("Cancel")}</button><button className="btn primary" onClick={() => { onClose(); useStore.getState().groupSelection(name); }}>{tr("Create compound")}</button></div>
     </Modal>
@@ -39,7 +39,7 @@ function Group({ onClose }: { onClose: () => void }) {
 function Templates({ onClose }: { onClose: () => void }) {
   return (
     <Modal title={tr("Example programs")} onClose={onClose} wide>
-      <p className="prose">{tr("Each example is built from the real module registry and runs on the same engine as your own programs. Your current program is kept under Saved programs.")}</p>
+      <p className="prose">{tr("Every example is built from the real modules and runs on the same engine as your own programs. Your current program is kept under Saved programs.")}</p>
       <ul className="tpl-grid">
         {TEMPLATES.map((t) => (
           <li key={t.id}>
@@ -61,12 +61,12 @@ function Projects({ onClose }: { onClose: () => void }) {
   return (
     <Modal title={tr("Open or import")} onClose={onClose}>
       <h3 className="sec">{tr("Saved programs")} {storageAvailable() ? '' : tr("(storage unavailable)")}</h3>
-      {!storageAvailable() && <p className="callout warn"><Icon name="alert" size={14} />{tr("Browser storage is not available here (private mode or restricted file access). Use Export and Import files instead.")}</p>}
+      {!storageAvailable() && <p className="callout warn"><Icon name="alert" size={14} />{tr("Browser storage isn’t available here (you may be in private mode, or file access is restricted). Use Export and Import files instead.")}</p>}
       {list.length === 0 ? <p className="muted">{tr("Nothing saved yet. Use File → Save in browser.")}</p> : (
         <ul className="saved-list">
           {list.map((p) => (
             <li key={p.id}>
-              <button className="saved-open" onClick={() => { const pr = projects.load(p.id); if (pr) { openWithBackup(pr, tr('Opened “{name}”.', { name: pr.name })); onClose(); } else st.toast(tr("That saved program is damaged and could not be opened."), 'error'); }}>
+              <button className="saved-open" onClick={() => { const pr = projects.load(p.id); if (pr) { openWithBackup(pr, tr('Opened “{name}”.', { name: pr.name })); onClose(); } else st.toast(tr("That saved program is damaged, so it couldn’t be opened."), 'error'); }}>
                 <b>{p.name}</b><span>{tr("{n} modules · {date}", { n: p.nodes, date: new Date(p.modified).toLocaleString() })}</span>
               </button>
               <button className="icon-btn" aria-label={tr('Delete saved program {name}', { name: p.name })} onClick={() => { projects.remove(p.id); setList(projects.list()); }}><Icon name="trash" size={14} /></button>
@@ -85,7 +85,7 @@ function Projects({ onClose }: { onClose: () => void }) {
 
 function QR({ text }: { text: string }) {
   const r = useMemo(() => {
-    if (text.length > QR_BYTE_LIMIT) return { error: tr('This program’s code is {n} characters, above the {limit}-character limit a QR code can reliably hold. Use the code text or Export file instead.', { n: text.length, limit: QR_BYTE_LIMIT }) };
+    if (text.length > QR_BYTE_LIMIT) return { error: tr('This program’s code is {n} characters, which is over the {limit}-character limit a QR code can reliably hold. Use the code text or Export file instead.', { n: text.length, limit: QR_BYTE_LIMIT }) };
     try {
       const q = qrcode(0, 'L');
       q.addData(text, 'Byte');
@@ -136,7 +136,7 @@ function Share({ onClose }: { onClose: () => void }) {
             <dt>{tr("CRC-32 checksum")}</dt><dd className="mono">{crc32(code.split('.')[1] ?? '').toString(16).padStart(8, '0')}</dd>
             <dt>{tr("SHA-256 fingerprint")}</dt><dd className="mono">{sha === undefined ? tr('computing…') : sha ?? tr('unavailable in this context')}</dd>
           </dl>
-          <p className="doc">{tr("The checksum is embedded in the code and detects accidental corruption. The fingerprint identifies exact content. Neither is a signature: they do not prove who made the program, and anyone can create a valid code for edited content. Codes are not encrypted, permanent, or tamper-proof.")}</p>
+          <p className="doc">{tr("The checksum is built into the code and catches accidental corruption. The fingerprint identifies the exact content. Neither is a signature. They don’t prove who made the program, and anyone can create a valid code for edited content. Codes aren’t encrypted, permanent or tamper-proof.")}</p>
         </div>
         <div>
           <h3 className="sec">{tr("QR code")}</h3>
@@ -164,21 +164,21 @@ function Settings({ onClose }: { onClose: () => void }) {
           </button>
         ))}
       </div>
-      <p className="doc">{tr("Changes the language of the whole editor and is remembered in this browser. A Set Language module (library → Workspace Settings) can switch it from inside a program.")}</p>
+      <p className="doc">{tr("Changes the language of the whole editor, and this browser remembers it. A Set Language module (library → Workspace Settings) can switch it from inside a program.")}</p>
       <h3 className="sec">{tr("Workspace")}</h3>
       <div className="field inline"><label htmlFor="s-snap">{tr("Snap modules to the grid")}</label><button id="s-snap" role="switch" aria-checked={s.snap} className={`toggle ${s.snap ? 'on' : ''}`} onClick={() => set({ snap: !s.snap })}><i /></button><p className="doc">{tr("While dragging, a dashed outline shows where the module will settle.")}</p></div>
       <div className="field inline"><label htmlFor="s-map">{tr("Overview map")}</label><button id="s-map" role="switch" aria-checked={s.minimap} className={`toggle ${s.minimap ? 'on' : ''}`} onClick={() => set({ minimap: !s.minimap })}><i /></button></div>
-      <div className="field inline"><label htmlFor="s-pins">{tr("Setting pin names")}</label><button id="s-pins" role="switch" aria-checked={s.pinLabels} className={`toggle ${s.pinLabels ? 'on' : ''}`} onClick={() => set({ pinLabels: !s.pinLabels })}><i /></button><p className="doc">{tr("While a module is highlighted (pointed at, or selected with a tap), each of its setting pins shows what it is for.")}</p></div>
+      <div className="field inline"><label htmlFor="s-pins">{tr("Setting pin names")}</label><button id="s-pins" role="switch" aria-checked={s.pinLabels} className={`toggle ${s.pinLabels ? 'on' : ''}`} onClick={() => set({ pinLabels: !s.pinLabels })}><i /></button><p className="doc">{tr("While a module is highlighted (pointed at, or selected with a tap), each of its setting pins shows what it’s for.")}</p></div>
       <div className="field"><label htmlFor="s-motion">{tr("Motion")}</label>
         <select id="s-motion" value={s.motion} onChange={(e) => set({ motion: e.target.value as any })}><option value="system">{tr("Follow system setting")}</option><option value="reduced">{tr("Reduce motion")}</option><option value="full">{tr("Full motion")}</option></select>
-        <p className="doc">{tr("Reduced motion removes camera transitions and settling movement; state changes stay visible.")}</p></div>
+        <p className="doc">{tr("Reduced motion turns off camera transitions and settling movement. State changes stay visible.")}</p></div>
       <div className="field"><label htmlFor="s-tick">{tr("Simulation tick")}</label>
         <select id="s-tick" value={s.tickMs} onChange={(e) => set({ tickMs: Number(e.target.value) })}>{[10, 20, 25, 50, 100, 200].map((t) => <option key={t} value={t}>{tr("{ms} ms ({hz} Hz)", { ms: t, hz: Math.round(1000 / t) })}</option>)}</select>
-        <p className="doc">{tr("Time resolution of the engine. Shorter ticks give finer timing but evaluate more often. Output values never depend on screen refresh.")}</p></div>
+        <p className="doc">{tr("How finely the engine keeps time. Shorter ticks give more precise timing but evaluate more often. Output values never depend on the screen’s refresh rate.")}</p></div>
       <div className="field"><label htmlFor="s-speed">{tr("Simulation speed")}</label>
         <select id="s-speed" value={s.speed} onChange={(e) => set({ speed: Number(e.target.value) })}>{[0.25, 0.5, 1, 2, 4].map((t) => <option key={t} value={t}>×{t}</option>)}</select></div>
       <h3 className="sec">{tr("Storage")}</h3>
-      <p className="prose">{storageAvailable() ? tr("Autosave and saved programs use this browser’s local storage.") : tr("Local storage is unavailable. Use File → Export to keep your work.")}</p>
+      <p className="prose">{storageAvailable() ? tr("Autosave and saved programs use this browser’s local storage.") : tr("Local storage isn’t available. Use File → Export to keep your work.")}</p>
       <div className="btn-row"><button className="btn danger" onClick={() => st.confirm({ title: tr("Erase all saved data?"), body: tr("This deletes autosave, saved programs, your compound library and settings from this browser. The current workspace stays open until you reload."), confirm: tr("Erase data"), danger: true, onConfirm: () => { clearAll(); st.toast(tr("Browser data erased."), 'ok'); } })}>{tr("Erase browser data…")}</button></div>
       <h3 className="sec">{tr("About")}</h3>
       <p className="prose">{tr("Inspired by the workflow of NEURO by THIX; an independent implementation with original code and assets. Typeface: “TT Autonomous” is requested first; the bundled fallback is JetBrains Mono.")}</p>
@@ -193,7 +193,7 @@ function CompoundViewer({ onClose }: { onClose: () => void }) {
   if (!def) return null;
   return (
     <Modal title={tr('Inside “{name}”', { name: def.name })} onClose={onClose} wide>
-      <p className="prose">{tr("Read-only view of the compound’s internal graph. Live values appear while the program runs. Change its exposed settings from the inspector.")}</p>
+      <p className="prose">{tr("A read-only view of what’s inside the compound. Live values appear while the program runs. To change its exposed settings, use the inspector.")}</p>
       <div className="viewer"><Canvas graph={def.graph} compounds={compounds} prefix={`${arg.nodeId}/`} ro /></div>
     </Modal>
   );

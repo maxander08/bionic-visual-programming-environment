@@ -123,7 +123,7 @@ describe('File Converter', () => {
 
   it('reports a failed conversion as an error', async () => {
     setFileInfo(info('src3', 'a.txt', { text: 'x' }));
-    setRunner(async () => { throw new Error('This browser could not decode the picture.'); });
+    setRunner(async () => { throw new Error('This browser couldn’t decode the picture.'); });
     const { e } = build({
       nodes: [['f', 'file-text', { fileId: 'src3', fileName: 'a.txt' }], ['c', 'actor-fileconv', { from: 'text', to: 'pdf', format: 'pdf' }]],
       wires: [['f', 'file', 'c', 'file']],
@@ -132,7 +132,7 @@ describe('File Converter', () => {
     e.runFor(100);
     await new Promise((r) => setTimeout(r, 10));
     e.runFor(100);
-    expect(e.nodes.get('c')!.status).toEqual({ level: 'error', message: 'This browser could not decode the picture.' });
+    expect(e.nodes.get('c')!.status).toEqual({ level: 'error', message: 'This browser couldn’t decode the picture.' });
   });
 
   it('is driven by its setting pins: a signal chooses the format', async () => {
@@ -152,7 +152,7 @@ describe('File Converter', () => {
     expect((e.out('c', 'file') as any).ext).toBe('webp');
   });
 
-  it('does not repeat a finished conversion', async () => {
+  it('doesn’t repeat a finished conversion', async () => {
     setFileInfo(info('src5', 'a.txt', { text: 'x' }));
     let n = 0;
     setRunner(async (_r, id) => { n++; return info(id, 'a.pdf'); });

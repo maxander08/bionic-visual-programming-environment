@@ -30,7 +30,7 @@ export function useFileDrop(nodeId: string, disabled = false) {
       const list = Array.from(e.dataTransfer.files);
       if (!list.length) return;
       useStore.getState().select([nodeId]);
-      if (list.length > 1) useStore.getState().toast(tr('A Files node holds one file. Only “{name}” was used.', { name: list[0].name }), 'info');
+      if (list.length > 1) useStore.getState().toast(tr('A Files node holds one file, so only “{name}” was used.', { name: list[0].name }), 'info');
       void loadFile(nodeId, list[0]);
     },
   };
@@ -176,8 +176,8 @@ export function FileInspector({ node, kind }: { node: NodeInst; kind: FileKind }
           <button type="button" className="btn sm" onClick={() => connectToProjector(node.id)}>{tr('Connect to a Projector')}</button>
         </div>
       )}
-      {id && <p className="doc">{tr('Preview opens the file in the Projector window: whatever its kind, it is shown by its content. Connect to a Projector adds one to the workspace and wires this node’s File output to it.')}</p>}
-      {missing && <p className="status-line warn">{tr('This file is not in this browser. Programs that were shared or imported do not carry their files: drop it on the node again.')}</p>}
+      {id && <p className="doc">{tr('Preview opens the file in the Projector window, shown by its content whatever its kind. Connect to a Projector adds one to the workspace and wires this node’s File output to it.')}</p>}
+      {missing && <p className="status-line warn">{tr('This file isn’t in this browser. Programs that were shared or imported don’t carry their files, so drop it on the node again.')}</p>}
       {id && !info && !missing && <p className="status-line info">{tr('Reading…')}</p>}
       {info?.warn && <p className="status-line warn">{tr(info.warn)}</p>}
       {info?.note && <p className="doc">{tr(info.note)}</p>}

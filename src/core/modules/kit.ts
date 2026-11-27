@@ -23,7 +23,7 @@ export const bol = (key: string, label: string, def: boolean, doc: string): Para
  * shows only what matters at a glance; a signal on this pin, or the switch in the inspector, brings the rest out.
  * `what` names the extra lines, as in “the date and UTC offset”.
  */
-export const details = (what: string): ParamDef => bol('details', 'Show details', false, `Also show ${what} on the node. Off keeps the node's face short; the same information is always available from the module's output pins and the inspector.`);
+export const details = (what: string): ParamDef => bol('details', 'Show details', false, `Also show ${what} on the node. Off keeps the node’s face short, and the same information is always available from the module’s output pins and the inspector.`);
 export const act = (key: string, label: string, command: string, doc: string): ParamDef => ({ key, label, kind: 'action', command, doc });
 
 export const inp = (id: string, label: string, type: PortType, doc: string, side: Side = 'top', optional = false): PortDef => ({ id, label, type, doc, side, optional });
@@ -36,7 +36,7 @@ export const RATE = (def = 5) => num('rate', 'Sample rate', def, 0.5, 30, 0.5, '
  * Milliseconds on the right edge. `what` names the time they describe, as in “time left”.
  */
 export const timeParts = (what: string, side: Side = 'right'): PortDef[] => [
-  out('hour', 'Hours', 'num', `Whole hours of the ${what}. Hours are not wrapped at 24: a day and two hours is 26.`, side),
+  out('hour', 'Hours', 'num', `Whole hours of the ${what}. Hours don’t wrap at 24, so a day and two hours is 26.`, side),
   out('minute', 'Minutes', 'num', `Minutes of the ${what}, 0–59.`, side),
   out('second', 'Seconds', 'num', `Seconds of the ${what}, 0–59.`, side),
   out('millisecond', 'Milliseconds', 'num', `Milliseconds of the ${what}, 0–999. They refresh every tick while the module is running.`, side),

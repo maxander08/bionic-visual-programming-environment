@@ -23,7 +23,7 @@ describe('color-space conversions', () => {
     expect(cmykToRgb(0, 0, 0, 120)).toEqual([0, 0, 0]);
   });
 
-  it('converts RGB to CMYK and emits normalized hex', () => {
+  it('converts RGB to CMYK and sends out normalized hex', () => {
     expect(rgbToCmyk([0, 0, 0])).toEqual([0, 0, 0, 100]);
     expect(rgbToCmyk([0, 102, 255])).toEqual([100, 60, 0, 0]);
     expect(rgbToHex([10, 122, 255])).toBe('#0a7aff');
@@ -111,7 +111,7 @@ describe('Color module', () => {
     expect(hex).toMatchObject({ model: 'hex', c: 21, m: 32, y: 43, k: 54, pantone: '485 C', hex: '#0a7aff' });
   });
 
-  it('emits the requested Pantone color and the corresponding screen swatch', () => {
+  it('sends out the requested Pantone color and the corresponding screen swatch', () => {
     const node = runColor({ model: 'pantone', pantone: '485 C' });
     expect(node.status.level).toBe('ok');
     expect(node.outputs.css?.v).toBe('#da291c');
@@ -134,7 +134,7 @@ describe('Color module', () => {
 
     const bad = runColor({ model: 'pantone', pantone: 'not a swatch' });
     expect(bad.status.level).toBe('error');
-    expect(bad.status.message).toContain('not a Pantone color');
+    expect(bad.status.message).toContain('isn’t a Pantone color');
   });
 });
 
@@ -154,7 +154,7 @@ describe('Color module HSV outputs', () => {
     expect(v).toBe(1);
   });
 
-  it('emits the HSV values in every color model', () => {
+  it('sends out the HSV values in every color model', () => {
     const hsv = runColor({ model: 'hsv', h: 0.25, s: 0.5, v: 0.75 });
     expect(hsv.outputs.h?.v).toBe(0.25);
     expect(hsv.outputs.s?.v).toBe(0.5);

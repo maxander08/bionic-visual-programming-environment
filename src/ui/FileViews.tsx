@@ -87,7 +87,7 @@ export function useArchiveListing(blob: Blob | undefined, ext: string, name: str
   useEffect(() => {
     if (!enabled || !blob) return;
     let alive = true;
-    listArchive(blob, ext, name).then((v) => alive && setSt({ blob, v })).catch(() => alive && setSt({ blob, v: { lines: [], note: 'This archive could not be read. It may be damaged.' } }));
+    listArchive(blob, ext, name).then((v) => alive && setSt({ blob, v })).catch(() => alive && setSt({ blob, v: { lines: [], note: 'Couldn’t read this archive. It may be damaged.' } }));
     return () => { alive = false; };
   }, [blob, ext, name, enabled]);
   if (!enabled || !blob) return null;

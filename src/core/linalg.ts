@@ -53,7 +53,7 @@ export function parseVector(text: string): Res<Vec> {
 
 function fromList(list: unknown[]): Res<Vec> {
   if (list.length > MAX_CELLS) return { ok: false, error: `A vector holds at most ${MAX_CELLS.toLocaleString('en')} numbers.` };
-  if (list.some((x) => Array.isArray(x))) return { ok: false, error: 'A vector is a flat list of numbers: it cannot contain lists. Use a Matrix for rows.' };
+  if (list.some((x) => Array.isArray(x))) return { ok: false, error: 'A vector is a flat list of numbers, so it can’t contain lists. Use a Matrix for rows.' };
   return numbers(list);
 }
 
@@ -72,7 +72,7 @@ function fromRows(rows: unknown[]): Res<Mat> {
   let width = -1;
   let cells = 0;
   for (const r of grid) {
-    if (width >= 0 && r.length !== width) return { ok: false, error: `Every row of a matrix needs the same number of columns: row 1 has ${width}, row ${out.length + 1} has ${r.length}.` };
+    if (width >= 0 && r.length !== width) return { ok: false, error: `Every row of a matrix needs the same number of columns, but row 1 has ${width} and row ${out.length + 1} has ${r.length}.` };
     width = r.length;
     cells += r.length;
     if (cells > MAX_CELLS) return { ok: false, error: `A matrix holds at most ${MAX_CELLS.toLocaleString('en')} numbers.` };

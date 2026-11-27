@@ -245,7 +245,7 @@ export function disconnectNodes(from: string, to: string, toPin?: string): Resul
   const st = useStore.getState();
   const pin = toPin?.replace(/^p:/, '');
   const hits = Object.values(st.project.graph.edges).filter((e) => e.from === from && e.to === to && (!pin || e.toPort === pin || e.toPort === `p:${pin}`));
-  if (!hits.length) return { ok: false, message: `There is no wire from \`${from}\` to \`${to}\`.` };
+  if (!hits.length) return { ok: false, message: `There’s no wire from \`${from}\` to \`${to}\`.` };
   st.edit((s) => { let g = s.graph; for (const e of hits) g = disconnect(g, e.id); return { ...s, graph: g }; });
   return { ok: true, ids: [from, to], message: `Removed ${hits.length} wire${hits.length === 1 ? '' : 's'} from ${from} to ${to}.` };
 }

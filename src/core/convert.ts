@@ -89,7 +89,7 @@ export function requestConversion(req: ConvertRequest): ConvertResult {
   const key = requestKey(req);
   const hit = results.get(key);
   if (hit) { results.delete(key); results.set(key, hit); return hit; } // most recently used goes last
-  if (!runner) return { status: 'error', message: 'File conversion needs a browser. It is not available here.' };
+  if (!runner) return { status: 'error', message: 'File conversion needs a browser, and it isn’t available here.' };
   const pending: ConvertResult = { status: 'pending' };
   results.set(key, pending);
   const id = resultId(key);

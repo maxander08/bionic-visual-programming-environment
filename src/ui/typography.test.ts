@@ -90,7 +90,7 @@ describe('GUI layer isolation and stacking invariants', () => {
     expect(toasts).toBeGreaterThan(100);
   });
 
-  it('scopes canvas snap-ghost styling under .ghosts so it cannot hide .g-btn.ghost', () => {
+  it('scopes canvas snap-ghost styling under .ghosts so it can’t hide .g-btn.ghost', () => {
     expect(/(^|[\r\n}])\s*\.ghost\s*\{/.test(indexCss)).toBe(false);
     expect(/\.ghosts\s+\.ghost\s*\{/.test(indexCss)).toBe(true);
   });

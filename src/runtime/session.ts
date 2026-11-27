@@ -56,9 +56,9 @@ function recomputeDiag(force = false) {
   lastDiagAt = now;
   const list = engine.diagnostics();
   for (const n of engine.nodes.values()) {
-    if (n.type === 'audio' && audio.state === 'unsupported') list.push({ level: 'warn', nodeId: n.id, message: 'Audio: Web Audio is not available in this browser.' });
+    if (n.type === 'audio' && audio.state === 'unsupported') list.push({ level: 'warn', nodeId: n.id, message: 'Audio: Web Audio isn’t available in this browser.' });
     if (n.type === 'audio' && audio.state === 'locked' && useStore.getState().run === 'running') list.push({ level: 'warn', nodeId: n.id, message: 'Audio: sound is locked until you interact with the page. Press Run or Step.' });
-    if (n.type === 'haptic' && !vibrationSupported()) list.push({ level: 'warn', nodeId: n.id, message: 'Haptic: this device or browser does not support vibration.' });
+    if (n.type === 'haptic' && !vibrationSupported()) list.push({ level: 'warn', nodeId: n.id, message: 'Haptic: this device or browser doesn’t support vibration.' });
     if (n.type === 'notify' && notificationState() !== 'granted') list.push({ level: 'warn', nodeId: n.id, message: `Notify: notification permission is “${notificationState()}”. Use the inspector to request it.` });
   }
   blocked = new Set(engine.edges.filter((e) => e.blocked).map((e) => e.orig));

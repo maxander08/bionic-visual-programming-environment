@@ -133,7 +133,7 @@ export function buildBlock(spec: BuildSpec, label = 'that'): Result {
 /** Put a Cookbook recipe on the workspace next to what is already there (the editor's own “open” would replace it). */
 export function addRecipe(id: string): Result {
   const r = RECIPE_BY_ID.get(id);
-  if (!r) return { ok: false, message: 'I could not find that recipe.' };
+  if (!r) return { ok: false, message: 'I couldn’t find that recipe.' };
   const minX = Math.min(...r.nodes.map((n) => n.x)), minY = Math.min(...r.nodes.map((n) => n.y));
   const maxX = Math.max(...r.nodes.map((n) => n.x + 144)), maxY = Math.max(...r.nodes.map((n) => n.y + 180));
   const origin = findFreeSpot(maxX - minX, maxY - minY);
@@ -248,7 +248,7 @@ export function control(action: 'run' | 'pause' | 'stop' | 'step'): Result {
   const st = useStore.getState();
   switch (action) {
     case 'run': if (st.run === 'running') return { ok: true, message: 'It is already running.' }; play(); return { ok: true, message: st.run === 'paused' ? 'Resumed.' : 'Running.' };
-    case 'pause': if (st.run !== 'running') return { ok: true, message: 'It is not running, so there is nothing to pause.' }; pause(); return { ok: true, message: 'Paused.' };
+    case 'pause': if (st.run !== 'running') return { ok: true, message: 'It isn’t running, so there is nothing to pause.' }; pause(); return { ok: true, message: 'Paused.' };
     case 'stop': if (st.run === 'stopped') return { ok: true, message: 'It is already stopped.' }; stop(); return { ok: true, message: 'Stopped and reset.' };
     case 'step': if (st.run === 'running') return { ok: false, message: 'Pause first, then I can step one tick at a time.' }; stepOnce(); return { ok: true, message: 'Stepped one tick.' };
     default: return { ok: false, message: `Unknown control action “${String(action)}”.` };

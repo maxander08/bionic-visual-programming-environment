@@ -206,13 +206,13 @@ function trim() {
 /** The state of a lookup, starting it when nobody has asked for it yet. Never throws. */
 export function requestPlace(query: string, lang = 'en'): PlaceResult {
   const q = query.trim();
-  if (!q) return { status: 'error', message: 'No place given. Type a city, a country or an address in the inspector, or connect text to the Place pin.' };
+  if (!q) return { status: 'error', message: 'No place given. Type a city, country or address in the inspector, or connect text to the Place pin.' };
   const key = keyOf(q, lang);
   const hit = results.get(key);
   if (hit) { results.delete(key); results.set(key, hit); return hit; }
   const local = localPlace(q, lang);
   if (local && (local.source === 'coordinates' || !runner)) { const r: PlaceResult = { status: 'ready', place: local }; results.set(key, r); return r; }
-  if (!runner) return { status: 'error', message: `“${q.slice(0, 40)}” is not a place this program knows, and looking up other places needs a browser.` };
+  if (!runner) return { status: 'error', message: `“${q.slice(0, 40)}” isn’t a place the program knows, and other places can only be looked up in a browser.` };
   // A known place is shown at once and refined when OpenStreetMap answers; an unknown one waits for the answer.
   const first: PlaceResult = local ? { status: 'ready', place: local } : { status: 'pending' };
   results.set(key, first);
@@ -221,12 +221,12 @@ export function requestPlace(query: string, lang = 'en'): PlaceResult {
   job.then(
     (p) => {
       if (p) results.set(key, { status: 'ready', place: p });
-      else if (!local) results.set(key, { status: 'error', message: `“${q.slice(0, 40)}” was not found. Try the name of a city, a country, a province or an address, or write coordinates like 35.68, 139.76.` });
+      else if (!local) results.set(key, { status: 'error', message: `Couldn’t find “${q.slice(0, 40)}”. Try the name of a city, country, province or address, or write coordinates like 35.68, 139.76.` });
       trim(); notify();
     },
     (e) => {
       if (e instanceof Error && e.message === 'superseded') { if (!local) results.delete(key); return; }
-      if (!local) results.set(key, { status: 'error', message: 'The place could not be looked up: the map service did not answer. Check the connection, or use a city or country the app knows, or coordinates.' });
+      if (!local) results.set(key, { status: 'error', message: 'Couldn’t look up that place because the map service didn’t answer. Check your connection, or use a city or country the app knows, or coordinates.' });
       notify();
     },
   );

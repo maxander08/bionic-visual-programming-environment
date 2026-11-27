@@ -107,7 +107,7 @@ describe('quantities: reading <amount><unit>', () => {
     expect(parseQuantity('21.5°C')).toMatchObject({ ok: true, q: { unit: '°C', base: 294.65 } });
     expect(parseQuantity('7')).toEqual({ ok: true, amount: 7 });
   });
-  it('rejects what is not a quantity', () => {
+  it('rejects what isn’t a quantity', () => {
     expect(parseQuantity('km5').ok).toBe(false);
     expect(parseQuantity('5 parsnips').ok).toBe(false);
     expect(parseQuantity('1e999m').ok).toBe(false);
@@ -158,7 +158,7 @@ describe('quantities: the section', () => {
 });
 
 describe('quantities: running', () => {
-  it('emits <amount><unit>, the amount, the unit and the SI value', () => {
+  it('sends out <amount><unit>, the amount, the unit and the SI value', () => {
     const e = run([['q', 'qty-length', { amount: 2.5, prefix: 'k', unit: 'm' }]]);
     expect(e.out('q', 'quantity')).toBe('2.5km');
     expect(e.out('q', 'amount')).toBe(2.5);
@@ -218,7 +218,7 @@ describe('quantities: running', () => {
     expect(e.out('f', 'base')).toBe(7e6);
   });
 
-  it('refuses a unit of another quantity and text that is not a quantity, with a message', () => {
+  it('refuses a unit of another quantity and text that isn’t a quantity, with a message', () => {
     const wrong = run([['c', 'constant', { kind: 'text', value: '5kg' }], ['t', 'qty-time']], [['c', 'out', 't', 'in']]);
     expect(wrong.nodes.get('t')!.status.level).toBe('error');
     expect(wrong.nodes.get('t')!.status.message).toMatch(/mass/);
@@ -227,7 +227,7 @@ describe('quantities: running', () => {
     expect(junk.nodes.get('l')!.status.level).toBe('error');
   });
 
-  it('falls back to the default for a prefix or unit it does not know', () => {
+  it('falls back to the default for a prefix or unit it doesn’t know', () => {
     const d = getDef('qty-length', undefined, {})!;
     const r = resolveParams(d, { amount: 1, prefix: 'x', unit: 'furlong' });
     expect(r).toMatchObject({ prefix: 'none', unit: 'm' });
@@ -270,7 +270,7 @@ describe('quantities: Time is a duration you can say', () => {
     expect(run([['n', 'constant', { value: '90' }], ['t', 'qty-time', { unit: 'min' }]], [['n', 'out', 't', 'in']]).out('t', 'base')).toBe(5400);
   });
 
-  it('refuses text that is not a time, and a negative time', () => {
+  it('refuses text that isn’t a time, and a negative time', () => {
     const bad = (value: string) => run([['c', 'constant', { kind: 'text', value }], ['t', 'qty-time']], [['c', 'out', 't', 'in']]).nodes.get('t')!.status;
     expect(bad('2 apples').level).toBe('error');
     expect(bad('5kg').message).toMatch(/mass/);

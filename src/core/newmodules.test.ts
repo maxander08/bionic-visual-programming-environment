@@ -51,9 +51,9 @@ describe('Base converter maths', () => {
     expect(conv('11111', 1, 10)).toBe('5');
     expect(conv('0', 10, 1)).toBe('0');
     expect(conv('0', 1, 10)).toBe('0');
-    expect(conv('12', 1, 10)).toContain('not a digit');
+    expect(conv('12', 1, 10)).toContain('isn’t a digit');
   });
-  it('reports digits that do not exist', () => {
+  it('reports digits that don’t exist', () => {
     expect(conv('102', 2, 10)).toContain('not a digit of base 2');
   });
 });
@@ -86,7 +86,7 @@ describe('Vector and Matrix', () => {
     expect(parseMatrix('1, 2; 3').ok).toBe(false);
     expect(transpose([[1, 2, 3], [4, 5, 6]])).toEqual([[1, 4], [2, 5], [3, 6]]);
   });
-  it('Vector emits its list, size, magnitude and item', () => {
+  it('Vector sends out its list, size, magnitude and item', () => {
     const e = run([['v', 'vector', { items: '3, 4', index: -1 }]]);
     expect(out(e, 'v', 'out')).toEqual([3, 4]);
     expect(out(e, 'v', 'length')).toBe(2);
@@ -95,7 +95,7 @@ describe('Vector and Matrix', () => {
     const n = run([['v', 'vector', { items: '3, 4', normalize: true }]]);
     expect(out(n, 'v', 'out')).toEqual([0.6, 0.8]);
   });
-  it('Matrix emits its rows, size and item, and can be transposed', () => {
+  it('Matrix sends out its rows, size and item, and can be transposed', () => {
     const e = run([['m', 'matrix', { values: '1, 2, 3; 4, 5, 6', row: 1, col: 2 }]]);
     expect(out(e, 'm', 'rows')).toBe(2);
     expect(out(e, 'm', 'cols')).toBe(3);

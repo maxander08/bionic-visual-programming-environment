@@ -37,10 +37,10 @@ const CONTENT = (what: string) => out('content', 'Content', 'text', what, 'botto
 
 const SPECS: Record<FileKindId, Spec> = {
   document: {
-    bottom: [CONTENT('The text of a .DOCX document: paragraphs separated by new lines. Empty for the old binary .DOC format, which cannot be read here.')],
+    bottom: [CONTENT('The text of a .DOCX document, with paragraphs separated by new lines. Empty for the old binary .DOC format, which can’t be read here.')],
     keywords: 'word docx doc letter report paperwork microsoft writer',
     summary: 'Holds a word-processor document: .DOCX or .DOC.',
-    runtime: 'Drag a document onto the node, or click the node to choose one. For .DOCX the plain text is pulled out of the file and sent on the Content pin (formatting, pictures and tables’ layout are not kept). The old binary .DOC format is stored and described but its text is not readable in the browser. The file stays in this browser.',
+    runtime: 'Drag a document onto the node, or click the node to choose one. For .DOCX, the plain text is pulled out of the file and sent to the Content pin (formatting, pictures and table layout aren’t kept). The old binary .DOC format is stored and described, but its text can’t be read in the browser. The file stays in this browser.',
     errors: ['A .DOCX that is damaged or password-protected gives a warning and no Content.'],
     examples: ['Document Content → Text Display: read a letter inside the program.', 'Document Name → Projector: show which document is loaded.'],
   },
@@ -49,22 +49,22 @@ const SPECS: Record<FileKindId, Spec> = {
     right: [out('lines', 'Lines', 'num', 'Number of lines in the text.', 'right')],
     keywords: 'markdown md txt rtf plain notes read string',
     summary: 'Holds a text file: .MD, .TXT or .RTF.',
-    runtime: 'Drag a text file onto the node, or click it to choose one. The text is read (as UTF-8) and sent on the Content pin, with the number of lines on Lines. Very long files are cut at 1 000 000 characters and the node says so. RTF files are sent as their raw markup, not as formatted text.',
-    errors: ['A file that is cut off at the limit raises a warning.'],
+    runtime: 'Drag a text file onto the node, or click it to choose one. The text is read (as UTF-8) and sent to the Content pin, with the number of lines on Lines. Very long files are cut at 1 000 000 characters, and the node tells you so. RTF files are sent as their raw markup, not as formatted text.',
+    errors: ['A file that is cut off at the limit gives a warning.'],
     examples: ['Text Content → String: use a file’s words as data.', 'Text Content → Sense (sentiment package): score the mood of a document.'],
   },
   pdf: {
     keywords: 'pdf portable document paper acrobat',
     summary: 'Holds a PDF file.',
-    runtime: 'Drag a PDF onto the node, or click it to choose one. The node reports the file’s name, extension and size and sends the File record. The text inside the PDF is not extracted.',
+    runtime: 'Drag a PDF onto the node, or click it to choose one. The node reports the file’s name, extension and size, and sends the File record. It doesn’t extract the text inside the PDF.',
     examples: ['PDF Size → Threshold: react when a file is large.', 'PDF File → another program’s Files node: pass the record along.'],
   },
   audio: {
     bottom: [out('duration', 'Duration', 'num', 'Length of the recording in seconds, when the browser can read it.', 'bottom')],
     keywords: 'sound music song mp3 wav m4a flac aac ogg recording',
     summary: 'Holds an audio file: .MP3, .WAV, .M4A, .FLAC, .AAC or .OGG.',
-    runtime: 'Drag a recording onto the node, or click it to choose one. The browser reads the file’s header to find its length, which is sent on Duration. The audio is not played by this node. Codecs the browser cannot read leave Duration empty and say so in the inspector.',
-    errors: ['A format this browser cannot decode (FLAC or OGG on some systems) has no Duration; the node still holds the file.'],
+    runtime: 'Drag a recording onto the node, or click it to choose one. The browser reads the file’s header to find its length, which is sent on Duration. This node doesn’t play the audio. If the browser can’t read a codec, Duration stays empty and the inspector says so.',
+    errors: ['A format this browser can’t decode (FLAC or OGG on some systems) has no Duration; the node still holds the file.'],
     examples: ['Audio Duration → Timer: count down the length of a track.'],
   },
   video: {
@@ -75,8 +75,8 @@ const SPECS: Record<FileKindId, Spec> = {
     ],
     keywords: 'movie film clip mp4 mov mkv webm avi recording',
     summary: 'Holds a video file: .MP4, .MOV, .MKV, .WEBM or .AVI.',
-    runtime: 'Drag a video onto the node, or click it to choose one. The browser reads the file’s header for the length and picture size, and a still frame is shown on the node. The video is not played. Formats the browser cannot read (MKV and AVI in most browsers) are still stored; their Duration, Width and Height stay empty.',
-    errors: ['A format this browser cannot decode has no Duration, Width, Height or still frame; the node still holds the file.'],
+    runtime: 'Drag a video onto the node, or click it to choose one. The browser reads the file’s header for the length and picture size, and a still frame is shown on the node. The video isn’t played. Formats the browser can’t read (MKV and AVI in most browsers) are still stored, but their Duration, Width and Height stay empty.',
+    errors: ['A format this browser can’t decode has no Duration, Width, Height or still frame; the node still holds the file.'],
     examples: ['Video Duration → Meter: plot clip lengths.'],
   },
   image: {
@@ -87,8 +87,8 @@ const SPECS: Record<FileKindId, Spec> = {
     ],
     keywords: 'picture photo jpg jpeg png gif svg webp tiff tif graphic',
     summary: 'Holds a picture: .JPG/.JPEG, .PNG, .GIF, .SVG, .WEBP or .TIFF.',
-    runtime: 'Drag a picture onto the node, or click it to choose one. It is decoded by the browser, shown on the node, and sent on Image (scaled to at most 256 px on the long side) with its real Width and Height. Animated GIFs give their first frame. TIFF is only decoded by some browsers; if yours cannot, the file is kept but Image stays empty.',
-    errors: ['A picture the browser cannot decode (TIFF in most browsers, a broken file) gives a warning and no Image.'],
+    runtime: 'Drag a picture onto the node, or click it to choose one. The browser decodes it, shows it on the node, and sends it on Image (scaled to at most 256 px on the long side) with its real Width and Height. Animated GIFs give their first frame. Only some browsers can decode TIFF. If yours can’t, the file is kept but Image stays empty.',
+    errors: ['A picture the browser can’t decode (TIFF in most browsers, a broken file) gives a warning and no Image.'],
     examples: ['Image Image → Sense or Knowledge: analyze a picture.', 'Image Image → Image Display: see the picture elsewhere on the workspace.'],
   },
   spreadsheet: {
@@ -96,8 +96,8 @@ const SPECS: Record<FileKindId, Spec> = {
     right: [out('lines', 'Lines', 'num', 'Number of lines in a .CSV or .SQL file.', 'right')],
     keywords: 'excel xlsx xls csv sql database table accdb access rows workbook',
     summary: 'Holds a spreadsheet or table file: .XLSX, .XLS, .CSV, .SQL or .ACCDB.',
-    runtime: 'Drag a table file onto the node, or click it to choose one. Plain-text tables (.CSV and .SQL) are read: the text goes to Content and the line count to Lines. Workbooks and databases (.XLSX, .XLS, .ACCDB) are stored and described but their cells are not read.',
-    errors: ['A file that is cut off at the limit raises a warning.'],
+    runtime: 'Drag a table file onto the node, or click it to choose one. Plain-text tables (.CSV and .SQL) are read: the text goes to Content and the line count to Lines. Workbooks and databases (.XLSX, .XLS, .ACCDB) are stored and described, but their cells aren’t read.',
+    errors: ['A file that is cut off at the limit gives a warning.'],
     examples: ['Spreadsheet Content → Array: split rows into a list.'],
   },
   presentation: {
@@ -105,49 +105,49 @@ const SPECS: Record<FileKindId, Spec> = {
     right: [out('slides', 'Slides', 'num', 'Number of slides in the presentation.', 'right')],
     keywords: 'powerpoint pptx slides deck keynote slideshow',
     summary: 'Holds a slide presentation: .PPTX.',
-    runtime: 'Drag a presentation onto the node, or click it to choose one. The slide count is sent on Slides and the text found on the slides (not pictures or notes) on Content, one block per slide.',
+    runtime: 'Drag a presentation onto the node, or click it to choose one. The slide count is sent on Slides, and the text found on the slides (not pictures or notes) goes to Content, one block per slide.',
     errors: ['A damaged .PPTX gives a warning and no Content.'],
     examples: ['Presentation Slides → Projector: show the slide count.'],
   },
   executable: {
     keywords: 'exe msi app bat sh program installer script binary command',
     summary: 'Holds a program or script file: .EXE, .MSI, .APP, .BAT or .SH.',
-    runtime: 'Drag a program onto the node, or click it to choose one. The file is only described (name, extension, size). It is never run, opened or sent anywhere: the browser cannot run it, and this node does not try.',
+    runtime: 'Drag a program onto the node, or click it to choose one. The file is only described (name, extension, size). It’s never run, opened or sent anywhere. The browser can’t run it, and this node doesn’t try.',
     examples: ['Executable Name → Text Display: list the programs in a bundle.'],
   },
   web: {
-    bottom: [CONTENT('The source text of the file (the first 1 000 000 characters). It is text only: nothing is run or rendered.')],
+    bottom: [CONTENT('The source text of the file (the first 1 000 000 characters). It’s text only: nothing is run or rendered.')],
     keywords: 'html css js javascript php website page source code script stylesheet',
     summary: 'Holds a web file: .HTML, .CSS, .JS or .PHP.',
-    runtime: 'Drag a web file onto the node, or click it to choose one. The source is read as text and sent on Content. It is never run, rendered or fetched: a script stays inert text.',
-    errors: ['A file that is cut off at the limit raises a warning.'],
+    runtime: 'Drag a web file onto the node, or click it to choose one. The source is read as text and sent on Content. It’s never run, rendered or fetched, so a script stays inert text.',
+    errors: ['A file that is cut off at the limit gives a warning.'],
     examples: ['Web Content → Text Display: read a page’s source.'],
   },
   compressed: {
     right: [out('entries', 'Entries', 'num', 'Number of files inside a .ZIP archive. Empty for the other archive types.', 'right')],
     keywords: 'zip rar 7z tar gz gzip archive bundle package compress',
     summary: 'Holds an archive: .ZIP, .RAR, .7Z, .TAR or .GZ.',
-    runtime: 'Drag an archive onto the node, or click it to choose one. For .ZIP files the number of files inside is sent on Entries (nothing is unpacked). The other types are stored and described but not opened.',
+    runtime: 'Drag an archive onto the node, or click it to choose one. For .ZIP files, the number of files inside is sent on Entries (nothing is unpacked). The other types are stored and described, but not opened.',
     errors: ['A damaged .ZIP gives a warning and no Entries.'],
     examples: ['Compressed Entries → Threshold: react to a bulky bundle.'],
   },
   font: {
     bottom: [
-      out('family', 'Family', 'text', 'The font family name stored inside the file, for example “Inter”. For a .WOFF2 file whose names this browser cannot unpack, the name is taken from the file name.', 'bottom'),
+      out('family', 'Family', 'text', 'The font family name stored inside the file, like “Inter”. If this browser can’t unpack the names in a .WOFF2 file, the name comes from the file name.', 'bottom'),
       out('image', 'Specimen', 'image', 'A picture of the font: its name set in the font itself, with a line of letters and digits under it. Connect it to an Image Display or a Projector.', 'bottom'),
       out('glyphs', 'Glyphs', 'num', 'Number of glyphs (drawn shapes) in the font, when the file says.', 'bottom'),
     ],
     right: [out('style', 'Style', 'text', 'The style inside the family: Regular, Bold Italic…', 'right')],
     keywords: 'font typeface type ttf otf woff2 truetype opentype glyph letters typography family bold italic',
     summary: 'Holds a font file: .TTF, .OTF or .WOFF2.',
-    runtime: 'Drag a font onto the node, or click the node to choose one. The browser installs the font for this page only (nothing is uploaded or added to your computer), the family, style and glyph count are read from the file, and a specimen picture is drawn with the font itself. Connect File to a Projector for a full preview: a live specimen you can type into, every size from tiny to huge, a grid of all the characters it can draw, and the file’s details.',
-    errors: ['A file with a font extension that is not really a font, or that the browser refuses (damaged, wrong format), gives a warning and no Specimen.'],
+    runtime: 'Drag a font onto the node, or click the node to choose one. The browser installs the font for this page only (nothing is uploaded or added to your computer), the family, style and glyph count are read from the file, and a specimen picture is drawn using the font itself. Connect File to a Projector for a full preview: a live specimen you can type into, every size from tiny to huge, a grid of all the characters it can draw, and the file’s details.',
+    errors: ['A file with a font extension that isn’t really a font, or that the browser refuses (damaged, wrong format), gives a warning and no Specimen.'],
     examples: ['Font File → Projector: type your own text and see it in the font.', 'Font Specimen → Image Display: show the specimen picture on the workspace.', 'Font Family → Text Display: read the font’s real name.'],
   },
   misc: {
     keywords: 'other any unknown anything else file binary data',
     summary: 'Holds any file that none of the other Files nodes takes.',
-    runtime: 'Drag any file onto the node, or click it to choose one. Files that belong to another Files node (a PDF, a picture…) are turned away with a hint about which node to use. The file is described by its name, extension and size.',
+    runtime: 'Drag any file onto the node, or click it to choose one. Files that belong to another Files node (a PDF, a picture…) are turned away, with a hint about which node to use. The file is described by its name, extension and size.',
     examples: ['Miscellaneous Extension → Compare: branch on the file type.'],
   },
 };
@@ -166,7 +166,7 @@ function runFor(kind: FileKind, outIds: string[]) {
       c.state.last = '';
       const st = fileState(id);
       c.view({ state: st === 'loading' ? 'loading' : 'missing', name });
-      if (st !== 'loading') c.warn(`“${name}” is not in this browser. Programs that were shared or imported do not carry their files: drop it on the node again.`);
+      if (st !== 'loading') c.warn(`“${name}” isn’t in this browser. Programs that were shared or imported don’t carry their files: drop it on the node again.`);
       return;
     }
     c.emit('file', descriptorOf(kind, info));

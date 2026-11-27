@@ -143,7 +143,7 @@ export const useStore = create<State>((set, get) => ({
     get().edit((s) => {
       const r = connect(s.graph, from, fp, to, tp, s.compounds);
       if (r.error) { err = r.error; return null; }
-      if (r.replaced) msg = tr("Replaced the previous connection: an input has one source.");
+      if (r.replaced) msg = tr("Replaced the previous connection. An input can only have one source.");
       return { ...s, graph: r.graph };
     });
     if (err) get().toast(err, 'error');
@@ -215,7 +215,7 @@ export const useStore = create<State>((set, get) => ({
     const lib = { ...get().userCompounds, [id]: def };
     set({ userCompounds: lib });
     const ok = userLibrary.write(lib);
-    get().toast(ok ? tr('Saved “{name}” to your library. It is available in other programs.', { name: def.name }) : tr("Could not write to browser storage; export the program to keep this compound."), ok ? 'ok' : 'error');
+    get().toast(ok ? tr('Saved “{name}” to your library. It’s available in other programs.', { name: def.name }) : tr("Couldn’t write to browser storage; export the program to keep this compound."), ok ? 'ok' : 'error');
   },
 
   undo() {

@@ -108,7 +108,7 @@ export const PACKAGES: MlPackage[] = [
     limitations: 'Unavailable here. Selecting it produces an error; no substitute result is faked.',
     inputs: 'image', outputs: 'label, score', params: [],
     run(c) {
-      c.fail('Object recognition needs a model file that is not bundled in this offline build.');
+      c.fail('Object recognition needs a model file that isn’t bundled in this offline build.');
     },
   },
   {
@@ -146,7 +146,7 @@ export const PACKAGES: MlPackage[] = [
   },
   {
     id: 'rules', name: 'Rule-based inference', short: 'RULES', host: 'knowledge', status: 'available',
-    description: 'Evaluates ordered if-then rules against the input and emits the label of the first rule that matches.',
+    description: 'Evaluates ordered if-then rules against the input and sends out the label of the first rule that matches.',
     technique: 'Production rules. Not a neural network.',
     requirements: 'One rule per line, e.g. “in > 0.7 => hot”. Operators: > < >= <= == != and ~ (text contains).', limitations: 'Single input variable named in.',
     inputs: 'num or text', outputs: 'label = matching label or default, score = 1 if a rule matched else 0',
@@ -284,5 +284,5 @@ export const packagesFor = (host: 'knowledge' | 'imagination') => PACKAGES.filte
 export function packageParamDef(host: 'knowledge' | 'imagination'): ParamDef {
   const list = packagesFor(host);
   // The package decides which other settings exist: the setting pins shown are those of the package chosen in the inspector.
-  return { ...sel('package', 'Package', list.find((p) => p.status === 'available')!.id, list.map((p) => [p.id, p.status === 'unavailable' ? `${p.name} — unavailable` : p.name] as [string, string]), 'Which inference package this nucleus runs. Each package documents its technique and limits.')};
+  return { ...sel('package', 'Package', list.find((p) => p.status === 'available')!.id, list.map((p) => [p.id, p.status === 'unavailable' ? `${p.name} — unavailable` : p.name] as [string, string]), 'Which package this nucleus runs. Each package describes its own technique and limits.')};
 }

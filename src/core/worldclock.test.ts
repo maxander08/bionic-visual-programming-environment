@@ -134,7 +134,7 @@ describe('World Clock module', () => {
     e.step();
     return e;
   }
-  it('emits the local time of the chosen city', () => {
+  it('sends out the local time of the chosen city', () => {
     const e = run({ city: 'Sydney, Australia' });
     expect(e.out('c', 'time')).toMatch(/^\d\d:\d\d:\d\d\.\d{3}$/);
     expect([10, 11]).toContain(e.out('c', 'offset'));
@@ -144,7 +144,7 @@ describe('World Clock module', () => {
     expect(Number.isInteger(ms) && ms >= 0 && ms <= 999).toBe(true);
     expect(e.nodes.get('c')!.status.level).toBe('ok');
   });
-  it('raises an error for an unknown city', () => {
+  it('gives an error for an unknown city', () => {
     const e = run({ city: 'Gotham' });
     expect(e.nodes.get('c')!.status.level).toBe('error');
     expect(e.out('c', 'time')).toBeUndefined();

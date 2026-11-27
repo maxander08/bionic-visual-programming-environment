@@ -68,9 +68,9 @@ export function sanitizeCompounds(raw: unknown, problems: string[]): Record<stri
 
 export function validateProject(raw: unknown): ParseResult {
   const problems: string[] = [];
-  if (!raw || typeof raw !== 'object') return { error: 'This is not a Nicque program (expected a JSON object).', problems };
+  if (!raw || typeof raw !== 'object') return { error: 'This isn’t a Nicque program (expected a JSON object).', problems };
   const r = raw as any;
-  if (r.format !== 'nicque' && r.format !== 'neural-studio') return { error: 'This file is not a Nicque program (missing format marker).', problems };
+  if (r.format !== 'nicque' && r.format !== 'neural-studio') return { error: 'This file isn’t a Nicque program (missing format marker).', problems };
   if (typeof r.version !== 'number' || r.version > FORMAT_VERSION) return { error: `Unsupported program version ${String(r.version)}. This build understands version ${FORMAT_VERSION}.`, problems };
   if (!r.graph || typeof r.graph !== 'object' || typeof r.graph.nodes !== 'object') return { error: 'The program contains no graph.', problems };
   const compounds = sanitizeCompounds(r.compounds ?? {}, problems);
@@ -91,7 +91,7 @@ export function parseProjectJSON(text: string): ParseResult {
   try {
     return validateProject(JSON.parse(text));
   } catch {
-    return { error: 'This is not valid JSON. The file may be damaged or is not a program.', problems: [] };
+    return { error: 'This isn’t valid JSON. The file may be damaged or isn’t a program.', problems: [] };
   }
 }
 
@@ -148,7 +148,7 @@ export function encodeShare(p: Project): string {
 export function decodeShare(codeRaw: string): ParseResult {
   const code = codeRaw.replace(/\s+/g, '');
   const parts = code.split('.');
-  if (parts.length !== 3 || parts[0] !== PREFIX) return { error: parts[0]?.startsWith('NS') ? `Unsupported share code version “${parts[0]}”.` : 'This does not look like a Nicque share code (it should start with “NS1.”).', problems: [] };
+  if (parts.length !== 3 || parts[0] !== PREFIX) return { error: parts[0]?.startsWith('NS') ? `Unsupported share code version “${parts[0]}”.` : 'This doesn’t look like a Nicque share code (it should start with “NS1.”).', problems: [] };
   if (!/^[A-Za-z0-9_-]*$/.test(parts[1]) || !/^[0-9a-f]{8}$/.test(parts[2])) return { error: 'The share code contains invalid characters. It may have been truncated or altered.', problems: [] };
   if (crc32(parts[1]).toString(16).padStart(8, '0') !== parts[2]) return { error: 'Checksum mismatch: the code is corrupted or was edited. Copy it again in full.', problems: [] };
   let json: string;
@@ -166,7 +166,7 @@ export function decodeShare(codeRaw: string): ParseResult {
     for (const c of chunks) { all.set(c, o); o += c.length; }
     json = strFromU8(all);
   } catch (e) {
-    return { error: e instanceof Error && e.message === 'too large' ? 'The decoded program is too large (limit 8 MB).' : 'The share code could not be decompressed. It is damaged.', problems: [] };
+    return { error: e instanceof Error && e.message === 'too large' ? 'The decoded program is too large (limit 8 MB).' : 'The share code couldn’t be decompressed. It’s damaged.', problems: [] };
   }
   let c: any;
   try { c = JSON.parse(json); } catch { return { error: 'The share code decoded to unreadable data.', problems: [] }; }

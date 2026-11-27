@@ -25,7 +25,7 @@ export function builtinCompounds(): CompoundDef[] {
     const b = new Builder();
     b.add('pick', 'decision', 0, 0, { labels: 'A, B', hysteresis: 0.05, min: 0.05 });
     return {
-      id: 'decision-circuit', name: 'Decision circuit', description: 'Chooses between two scored options with hysteresis so the choice does not flicker.', graph: b.g,
+      id: 'decision-circuit', name: 'Decision circuit', description: 'Chooses between two scored options with hysteresis, so the choice doesn’t flicker.', graph: b.g,
       inputs: portsOf(b, [{ id: 'a', label: 'Score A', type: 'num', nodeId: 'pick', port: 'a' }, { id: 'b', label: 'Score B', type: 'num', nodeId: 'pick', port: 'b' }]),
       outputs: portsOf(b, [{ id: 'label', label: 'Choice', type: 'text', nodeId: 'pick', port: 'label' }, { id: 'margin', label: 'Margin', type: 'num', nodeId: 'pick', port: 'margin' }]),
       exposed: [{ key: 'labels', label: 'Option names', nodeId: 'pick', param: 'labels' }, { key: 'hysteresis', label: 'Hysteresis', nodeId: 'pick', param: 'hysteresis' }],
@@ -38,7 +38,7 @@ export function builtinCompounds(): CompoundDef[] {
     b.wire('r', 'expected', 'd', 'in');
     b.wire('d', 'out', 'r', 'cost');
     return {
-      id: 'reward-loop', name: 'Reward loop', description: 'A reward center whose learned expectation is fed back, after a delay, as effort cost, so sustained success becomes less rewarding.', graph: b.g,
+      id: 'reward-loop', name: 'Reward loop', description: 'A reward center whose learned expectation is fed back, after a delay, as effort cost, so success that keeps going becomes less rewarding.', graph: b.g,
       inputs: portsOf(b, [{ id: 'goal', label: 'Goal', type: 'num', nodeId: 'r', port: 'goal' }]),
       outputs: portsOf(b, [{ id: 'reward', label: 'Reward', type: 'num', nodeId: 'r', port: 'reward' }, { id: 'error', label: 'Error', type: 'num', nodeId: 'r', port: 'error' }]),
       exposed: [{ key: 'gain', label: 'Reward gain', nodeId: 'r', param: 'gain' }, { key: 'learn', label: 'Learning rate', nodeId: 'r', param: 'learn' }],
@@ -50,7 +50,7 @@ export function builtinCompounds(): CompoundDef[] {
     b.add('t', 'threshold', 156, 0, { threshold: 0.6, hysteresis: 0.1 });
     b.wire('s', 'level', 't', 'in');
     return {
-      id: 'sensory-response', name: 'Sensory response', description: 'Auto-ranges a raw signal into 0–1 and raises a trigger when it becomes strong.', graph: b.g,
+      id: 'sensory-response', name: 'Sensory response', description: 'Auto-ranges a raw signal into 0–1 and raises a trigger when it gets strong.', graph: b.g,
       inputs: portsOf(b, [{ id: 'in', label: 'Signal', type: 'any', nodeId: 's', port: 'in' }]),
       outputs: portsOf(b, [{ id: 'level', label: 'Level', type: 'num', nodeId: 's', port: 'level' }, { id: 'hit', label: 'Triggered', type: 'bool', nodeId: 't', port: 'over' }]),
       exposed: [{ key: 'threshold', label: 'Trigger level', nodeId: 't', param: 'threshold' }],
@@ -109,7 +109,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'reward-loop', name: 'Reward-based decision loop',
     summary: 'Random outcomes drive a Reward center whose expectation feeds back as effort cost.',
-    expect: 'Reward and prediction error fluctuate; as the expectation grows, the delayed cost pulls rewards down, so the error settles instead of growing.',
+    expect: 'Reward and prediction error fluctuate. As the expectation grows, the delayed cost pulls rewards down, so the error settles instead of growing.',
     build: () => make('Reward loop', 'Feedback through Delay keeps the reward expectation bounded.', (b) => {
       b.add('out', 'random', 0, 0, { min: 0, max: 1, rate: 1, seed: 7 });
       b.add('rew', 'reward', 0, 48, { gain: 1.5, costWeight: 0.6, learn: 0.25 });
@@ -137,7 +137,7 @@ export const TEMPLATES: Template[] = [
   },
   {
     id: 'equation-graphs', name: 'Equation graphs',
-    summary: 'Equation nodes store formulas; Meters draw their graphs on gray axes.',
+    summary: 'Equation nodes store formulas, and Meters draw their graphs on gray axes.',
     expect: 'The first Meter shows a decaying cosine, the second shows sin(x) and cos(x) together, and the third shows a wave travelling to the right as time passes. The Projector reads y(x) of the animated equation at x = 1.',
     build: () => make('Equation graphs', 'Equation → Meter: any formula, drawn as a graph.', (b) => {
       b.add('damped', 'equation', 0, 0, { expr: 'y = exp(-x^2/16) * cos(3x)', xMin: -8, xMax: 8 });
@@ -153,7 +153,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'memory-state', name: 'Memory and state tracking',
     summary: 'A sequence of numbers feeds a Memory trace while a clock steps a three-state machine.',
-    expect: 'The memory trace follows the sequence with lag; the state machine cycles idle → active → done on every pulse.',
+    expect: 'The memory trace follows the sequence with a lag. The state machine cycles idle → active → done on every pulse.',
     build: () => make('Memory and state', 'Memory trace and state machine side by side.', (b) => {
       b.add('seq', 'sequence', 0, 0, { values: '3, 8, 5, 9, 2', auto: 700 });
       b.add('mem', 'memory', 0, 48, { remember: 0.5 });
@@ -185,7 +185,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'thermostat', name: 'Feedback-controlled behavior',
     summary: 'A thermostat: a heater switches on below 0.6 and off above 0.7, warming a slow “temperature”.',
-    expect: 'The temperature meter oscillates between roughly 0.6 and 0.7 while the indicator toggles. The loop is legal because Smooth (an Inductor) stabilises it.',
+    expect: 'The temperature meter oscillates between roughly 0.6 and 0.7 while the indicator toggles. The loop is allowed because Smooth (an Inductor) keeps it stable.',
     build: () => make('Thermostat feedback', 'Closed loop through a Smooth module.', (b) => {
       b.add('zero', 'constant', 0, 0, { value: '0' });
       b.add('mix', 'combine', 0, 48, { mode: 'sum' });
@@ -200,7 +200,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'apparatus', name: 'Compound systems',
     summary: 'A reusable toggle state machine and a decision circuit, each packaged as a compound.',
-    expect: 'Every second the toggle flips between off and on; the decision circuit picks whichever random score is higher.',
+    expect: 'Every second the toggle flips between off and on, and the decision circuit picks whichever random score is higher.',
     build: () => make('Compound systems', 'Compounds reused as ordinary modules.', (b) => {
       b.add('clk', 'pulse', 0, 0, { period: 1000, width: 100 });
       b.add('tog', 'compound', 0, 48, { def: 'toggle-state-machine' });
@@ -231,7 +231,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'file-conversion', name: 'File conversion and Projector',
     summary: 'A picture goes through a File Converter to become a PDF, and the Projector shows the result.',
-    expect: 'Drop a picture on the Image node and press Run. The converter says “Converting…” and then shows the PDF’s name and size; the Projector shows it, and its expand icon opens it in a full-size window.',
+    expect: 'Drop a picture on the Image node and press Run. The converter says “Converting…” and then shows the PDF’s name and size. The Projector shows it too, and its expand icon opens it in a full-size window.',
     build: () => make('File conversion', 'Image → File Converter (PDF) → Projector.', (b) => {
       b.add('img', 'file-image', 0, 0);
       b.add('cv', 'actor-fileconv', 0, 168, { from: 'image', to: 'pdf', format: 'pdf' });

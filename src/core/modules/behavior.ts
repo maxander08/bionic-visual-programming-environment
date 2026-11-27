@@ -64,12 +64,12 @@ function colorParams(p: Params, all: boolean): ParamDef[] {
   const of = (m: string, d: ParamDef): ParamDef => (all || model === m ? { ...d, pinSide: 'top' } : { ...d, hidden: true });
   const cmyk = (key: string, label: string, def: number, ink: string) => of('cmyk', num(key, label, def, 0, 100, 1, `Amount of ${ink} ink, 0–100 %. Used when the model is CMYK.`, '%'));
   return [
-    { pinSide: 'left' as const, ...sel('model', 'Color model', 'hsv', COLOR_MODELS, 'How the color is written: HSV, CMYK, Pantone or Hex. Each model has its own settings.') },
+    { pinSide: 'left' as const, ...sel('model', 'Color model', 'hsv', COLOR_MODELS, 'How you write the color: HSV, CMYK, Pantone or Hex. Each model has its own settings.') },
     of('hsv', num('h', 'Hue', 0.6, 0, 1, 0.01, 'Used when H is unconnected.')),
     of('hsv', num('s', 'Saturation', 1, 0, 1, 0.01, 'Used when S is unconnected.')),
     of('hsv', num('v', 'Value', 1, 0, 1, 0.01, 'Used when V is unconnected.')),
     cmyk('c', 'Cyan', 100, 'cyan'), cmyk('m', 'Magenta', 60, 'magenta'), cmyk('y', 'Yellow', 0, 'yellow'), cmyk('k', 'Black', 0, 'black'),
-    of('pantone', txt('pantone', 'Pantone', '300 C', 'A Pantone code such as 485 C or 19-4052 TCX, or a name such as Classic Blue. Used when the model is Pantone.', { maxLength: 60, placeholder: '485 C' })),
+    of('pantone', txt('pantone', 'Pantone', '300 C', 'A Pantone code like 485 C or 19-4052 TCX, or a name like Classic Blue. Used when the model is Pantone.', { maxLength: 60, placeholder: '485 C' })),
     of('hex', txt('hex', 'Hex', '#0066ff', 'A hex color: #rrggbb or #rgb. Used when the model is Hex.', { maxLength: 9, placeholder: '#rrggbb' })),
   ];
 }
@@ -85,7 +85,7 @@ export const behaviors: ModuleDef[] = [
     ...base, type: 'image', name: 'Image', caption: 'Image Display', glyph: 'image', size: 'square', keywords: 'picture camera display',
     inputs: [inp('in', 'Image', 'image', 'An image signal.')], outputs: [], params: [],
     run(c) { const v = c.get('in'); if (!isImage(v)) return c.warn('Input is not an image.'); c.view({ image: v }); },
-    doc: { summary: 'Displays an image signal.', runtime: 'Draws the most recent image, scaled to fit.', errors: ['Non-image signals raise a warning.'] },
+    doc: { summary: 'Displays an image signal.', runtime: 'Draws the most recent image, scaled to fit.', errors: ['Non-image signals give a warning.'] },
   },
   {
     ...base, type: 'projector', name: 'Projector', caption: 'Projector', glyph: 'projector', family: 'projector', size: 'square', keywords: 'display output large show number text image',
@@ -97,8 +97,8 @@ export const behaviors: ModuleDef[] = [
     run(c) { c.view({ ...projectView(c.get('in'), c.str('format')), fontSize: c.num('fontSize') }); },
     doc: {
       summary: 'The general-purpose display for anything: numbers, text, images, equations, lists and whole files.',
-      runtime: 'Chooses a layout from the value type: large number, text, picture, graph, or a file shown by its content (the words of a text, Word, web or CSV file, a picture, the first lines of a presentation). The node itself shows a short preview; the expand button in its corner opens a full-size window that shows everything: all of a long text, scrolling and selectable, a picture at full size, a PDF page by page, audio and video with player controls, a font as a live specimen you can type into with a grid of its characters, a spreadsheet as a table, an archive as a list of what is inside, and for every file a hex dump of its bytes and a Download button. The inspector has the same expand button next to every signal, so any value can be read in full.',
-      errors: ['A file that is no longer in this browser (a shared program does not carry its files) shows its name and a note instead of its content.'],
+      runtime: 'Picks a layout based on the value type: large number, text, picture, graph, or a file shown by its content (the words of a text, Word, web or CSV file, a picture, the first lines of a presentation). The node itself shows a short preview. The expand button in its corner opens a full-size window that shows everything: all of a long text (scrollable and selectable), a picture at full size, a PDF page by page, audio and video with player controls, a font as a live specimen you can type into, with a grid of its characters, a spreadsheet as a table, an archive as a list of what’s inside, and for every file a hex dump of its bytes and a Download button. The inspector has the same expand button next to every signal, so you can read any value in full.',
+      errors: ['A file that’s no longer in this browser (a shared program doesn’t carry its files) shows its name and a note instead of its content.'],
       examples: ['Text file Content → Projector: read a file on the workspace, and open the window for the whole of it.', 'Files node File → Projector: view the file itself, whatever its kind: a font becomes a specimen, a workbook a table, a program a hex dump.', 'File Converter File → Projector: see what the conversion made.'],
     },
   },
@@ -120,23 +120,23 @@ export const behaviors: ModuleDef[] = [
       while (h.length > c.num('window')) h.shift();
       c.view({ hist: h.slice(), last: x, lastText: toText(v) });
     },
-    doc: { summary: 'A live plot of a numeric signal, or the graph of an Equation.', runtime: 'Numeric input: records one sample each time the input changes and draws it over time. Equation input: samples every curve across the equation’s x range and draws them over dimmed gray axes through x = 0 and y = 0. Click the expand icon for a labelled full-size graph.', errors: ['An equation that cannot be parsed raises an error naming the problem.'] },
+    doc: { summary: 'A live plot of a numeric signal, or the graph of an Equation.', runtime: 'Numeric input: records one sample each time the input changes and draws it over time. Equation input: samples every curve across the equation’s x range and draws them over dimmed gray axes through x = 0 and y = 0. Click the expand icon for a labelled full-size graph.', errors: ['An equation that can’t be parsed gives an error naming the problem.'] },
   },
   {
     ...base, type: 'audio', name: 'Audio', caption: 'Audio Speaker', glyph: 'audio', size: 'small', keywords: 'sound speaker tone oscillator play',
     inputs: [inp('freq', 'Frequency', 'num', 'Pitch in Hz.', 'top', true), inp('amp', 'Amplitude', 'num', 'Loudness 0–1 (multiplied by volume).', 'top', true)], outputs: [],
-    params: [sel('wave', 'Waveform', 'sine', [['sine', 'Sine'], ['triangle', 'Triangle'], ['square', 'Square'], ['sawtooth', 'Saw']], 'Oscillator shape.'), num('freq', 'Default pitch', 440, 20, 8000, 1, 'Used when Frequency is unconnected.', 'Hz'), num('volume', 'Volume', 0.15, 0, 1, 0.01, 'Master level; kept low by default.'), bol('mute', 'Mute', false, 'Silence the output without stopping the program.')],
+    params: [sel('wave', 'Waveform', 'sine', [['sine', 'Sine'], ['triangle', 'Triangle'], ['square', 'Square'], ['sawtooth', 'Saw']], 'Oscillator shape.'), num('freq', 'Default pitch', 440, 20, 8000, 1, 'Used when Frequency is unconnected.', 'Hz'), num('volume', 'Volume', 0.15, 0, 1, 0.01, 'Overall volume, kept low by default.'), bol('mute', 'Mute', false, 'Silence the output without stopping the program.')],
     run(c) {
       const f = c.has('freq') ? toNum(c.get('freq')) : c.num('freq');
       const a = c.has('amp') ? clamp(toNum(c.get('amp')), 0, 1) : 1;
       c.view({ freq: f, amp: a, wave: c.str('wave'), volume: c.num('volume'), mute: c.bool('mute') });
     },
     source: true,
-    doc: { summary: 'Plays a generated tone through the device speakers.', runtime: 'A Web Audio oscillator follows Frequency and Amplitude. Browsers only allow sound after a user gesture, so press Run (or Step) first. Silent while the program is paused or stopped.', errors: ['If Web Audio is unavailable the node reports it and stays silent.'] },
+    doc: { summary: 'Plays a generated tone through your device’s speakers.', runtime: 'A Web Audio oscillator follows Frequency and Amplitude. Browsers only allow sound after a user gesture, so press Run (or Step) first. Silent while the program is paused or stopped.', errors: ['If Web Audio is unavailable the node reports it and stays silent.'] },
   },
   {
     ...base, type: 'haptic', name: 'Haptic', caption: 'Haptic Generator', glyph: 'haptic', size: 'small', keywords: 'vibrate vibration touch feedback',
-    inputs: [inp('in', 'Trigger', 'any', 'A truthy arrival vibrates the device.')], outputs: [],
+    inputs: [inp('in', 'Trigger', 'any', 'A true value vibrates the device.')], outputs: [],
     params: [num('ms', 'Duration', 40, 5, 1000, 5, 'Vibration length.', 'ms')],
     run(c) { if (c.changed('in') && toBool(c.get('in'))) { c.state.n = (c.state.n ?? 0) + 1; c.view({ n: c.state.n, ms: c.num('ms') }); } },
     doc: { summary: 'Vibrates the device when triggered.', runtime: 'Uses the Vibration API. Supported on most Android browsers; unavailable on iOS Safari and desktops, where the node reports it.', errors: ['Unsupported device: status shows “not supported”.'] },
@@ -144,7 +144,7 @@ export const behaviors: ModuleDef[] = [
   {
     ...base, type: 'vital', name: 'Vital', caption: 'Vital Indicator', glyph: 'vital', size: 'small', keywords: 'indicator light led dot status',
     inputs: [inp('in', 'Input', 'any', 'Boolean or 0–1 level.')], outputs: [],
-    params: [sel('color', 'Color', 'white', COLORS, 'Indicator color. State is also shown by fill, not color alone.')],
+    params: [sel('color', 'Color', 'white', COLORS, 'Indicator color. The state also shows in the fill, not just the color.')],
     run(c) { const v = c.get('in'); c.view({ level: typeof v === 'boolean' ? (v ? 1 : 0) : clamp(toNum(v) || 0, 0, 1), color: c.str('color') }); },
     doc: { summary: 'A dot indicator. Filled and large when the input is true or near 1, hollow when false.', runtime: 'Booleans map to 0/1; numbers are clamped to 0–1 and set the dot size.' },
   },
@@ -153,11 +153,11 @@ export const behaviors: ModuleDef[] = [
     inputs: [inp('in', 'Level', 'num', 'Brightness, 0–1.')], outputs: [],
     params: [sel('color', 'Color', 'white', COLORS, 'Beam color.')],
     run(c) { c.view({ level: clamp(toNum(c.get('in')) || 0, 0, 1), color: c.str('color') }); },
-    doc: { summary: 'A visual output whose beam brightness follows the input.', runtime: 'Level is clamped to 0–1.' },
+    doc: { summary: 'A light beam whose brightness follows the input.', runtime: 'Level is clamped to 0–1.' },
   },
   {
     ...base, type: 'notify', name: 'Notify', caption: 'Notification', glyph: 'notify', size: 'small', keywords: 'alert browser notification message',
-    inputs: [inp('in', 'Trigger', 'any', 'A truthy arrival sends a notification.')], outputs: [],
+    inputs: [inp('in', 'Trigger', 'any', 'A true value sends a notification.')], outputs: [],
     params: [txt('title', 'Title', 'Nicque', 'Notification title.', { maxLength: 80 }), txt('body', 'Body', '', 'Notification text. If empty, the triggering value is used.', { maxLength: 200 }), num('gap', 'Minimum gap', 3000, 100, 600000, 100, 'Notifications closer together than this are dropped.', 'ms')],
     run(c) {
       if (!(c.changed('in') && toBool(c.get('in')))) return;
@@ -178,7 +178,7 @@ export const behaviors: ModuleDef[] = [
       out('y', 'Yellow', 'num', 'The yellow of the color in CMYK, 0–100 %.'),
       out('k', 'Black', 'num', 'The black (key) of the color in CMYK, 0–100 %.'),
       out('css', 'Hex', 'text', 'The color as #rrggbb.', 'right'),
-      out('pantone', 'Pantone', 'text', 'The Pantone color: the one asked for in the Pantone model, otherwise the closest Pantone color, as text such as PANTONE 19-4052 TCX Classic Blue.', 'right'),
+      out('pantone', 'Pantone', 'text', 'The Pantone color: the one you asked for in the Pantone model, otherwise the closest Pantone color, as text like PANTONE 19-4052 TCX Classic Blue.', 'right'),
       out('h', 'Hue', 'num', 'The hue of the color in HSV, 0–1.', 'right'),
       out('s', 'Saturation', 'num', 'The saturation of the color in HSV, 0–1.', 'right'),
       out('v', 'Value', 'num', 'The value (brightness) of the color in HSV, 0–1.', 'right'),
@@ -198,13 +198,13 @@ export const behaviors: ModuleDef[] = [
       } else if (model === 'pantone') {
         const q = c.str('pantone').trim();
         const hit = pantoneToRgb(q);
-        if (!hit) return c.fail(`“${q}” is not a Pantone color the program knows. Try a code such as 485 C or 19-4052 TCX, or a name such as Classic Blue.`);
+        if (!hit) return c.fail(`“${q}” isn’t a Pantone color the program knows. Try a code like 485 C or 19-4052 TCX, or a name like Classic Blue.`);
         rgb = hit.rgb;
         pantone = hit.name;
       } else if (model === 'hex') {
         const q = c.str('hex').trim();
         const hit = parseHex(q);
-        if (!hit) return c.fail(`“${q}” is not a hex color. Write it as #rrggbb or #rgb, for example #0a7aff.`);
+        if (!hit) return c.fail(`“${q}” isn’t a hex color. Write it as #rrggbb or #rgb, like #0a7aff.`);
         rgb = hit;
       } else {
         hsv = [c.num('h'), c.num('s'), c.num('v')];
@@ -223,9 +223,9 @@ export const behaviors: ModuleDef[] = [
       c.view({ model, hex, rgb: [r, gg, b], cmyk, pantone });
     },
     doc: {
-      summary: 'Generates a color from HSV, CMYK, a Pantone code or a hex code.',
-      runtime: 'The Color model setting chooses how the color is written: HSV (hue, saturation, value), CMYK (cyan, magenta, yellow, black, in percent), Pantone (a code such as 485 C or 19-4052 TCX, or a name such as Classic Blue) or Hex (#rrggbb). Each model has its own setting pins, and the pins of the others are hidden. The color leaves as a swatch image, as hex text, as hue, saturation and value numbers, as cyan, magenta, yellow and black numbers, and as the Pantone color it is or is closest to. Screens show CMYK and Pantone as approximations of the printed ink.',
-      errors: ['A hex code that is not #rgb or #rrggbb raises an error.', 'A Pantone code or name the program does not know raises an error.'],
+      summary: 'Makes a color from HSV, CMYK, a Pantone code or a hex code.',
+      runtime: 'The Color model setting picks how you write the color: HSV (hue, saturation, value), CMYK (cyan, magenta, yellow, black, in percent), Pantone (a code like 485 C or 19-4052 TCX, or a name like Classic Blue) or Hex (#rrggbb). Each model has its own setting pins, and the pins for the other models are hidden. The color comes out as a swatch image, as hex text, as hue, saturation and value numbers, as cyan, magenta, yellow and black numbers, and as the Pantone color it is or is closest to. Screens can only show CMYK and Pantone as approximations of the printed ink.',
+      errors: ['A hex code that isn’t #rgb or #rrggbb gives an error.', 'A Pantone code or name the program doesn’t know gives an error.'],
     },
   },
 ];
@@ -244,7 +244,7 @@ function runPlace(c: Parameters<ModuleDef['run']>[0], extra: Record<string, unkn
   c.emit('name', p.label);
   c.view({ state: 'ready', query, place: p, ...extra });
 }
-const PLACE_SUGGEST = txt('place', 'Default place', 'Tokyo, Japan', 'The place to show when the Place pin has no signal: a city, a country, a province, a district, an address or a landmark anywhere on Earth, in English, 简体中文 or 繁體中文 (for example “Paris, France”, “Bavaria”, “Eiffel Tower” or “东京”), or coordinates such as 35.68, 139.76.', { maxLength: 200, placeholder: 'e.g. Kyoto, Texas, 1 Infinite Loop, 35.68 139.76', suggest: cityLabels });
+const PLACE_SUGGEST = txt('place', 'Default place', 'Tokyo, Japan', 'The place to show when the Place pin has no signal: a city, country, province, district, address or landmark anywhere on Earth, in English, 简体中文 or 繁體中文 (for example “Paris, France”, “Bavaria”, “Eiffel Tower” or “东京”), or coordinates like 35.68, 139.76.', { maxLength: 200, placeholder: 'e.g. Kyoto, Texas, 1 Infinite Loop, 35.68 139.76', suggest: cityLabels });
 const placePins = [
   out('lat', 'Latitude', 'num', 'Latitude of the place in degrees, north positive.', 'right'),
   out('lon', 'Longitude', 'num', 'Longitude of the place in degrees, east positive.', 'right'),
@@ -254,42 +254,42 @@ const placePins = [
 export const places: ModuleDef[] = [
   {
     ...base, type: 'map', name: 'Map', caption: 'Map Display', glyph: 'map', size: 'tall', source: true, keywords: 'place location city country province street address openstreetmap osm navigate where position gps coordinates',
-    inputs: [inp('in', 'Place', 'text', 'Any place on Earth: a city, a country, a province, a district, a street address or a landmark, or coordinates such as 35.68, 139.76.', 'top', true)],
+    inputs: [inp('in', 'Place', 'text', 'Any place on Earth: a city, country, province, district, street address or landmark, or coordinates like 35.68, 139.76.', 'top', true)],
     outputs: placePins,
     params: [
       PLACE_SUGGEST,
-      bol('fit', 'Fit to place', true, 'Zoom so that the whole place is in view: a country shows all of it, a city its streets. Off uses the Zoom setting.'),
-      num('zoom', 'Zoom', 16, 1, 19, 1, 'Used when Fit to place is off. 3 is a continent, 10 a city, 16 shows the streets and buildings, 19 is as close as the map goes.'),
+      bol('fit', 'Fit to place', true, 'Zoom so the whole place is in view: you’ll see all of a country, or the streets of a city. Off uses the Zoom setting.'),
+      num('zoom', 'Zoom', 16, 1, 19, 1, 'Used when Fit to place is off. 3 is a continent, 10 a city, 16 shows streets and buildings, and 19 is as close as the map goes.'),
       bol('marker', 'Show pin', true, 'Draw a pin on the exact spot.'),
-      sel('style', 'Appearance', 'dark', [['dark', 'Dark'], ['light', 'Light map']], 'Dark matches the rest of the program; Light is the usual OpenStreetMap colouring.'),
-      details('the name and the coordinates of the place'),
+      sel('style', 'Appearance', 'dark', [['dark', 'Dark'], ['light', 'Light map']], 'Dark matches the rest of the program. Light is the usual OpenStreetMap look.'),
+      details('the place’s name and coordinates'),
     ],
     run(c) { runPlace(c, {}); },
     doc: {
       summary: 'A street-level map that shows exactly where a place is.',
-      runtime: 'Reads a place from the Place pin (or the Default place setting) and shows it on an OpenStreetMap map with a pin on the spot. A city, a country, a province, a district, an address or a landmark anywhere on Earth is understood, in English, Simplified or Traditional Chinese; coordinates such as 35.68, 139.76 work too. Cities and countries the program knows appear at once; everything else is looked up with OpenStreetMap Nominatim, which also brings the outline of an area, drawn on the map. The node shows the map; the expand button opens a window where it can be dragged and zoomed down to single buildings. The latitude, longitude and name leave on the right. Map tiles and lookups need an internet connection and are the only network use of this module.',
-      errors: ['A place that is not found raises an error naming it.', 'Without a connection only the cities, countries and coordinates the program knows can be shown; the map itself stays blank.'],
+      runtime: 'Reads a place from the Place pin (or the Default place setting) and shows it on an OpenStreetMap map, with a pin on the spot. It understands cities, countries, provinces, districts, addresses and landmarks anywhere on Earth, in English, Simplified or Traditional Chinese. Coordinates like 35.68, 139.76 work too. Cities and countries the program knows show up right away. Everything else is looked up with OpenStreetMap Nominatim, which also returns the outline of an area, drawn on the map. The node shows the map. The expand button opens a window where you can drag and zoom all the way down to single buildings. The latitude, longitude and name come out on the right. Map tiles and lookups need an internet connection, and they’re the only network use in this module.',
+      errors: ['A place that can’t be found gives an error that names it.', 'Without a connection, you can only show the cities, countries and coordinates the program knows. The map itself stays blank.'],
       examples: ['Text “Eiffel Tower” → Map: see the tower on the street map.', 'Constant “Bavaria” → Map and Globe: the same place on a map and on the planet.', 'Map Latitude and Longitude → Projector: read the coordinates of a place.'],
     },
   },
   {
     ...base, type: 'globe', name: 'Globe', caption: 'Globe Display', glyph: 'globe', size: 'tall', source: true, keywords: 'earth planet world place location city country province continent sphere where position coordinates',
-    inputs: [inp('in', 'Place', 'text', 'Any place on Earth: a city, a country, a province, a district, a street address or a landmark, or coordinates such as 35.68, 139.76.', 'top', true)],
+    inputs: [inp('in', 'Place', 'text', 'Any place on Earth: a city, country, province, district, street address or landmark, or coordinates like 35.68, 139.76.', 'top', true)],
     outputs: placePins,
     params: [
       PLACE_SUGGEST,
       bol('borders', 'Show borders', true, 'Draw the borders between countries, dimmer than the coastlines.'),
       bol('grid', 'Show grid', true, 'Draw the lines of latitude and longitude every 30 degrees.'),
-      bol('marker', 'Show pin', true, 'Draw a marker on the exact spot, and the outline of the area when the place is one.'),
+      bol('marker', 'Show pin', true, 'Draw a marker on the exact spot, plus the outline of the area when the place is one.'),
       bol('spin', 'Auto-rotate', false, 'Turn the globe slowly. Off keeps the place facing you.'),
-      details('the name and the coordinates of the place'),
+      details('the place’s name and coordinates'),
     ],
     run(c) { runPlace(c, {}); },
     doc: {
       summary: 'A wire-frame globe that turns to face a place and marks where it is.',
-      runtime: 'Reads a place from the Place pin (or the Default place setting), turns the globe to face it and marks the spot; an area such as a country or a province is outlined. Coastlines and borders are drawn as thin white lines on black, like the rest of the Behavior modules. Cities and countries the program knows appear at once; everything else is looked up with OpenStreetMap Nominatim, which needs an internet connection. The expand button opens a window where the globe can be turned by dragging and zoomed with the wheel. The latitude, longitude and name leave on the right.',
-      errors: ['A place that is not found raises an error naming it.'],
-      examples: ['Text “Antarctica” → Globe: see where it is on the planet.', 'Clock City → Globe: follow the city of a clock.'],
+      runtime: 'Reads a place from the Place pin (or the Default place setting), turns the globe to face it and marks the spot. An area such as a country or province is outlined. Coastlines and borders are thin white lines on black, like the rest of the Behavior modules. Cities and countries the program knows show up right away. Everything else is looked up with OpenStreetMap Nominatim, which needs an internet connection. The expand button opens a window where you can drag to turn the globe and use the wheel to zoom. The latitude, longitude and name come out on the right.',
+      errors: ['A place that can’t be found gives an error that names it.'],
+      examples: ['Text “Antarctica” → Globe: see where it’s on the planet.', 'Clock City → Globe: follow the city of a clock.'],
     },
   },
 ];

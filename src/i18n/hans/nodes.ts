@@ -70,7 +70,7 @@ export const nodes: Record<string, string> = {
   'Hour': '小时', 'Minute': '分钟', 'Seconds': '秒', 'Milliseconds': '毫秒', 'Completions': '完成次数', 'Auto start': '自动开始', 'Repeat': '重复', 'Show milliseconds': '显示毫秒',
   'START': '开始', 'PAUSE / RESUME': '暂停 / 继续', 'RESET': '重置',
   'Alarm Clock': '闹钟', 'Dismiss': '关闭', 'Snooze': '稍后提醒', 'Ringing': '响铃中', 'Time left': '剩余时间', 'Seconds left': '剩余秒数', 'Next ring': '下次响铃', 'Rings': '响铃次数',
-  'e.g. 07:30:00.000 or 7:30 pm': '例如 07:30:00.000 或 7:30 pm', 'Once (next time it is reached)': '一次（下次到达该时间时）', 'Every day': '每天', 'Weekdays (Mon–Fri)': '工作日（周一至周五）', 'Weekends (Sat–Sun)': '周末（周六至周日）',
+  'e.g. 07:30:00.000 or 7:30 pm': '例如 07:30:00.000 或 7:30 pm', 'Once (next time it’s reached)': '一次（下次到达该时间时）', 'Every day': '每天', 'Weekdays (Mon–Fri)': '工作日（周一至周五）', 'Weekends (Sat–Sun)': '周末（周六至周日）',
   'City': '城市', 'This device (leave empty)': '本设备（留空）', 'Ring time': '响铃时间', 'TEST RING': '试响', 'SNOOZE': '稍后提醒', 'DISMISS': '关闭',
   'Stopwatch': '秒表', 'Stop': '停止', 'Lap': '计圈', 'Elapsed': '已用时间', 'Lap time': '圈时间', 'Laps': '圈数', 'Stop at': '停止于', 'START / STOP': '开始 / 停止', 'LAP': '计圈',
   'World Clock': '世界时钟', 'Date': '日期', 'UTC offset': 'UTC 偏移', 'e.g. Tokyo or Paris, France': '例如 Tokyo 或 Paris, France', 'Format': '格式', '24-hour (14:30)': '24 小时制 (14:30)', '12-hour (2:30 PM)': '12 小时制 (2:30 PM)', 'Show seconds': '显示秒',

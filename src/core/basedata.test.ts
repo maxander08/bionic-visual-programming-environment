@@ -86,7 +86,7 @@ describe('Base Data section', () => {
 });
 
 describe('Integer', () => {
-  it('emits its value, as text in the chosen base', () => {
+  it('sends out its value, as text in the chosen base', () => {
     const e = build([['i', 'integer', { value: 255, base: 'hex' }]]);
     expect(e.out('i', 'out')).toBe(255);
     expect(e.out('i', 'text')).toBe('0xFF');
@@ -99,7 +99,7 @@ describe('Integer', () => {
     expect(run('floor', '-2.1')).toBe(-3);
     expect(run('ceil', '2.1')).toBe(3);
   });
-  it('reads true as 1 and text such as 0x1F as a number; rejects what is not a number', () => {
+  it('reads true as 1 and text such as 0x1F as a number; rejects what isn’t a number', () => {
     expect(build([['c', 'constant', { kind: 'bool', value: 'true' }], ['i', 'integer']], [['c', 'out', 'i', 'in']]).out('i', 'out')).toBe(1);
     expect(build([['c', 'constant', { kind: 'text', value: '0x1F' }], ['i', 'integer']], [['c', 'out', 'i', 'in']]).out('i', 'out')).toBe(31);
     const e = build([['c', 'constant', { kind: 'text', value: 'abc' }], ['i', 'integer']], [['c', 'out', 'i', 'in']]);
@@ -165,7 +165,7 @@ describe('Decimal', () => {
     const e = build([['c', 'constant', { value: 1 / 3 }], ['d', 'decimal', { value: '1' }]], [['c', 'out', 'd', 'p:value']]);
     expect(e.out('d', 'text')).toBe('0.3333333333333333');
   });
-  it('rejects text that is not a number', () => {
+  it('rejects text that isn’t a number', () => {
     const e = build([['c', 'constant', { kind: 'text', value: '1,5' }], ['d', 'decimal']], [['c', 'out', 'd', 'in']]);
     expect(status(e, 'd').level).toBe('error');
     expect(status(build([['d', 'decimal', { value: 'abc' }]]), 'd').level).toBe('error');
@@ -195,7 +195,7 @@ describe('String', () => {
 });
 
 describe('Character', () => {
-  it('emits one character and its code point', () => {
+  it('sends out one character and its code point', () => {
     const e = build([['c', 'character', { value: 'a', case: 'upper' }]]);
     expect(e.out('c', 'out')).toBe('A');
     expect(e.out('c', 'code')).toBe(65);
@@ -228,7 +228,7 @@ describe('Character', () => {
 });
 
 describe('Boolean', () => {
-  it('emits the value, its opposite and the words', () => {
+  it('sends out the value, its opposite and the words', () => {
     const e = build([['b', 'boolean', { value: true, words: 'yn' }]]);
     expect(e.out('b', 'out')).toBe(true);
     expect(e.out('b', 'not')).toBe(false);

@@ -87,14 +87,14 @@ describe('Files: running', () => {
   const info = (over: Partial<FileInfo>): FileInfo => ({ id: 'tf1', name: 'notes.txt', ext: 'txt', size: 42, mime: 'text/plain', modified: 1, ...over });
   const withFile = { fileId: 'tf1', fileName: 'notes.txt', fileExt: 'txt', fileSize: '42', fileMime: 'text/plain', fileModified: '1' };
 
-  it('an empty node emits nothing and raises no warning', () => {
+  it('an empty node sends out nothing and raises no warning', () => {
     const e = run([['f', 'file-text']]);
     expect(out(e, 'f', 'file')).toBeUndefined();
     expect(e.nodes.get('f')!.status.level).toBe('ok');
     expect(e.nodes.get('f')!.viewData.state).toBe('empty');
   });
 
-  it('a file that is not in this browser warns instead of failing', () => {
+  it('a file that isn’t in this browser warns instead of failing', () => {
     const e = run([['f', 'file-pdf', { ...withFile, fileId: 'nowhere', fileName: 'x.pdf', fileExt: 'pdf' }]]);
     expect(e.nodes.get('f')!.status.level).toBe('warn');
     expect(out(e, 'f', 'file')).toBeUndefined();
@@ -125,7 +125,7 @@ describe('Files: running', () => {
   });
 
   it('a runtime problem with the file is reported as a warning but the outputs still flow', () => {
-    setFileInfo(info({ id: 'tw', text: 'abc', lines: 1, warn: 'The file is longer than 1 000 000 characters: Content holds only the first part.' }));
+    setFileInfo(info({ id: 'tw', text: 'abc', lines: 1, warn: 'The file is longer than 1 000 000 characters, so Content only holds the first part.' }));
     const e = run([['f', 'file-text', { ...withFile, fileId: 'tw' }]]);
     expect(e.nodes.get('f')!.status.level).toBe('warn');
     expect(out(e, 'f', 'content')).toBe('abc');

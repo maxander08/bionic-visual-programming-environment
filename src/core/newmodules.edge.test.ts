@@ -27,7 +27,7 @@ describe('new module edge cases', () => {
     expect(checkSymbols('0\u2009', 2)).toBeDefined();
   });
 
-  it('accepts U+2026 when it is a custom base digit', () => {
+  it('accepts U+2026 when it’s a custom base digit', () => {
     expect(parseBased('…', 2, '0…')).toEqual({ ok: true, value: { neg: false, n: 1n, d: 1n } });
   });
 
@@ -83,7 +83,7 @@ describe('new module edge cases', () => {
     for (const text of ['Vector', 'Vct', 'Matrix', 'Mtx', 'Base Converter', 'Normalize', 'Transpose', 'Pause / Resume', 'Start / Stop', 'Test ring']) {
       expect(trIn(lang, text), text).not.toBe(text);
     }
-    const error = '“2” is not a digit of base 2. The digits are 0 1.';
+    const error = '“2” isn’t a digit of base 2. The digits are 0 1.';
     expect(trIn(lang, error)).not.toBe(error);
   });
 });

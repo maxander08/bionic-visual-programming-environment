@@ -60,7 +60,7 @@ function fromBig(v: bigint, scale: number): Dec {
 }
 
 function align(a: Dec, b: Dec): { A: bigint; B: bigint; scale: number } {
-  if (Math.abs(a.scale - b.scale) > MEMORY_DIGITS) throw new DecError('The two numbers are too far apart in size for this browser to hold the result in memory.');
+  if (Math.abs(a.scale - b.scale) > MEMORY_DIGITS) throw new DecError('The two numbers are too far apart in size for your browser to hold the result in memory.');
   const scale = Math.max(a.scale, b.scale);
   return { A: big(a) * P10(scale - a.scale), B: big(b) * P10(scale - b.scale), scale };
 }
@@ -129,7 +129,7 @@ export function div(a: Dec, b: Dec, _prec: number = DEFAULT_PRECISION): Dec {
 
 /** The remainder with the sign of b (JavaScript's ((a % b) + b) % b), exact. */
 export function mod(a: Dec, b: Dec): Dec {
-  if (isZero(b)) throw new DecError('Remainder of a division by zero.');
+  if (isZero(b)) throw new DecError('Can’t take a remainder when dividing by zero.');
   if (a.tail || b.tail) {
     const x = decToRat(a), y = decToRat(b);
     const P = x.n * y.d, Q = y.n * x.d;
@@ -182,7 +182,7 @@ function isqrt(n: bigint): bigint {
 
 /** Square root to `prec` significant digits. Exact (and unpadded) whenever the root ends or repeats: 2.25 → 1.5, 4/9 → 0.666… */
 export function sqrt(a: Dec, prec = DEFAULT_PRECISION): Dec {
-  if (a.neg && !isZero(a)) throw new DecError('The square root of a negative number is not a real number.');
+  if (a.neg && !isZero(a)) throw new DecError('The square root of a negative number isn’t a real number.');
   if (isZero(a)) return ZERO;
   if (a.tail) {
     const r = decToRat(a), sn = isqrt(r.n), sd = isqrt(r.d);
@@ -271,7 +271,7 @@ export function exp(x: Dec, prec = DEFAULT_PRECISION): Dec {
   if (isZero(x)) return ONE;
   x = approxDec(x, prec + 30);
   const xn = toNumber(x);
-  if (expTooBig(xn)) throw new DecError('e^x of that number has more digits than this browser can hold in memory.');
+  if (expTooBig(xn)) throw new DecError('e^x of that number has too many digits for your browser to hold in memory.');
   const k = Math.max(0, Math.ceil(Math.log2(Math.abs(xn))) + 1);
   const W = prec + 15 + Math.ceil(k * 0.31) + Math.ceil(Math.abs(xn) * 0.4343);
   const one = P10(W);
@@ -366,7 +366,7 @@ function sinCos(x: Dec, prec: number, wantSin: boolean): Dec {
     if (sigDigits >= prec + 8 || !needReduce) return fromFixed(sum, W, prec);
     W += (W - sigDigits) + 16;
   }
-  throw new DecError('The sine or cosine of that angle could not be worked out: it is too close to a multiple of π/2 for any working precision.');
+  throw new DecError('Couldn’t work out the sine or cosine of that angle. It’s too close to a multiple of π/2 for any working precision.');
 }
 export const sin = (x: Dec, prec = DEFAULT_PRECISION): Dec => sinCos(x, prec, true);
 export const cos = (x: Dec, prec = DEFAULT_PRECISION): Dec => sinCos(x, prec, false);
@@ -395,14 +395,14 @@ export function pow(a: Dec, b: Dec, prec = DEFAULT_PRECISION): Dec {
     // ±1 stay exact for arbitrarily large integer exponents; determine the sign from the exact decimal digits, not a double.
     if (cmp(abs(a), ONE) === 0) return a.neg && oddInteger(b) ? { neg: true, digits: '1', scale: 0 } : ONE;
     const e = smallInteger(b);
-    if (e === null) throw new DecError('That exponent is too large for this browser to work with.');
+    if (e === null) throw new DecError('That exponent is too large for your browser to handle.');
     if (e >= 0n) return intPow(a, e);
-    if (isZero(a)) throw new DecError('Zero cannot be raised to a negative power.');
+    if (isZero(a)) throw new DecError('Zero can’t be raised to a negative power.');
     return div(ONE, intPow(a, -e), prec);
   }
-  if (a.neg && !isZero(a)) throw new DecError('A negative number cannot be raised to a fractional power.');
+  if (a.neg && !isZero(a)) throw new DecError('A negative number can’t be raised to a fractional power.');
   if (isZero(a)) {
-    if (b.neg) throw new DecError('Zero cannot be raised to a negative power.');
+    if (b.neg) throw new DecError('Zero can’t be raised to a negative power.');
     return ZERO;
   }
   const P = prec + 23 + Math.max(0, leadExp(b) + 1);

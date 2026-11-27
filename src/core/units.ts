@@ -101,9 +101,9 @@ const normalize = (s: string) => s.replace(/\u2212/g, '-').replace(/\u00b5/g, '�
 /** Read `<amount><unit>`. A spelling that fits two units (cd, au, min) is read as the one of `prefer`, the group being converted. */
 export function parseConv(input: string, prefer: string): ConvParse {
   const m = NUMBER.exec(normalize(input).trim());
-  if (!m) return { ok: false, error: `“${input.trim().slice(0, 24)}” is not a quantity. Write an amount followed by a unit, like 2.5km.` };
+  if (!m) return { ok: false, error: `“${input.trim().slice(0, 24)}” isn’t a quantity. Write an amount followed by a unit, like 2.5km.` };
   const amount = Number(m[1]);
-  if (!Number.isFinite(amount)) return { ok: false, error: `“${m[1]}” is not a finite number.` };
+  if (!Number.isFinite(amount)) return { ok: false, error: `“${m[1]}” isn’t a finite number.` };
   const rest = m[2].trim();
   if (rest === '') return { ok: true, amount };
   const cands: { prefix: string; unit: ConvUnit }[] = [];
@@ -112,7 +112,7 @@ export function parseConv(input: string, prefer: string): ConvParse {
     const u = CONV_BY_SYM.get(rest.slice(p.length));
     if (u && (p === '' || !u.noPrefix)) cands.push({ prefix: p, unit: u });
   }
-  if (!cands.length) return { ok: false, error: `“${rest.slice(0, 16)}” is not a known unit.` };
+  if (!cands.length) return { ok: false, error: `“${rest.slice(0, 16)}” isn’t a known unit.` };
   cands.sort((a, b) => Number(b.unit.group === prefer) - Number(a.unit.group === prefer) || a.prefix.length - b.prefix.length);
   const { prefix, unit } = cands[0];
   return { ok: true, amount, q: { amount, prefix, unit: unit.sym, group: unit.group, base: cToBase(amount, prefix, unit.sym) } };

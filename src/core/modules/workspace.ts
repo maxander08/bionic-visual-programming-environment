@@ -10,7 +10,7 @@ export const workspace: ModuleDef[] = [
     type: 'setlanguage', name: 'Set Language', caption: 'Set Language', category: 'Workspace Settings', family: 'workspace', glyph: '文A', size: 'small',
     keywords: 'language locale translate translation chinese simplified traditional english interface i18n 中文 简体 繁體 语言 語言',
     source: true,
-    inputs: [inp('apply', 'Apply', 'any', 'A truthy arrival applies the language now. Connect a switch, a button or a pulse to it.', 'top', true)],
+    inputs: [inp('apply', 'Apply', 'any', 'A true value applies the language right away. Connect a switch, a button or a pulse to it.', 'top', true)],
     outputs: [
       out('language', 'Language', 'text', 'Code of the language this module is set to: en, zh-Hans or zh-Hant.'),
       out('name', 'Name', 'text', 'The language written in itself, for example 简体中文.', 'right'),
@@ -18,8 +18,8 @@ export const workspace: ModuleDef[] = [
     ],
     params: [
       sel('language', 'Language', 'en', LANGS.map((l): [string, string] => [l.code, l.native]), 'The interface language the workspace switches to: English, Simplified Chinese (zh-Hans) or Traditional Chinese (zh-Hant).'),
-      sel('mode', 'Apply when', 'auto', [['auto', 'Program starts or setting changes'], ['signal', 'Apply pin receives a signal']], 'Auto switches the language when the program starts and whenever the Language setting changes. Signal waits for a truthy arrival on the Apply pin.'),
-      bol('remember', 'Remember choice', true, 'Keep the language the next time this browser opens the editor. Off: it only lasts for this session.'),
+      sel('mode', 'Apply when', 'auto', [['auto', 'Program starts or setting changes'], ['signal', 'Apply pin receives a signal']], 'Auto switches the language when the program starts and whenever the Language setting changes. Signal waits for a true value on the Apply pin.'),
+      bol('remember', 'Remember choice', true, 'Remember the language the next time this browser opens the editor. Off: it only lasts for this session.'),
       bol('notice', 'Show notice', true, 'Show a short message when the language actually switches.'),
     ],
     run(c) {
@@ -39,7 +39,7 @@ export const workspace: ModuleDef[] = [
     },
     doc: {
       summary: 'Switches the language of the whole editor: English, Simplified Chinese or Traditional Chinese.',
-      runtime: 'In Auto mode the language is applied when the program starts and again whenever the Language setting (or its pin) changes. In Signal mode it is applied each time a truthy value reaches Apply. It changes the editor, not the program: signals, saved programs and share codes are identical in every language. The language is also available in Settings on the toolbar.',
+      runtime: 'In Auto mode, the language is applied when the program starts and again whenever the Language setting (or its pin) changes. In Signal mode, it’s applied each time a true value reaches Apply. It changes the editor, not the program: signals, saved programs and share codes are identical in every language. You can also change the language in Settings on the toolbar.',
       errors: ['A Language pin that carries an unknown code falls back to English.'],
       examples: ['Auto, Language = zh-Hant: the editor switches to Traditional Chinese when you press Run.', 'Signal mode with a Switch on Apply: flip the switch to change language.'],
     },

@@ -57,7 +57,7 @@ describe('places', () => {
     expect(r.rings[0].length).toBeLessThan(ring.length);
     expect(r.rings.length).toBe(2);
   });
-  it('asks the runner for places it does not know and shows known ones at once', async () => {
+  it('asks the runner for places it doesn’t know and shows known ones at once', async () => {
     const calls: string[] = [];
     setPlaceRunner(async (q) => { calls.push(q); return q === 'Bavaria' ? { query: q, name: 'Bavaria', label: 'Bavaria, Germany', lat: 48.9, lon: 11.4, bbox: [47.2, 8.9, 50.6, 13.9], kind: 'state', source: 'osm' } : null; });
     expect(requestPlace('Tokyo', 'en')).toMatchObject({ status: 'ready' });
@@ -72,7 +72,7 @@ describe('places', () => {
 });
 
 describe('Map and Globe modules', () => {
-  it('have setting pins for every setting, and show and emit a known place', () => {
+  it('have setting pins for every setting, and show and send out a known place', () => {
     for (const type of ['map', 'globe']) {
       const d = getDef(type)!;
       const keys = d.params.map((p) => p.key);

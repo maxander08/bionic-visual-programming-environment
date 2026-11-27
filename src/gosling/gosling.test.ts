@@ -157,7 +157,7 @@ describe('Gosling: planner, replace-reset, and voice regressions', () => {
   });
 
   it('builds audio beeps on countdowns, preserves alarm city after time, and handles 0 Hz safely', () => {
-    respond('make a 10 second countdown that beeps when it is done');
+    respond('make a 10 second countdown that beeps when it’s done');
     const types = Object.values(useStore.getState().project.graph.nodes).map((n) => n.type).sort();
     expect(types).toEqual(['audio', 'projector', 'timer']);
 

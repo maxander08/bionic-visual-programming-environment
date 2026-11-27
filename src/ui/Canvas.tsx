@@ -633,8 +633,8 @@ function CanvasImpl({ graph, compounds, prefix = '', ro = false, main = false }:
           if (hit && hit.node !== d.anchor.node && hit.dir === opp) {
             const [from, fp, to, tp] = d.anchor.dir === 'out' ? [d.anchor.node, d.anchor.port, hit.node, hit.port] : [hit.node, hit.port, d.anchor.node, d.anchor.port];
             const chk = checkConnection(live.current.graph, from, fp, to, tp, live.current.compounds);
-            st.toast(chk.reason ?? tr("Those ports cannot be connected."), 'error');
-          } else if (hit && hit.node === d.anchor.node && hit.dir === opp) st.toast(tr("A module cannot connect to itself. Route feedback through a Delay or another module."), 'info');
+            st.toast(chk.reason ?? tr("Those ports can’t be connected."), 'error');
+          } else if (hit && hit.node === d.anchor.node && hit.dir === opp) st.toast(tr("A module can’t connect to itself. Route feedback through a Delay or another module."), 'info');
           else if (d.replace) { st.removeEdge(d.replace.id); st.toast(tr("Connection removed."), 'info'); }
         }
       }

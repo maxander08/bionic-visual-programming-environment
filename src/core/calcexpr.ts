@@ -416,7 +416,7 @@ export function diff(a: Ast, v: string): Ast {
       throw new Error(`${a.f}() has no closed-form derivative here.`);
     }
   }
-  throw new Error('Cannot differentiate this expression.');
+  throw new Error('Can’t differentiate this expression.');
 }
 
 /** The n-th derivative, simplified at every step. Throws when the expression swells beyond `limit` nodes. */

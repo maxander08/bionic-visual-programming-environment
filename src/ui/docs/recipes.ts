@@ -25,7 +25,7 @@ const at = (col: number, row: number) => ({ x: col * C, y: row * R });
 export const RECIPES: Recipe[] = [
   {
     id: 'loud-light', title: 'Light up when it gets loud', level: 'Beginner',
-    summary: 'Hearing → Threshold → Vital, with hysteresis so the light does not flicker.',
+    summary: 'Hearing → Threshold → Vital, with hysteresis so the light doesn’t flicker.',
     tags: 'sound loudness threshold indicator hysteresis trigger',
     nodes: [
       { id: 'ear', type: 'hearing', ...at(0, 0) },
@@ -34,9 +34,9 @@ export const RECIPES: Recipe[] = [
       { id: 'scope', type: 'meter', ...at(1, 1) },
     ],
     wires: [['ear', 'level', 'limit', 'in'], ['limit', 'over', 'led', 'in'], ['ear', 'level', 'scope', 'in']],
-    steps: ['**Hearing** produces a loudness level between 0 and 1 (a simulated melody until you pick the microphone).', '**Threshold** turns the level into true/false at 0.6. Hysteresis 0.1 means it only turns off again below 0.5.', '**Vital** shows the true/false as a filled or hollow dot.', '**Meter** plots the raw level so you can see why the light changes.'],
+    steps: ['**Hearing** makes a loudness level between 0 and 1 (a simulated melody until you pick the microphone).', '**Threshold** turns the level into true/false at 0.6. A hysteresis of 0.1 means it only turns off again below 0.5.', '**Vital** shows the true/false as a filled or hollow dot.', '**Meter** plots the raw level so you can see why the light changes.'],
     expect: 'The meter swells and falls once a second. The dot fills while the level is above 0.6.',
-    tweak: ['Set Hysteresis to 0 and watch for flicker near the limit.', 'Change Threshold’s **Condition** to *below* to light up when it is quiet.', 'Switch Hearing’s **Source** to the microphone.'],
+    tweak: ['Set Hysteresis to 0 and watch for flicker near the limit.', 'Change Threshold’s **Condition** to *below* to light up when it’s quiet.', 'Switch Hearing’s **Source** to the microphone.'],
   },
   {
     id: 'smooth-signal', title: 'Smooth a jittery signal', level: 'Beginner',
@@ -49,7 +49,7 @@ export const RECIPES: Recipe[] = [
       { id: 'soft', type: 'meter', ...at(2, 1) },
     ],
     wires: [['noise', 'out', 'smooth', 'in'], ['noise', 'out', 'raw', 'in'], ['smooth', 'out', 'soft', 'in']],
-    steps: ['**Random** draws a new number 8 times a second, repeatably (Seed 3).', '**Smooth** follows it with an 800 ms time constant.', 'Two **Meters** let you compare before and after.'],
+    steps: ['**Random** picks a new number 8 times a second, repeatably (Seed 3).', '**Smooth** follows it with an 800 ms time constant.', 'Two **Meters** let you compare before and after.'],
     expect: 'The first meter jumps around; the second drifts gently toward the same values.',
     tweak: ['Try Time constant 200 ms (light) and 3000 ms (heavy).', 'Change the Seed for a different sequence.'],
   },
@@ -63,7 +63,7 @@ export const RECIPES: Recipe[] = [
       { id: 'show', type: 'projector', ...at(0, 2), params: { format: 'int' } },
     ],
     wires: [['clock', 'out', 'count', 'inc'], ['count', 'out', 'show', 'in']],
-    steps: ['**Pulse** emits a true pulse every 800 ms.', '**Counter** adds 1 for every pulse. With **Wrap around** on and Maximum 9, it counts 0…9 then returns to 0.', '**Projector** shows the number as a whole number.'],
+    steps: ['**Pulse** sends a true pulse every 800 ms.', '**Counter** adds 1 for every pulse. With **Wrap around** on and Maximum 9, it counts 0…9 then returns to 0.', '**Projector** shows the number as a whole number.'],
     expect: 'The projector counts up once every 0.8 seconds and loops after 9.',
     tweak: ['Turn Wrap around off to see it stop at 9.', 'Set Step to −1 to count down.', 'Connect a [[n:switch]] to Reset.'],
   },
@@ -153,7 +153,7 @@ export const RECIPES: Recipe[] = [
       { id: 'hz', type: 'projector', ...at(1, 1), params: { format: 'int' } },
     ],
     wires: [['osc', 'out', 'map', 'in'], ['map', 'out', 'tone', 'freq'], ['map', 'out', 'hz', 'in']],
-    steps: ['**Wave** swings between −1 and 1 every 4 seconds.', '**Plastic Nerve** maps −1…1 onto 220…880 Hz. It is the glue between a signal’s range and a setting’s range.', '**Audio** plays the tone; **Projector** shows the frequency.'],
+    steps: ['**Wave** swings between −1 and 1 every 4 seconds.', '**Plastic Nerve** maps −1…1 onto 220…880 Hz. It’s the glue between a signal’s range and a setting’s range.', '**Audio** plays the tone; **Projector** shows the frequency.'],
     expect: 'After pressing Run, you hear a tone rising and falling between 220 and 880 Hz.',
     tweak: ['Change Curve to *ease-in* to bunch the sweep toward the low pitches.', 'Swap the Wave for a [[n:touch]] pad’s X output to play it by hand.'],
   },
@@ -168,7 +168,7 @@ export const RECIPES: Recipe[] = [
       { id: 'total', type: 'projector', ...at(1, 3), params: { format: 'int' } },
     ],
     wires: [['slow', 'out', 'map', 'in'], ['map', 'out', 'clock', 'p:period'], ['clock', 'count', 'total', 'in']],
-    steps: ['**Wave** sweeps −1…1 every 10 seconds.', '**Plastic Nerve** remaps it to 250…1200 ms, a valid range for Pulse’s Period.', 'The remapped signal is wired to Pulse’s **Period setting pin** (left edge). While it is connected, it replaces the inspector value.', '**Projector** shows how many pulses have fired.'],
+    steps: ['**Wave** sweeps −1…1 every 10 seconds.', '**Plastic Nerve** remaps it to 250…1200 ms, a valid range for Pulse’s Period.', 'The remapped signal is wired to Pulse’s **Period setting pin** (left edge). While it’s connected, it replaces the inspector value.', '**Projector** shows how many pulses have fired.'],
     expect: 'The pulses speed up and slow down smoothly. Select Pulse and you will see its Period greyed out because a wire is driving it.',
     tweak: ['Disconnect the wire and the inspector’s Period (1000 ms) returns.', 'Try driving Width the same way.'],
   },
@@ -198,7 +198,7 @@ export const RECIPES: Recipe[] = [
     wires: [['said', 'text', 'read', 'in'], ['read', 'label', 'verdict', 'in'], ['read', 'score', 'strength', 'in']],
     steps: ['**Info** holds some text you can edit in the inspector.', '**Knowledge** with the *Text sentiment* package scores words against a small lexicon.', '**Text** shows the label; **Projector** shows the score as a percentage.'],
     expect: 'The label reads positive. Edit the Info text to “this is terrible and sad” and it flips.',
-    tweak: ['Chain Info into several Knowledge nodes with different packages.', 'Remember it is a word list, not a language model: sarcasm will fool it.'],
+    tweak: ['Chain Info into several Knowledge nodes with different packages.', 'Remember it’s a word list, not a language model: sarcasm will fool it.'],
   },
 ];
 

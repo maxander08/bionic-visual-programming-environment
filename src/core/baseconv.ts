@@ -20,17 +20,17 @@ export type Res<T> = { ok: true; value: T } | { ok: false; error: string };
 export interface Ratio { neg: boolean; n: bigint; d: bigint }
 
 const RESERVED = new Set(['-', '+', '.', '_', ' ', '\t', '\n', '\r']);
-const MEMORY = 'This number needs more memory than this browser can give it.';
+const MEMORY = 'This number needs more memory than your browser can spare.';
 
 /** Check that the symbols can write both bases. Base 1 needs two (a zero and a tally mark), base b needs b. */
 export function checkSymbols(symbols: string, need: number): string | undefined {
   const list = Array.from(symbols);
-  if (list.length < need) return `Symbols needs at least ${need} characters, one for each digit of the larger base: it has ${list.length}.`;
+  if (list.length < need) return `Symbols needs at least ${need} characters, one for each digit of the larger base, but it only has ${list.length}.`;
   const used = list.slice(0, need);
   const seen = new Set<string>();
   for (const s of used) {
-    if (RESERVED.has(s) || /\s/u.test(s)) return `The symbol “${s.trim() === '' ? 'space' : s}” cannot be a digit, because it is used for the sign, the point or spacing. Choose another one.`;
-    if (seen.has(s)) return `The symbol “${s}” appears twice among the first ${need}: every digit needs its own symbol.`;
+    if (RESERVED.has(s) || /\s/u.test(s)) return `“${s.trim() === '' ? 'space' : s}” can’t be used as a digit, because it’s used for the sign, the point or spacing. Pick another one.`;
+    if (seen.has(s)) return `The symbol “${s}” appears twice among the first ${need}. Every digit needs its own symbol.`;
     seen.add(s);
   }
   return undefined;
@@ -38,7 +38,7 @@ export function checkSymbols(symbols: string, need: number): string | undefined 
 
 /* ───── whole numbers ⇄ digits, fast for any length ───── */
 
-/** The value of digits written in base B (divide and conquer, so a million digits is not a million long multiplications). */
+/** The value of digits written in base B (divide and conquer, so a million digits isn’t a million long multiplications). */
 function fromDigits(vals: number[], B: bigint, lo = 0, hi = vals.length): bigint {
   const len = hi - lo;
   if (len <= 24) { let n = 0n; for (let i = lo; i < hi; i++) n = n * B + BigInt(vals[i]); return n; }
@@ -69,18 +69,18 @@ function toDigits(v: bigint, base: number, syms: string[], width = 0): string[] 
 export function parseBased(text: string, base: number, symbols: string): Res<Ratio> {
   const syms = Array.from(symbols);
   let s = text.trim().replace(/[\s_]/g, '');
-  if (s === '') return { ok: false, error: 'There is no number to convert.' };
+  if (s === '') return { ok: false, error: 'There’s no number to convert.' };
   let neg = false;
   if (s[0] === '-' || s[0] === '+') { neg = s[0] === '-'; s = s.slice(1); }
   if (s === '') return { ok: false, error: 'A sign needs digits after it.' };
 
   if (base === 1) {
-    if (s.includes('.')) return { ok: false, error: 'Base 1 (tally marks) writes whole numbers only: there is no decimal point.' };
+    if (s.includes('.')) return { ok: false, error: 'Base 1 (tally marks) writes whole numbers only: there’s no decimal point.' };
     const zero = syms[0], mark = syms[1];
     if (s === zero) return { ok: true, value: { neg: false, n: 0n, d: 1n } };
     const marks = Array.from(s);
     const wrong = marks.find((ch) => ch !== mark);
-    if (wrong !== undefined) return { ok: false, error: `“${wrong}” is not a digit of base 1: write the number as that many “${mark}” marks, or “${zero}” for zero.` };
+    if (wrong !== undefined) return { ok: false, error: `“${wrong}” isn’t a digit of base 1. Write the number as that many “${mark}” marks, or “${zero}” for zero.` };
     return { ok: true, value: { neg, n: BigInt(marks.length), d: 1n } };
   }
 
@@ -113,7 +113,7 @@ export function parseBased(text: string, base: number, symbols: string): Res<Rat
   if (endless) {
     // The digits before the ellipsis are the start of the number; the ones they end with repeat.
     const hit = parts.length === 2 && frac !== '' ? (findRepeat(f.vals, 5) ?? findRepeat(f.vals, 2)) : null;
-    if (!hit) return { ok: false, error: 'An ellipsis (...) must follow digits that repeat after the point, such as 0.333...' };
+    if (!hit) return { ok: false, error: 'An ellipsis (...) has to follow the digits that repeat after the point, like 0.333...' };
     const pre = f.vals.slice(0, hit.start), block = f.vals.slice(hit.start, hit.start + hit.len);
     const head = fromDigits(w.vals.concat(pre), B), blk = fromDigits(block, B), nines = B ** BigInt(hit.len) - 1n;
     return { ok: true, value: { neg, n: head * nines + blk, d: nines * B ** BigInt(pre.length) } };
@@ -126,7 +126,7 @@ export function parseBased(text: string, base: number, symbols: string): Res<Rat
 
 export interface Based {
   text: string;
-  /** True when the number could not be written exactly in this many digits and was rounded. */
+  /** True when the number couldn’t be written exactly in this many digits and was rounded. */
   rounded: boolean;
   /** True when the fraction never ends but repeats: the text ends in an ellipsis after the repeating digits. */
   repeating?: boolean;
@@ -182,5 +182,5 @@ export function formatBased(r: Ratio, base: number, symbols: string, precision: 
   }
 }
 
-/** The digits of a number written as text, whatever it is made of (the sign and the point are not digits). */
+/** The digits of a number written as text, whatever it’s made of (the sign and the point aren’t digits). */
 export const countDigits = (text: string): number => Array.from(text).filter((ch) => ch !== '-' && ch !== '.').length;

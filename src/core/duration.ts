@@ -42,7 +42,7 @@ export const fromBaseUnit = (v: number, base: TimeBase): number => (base === 'ms
 export function parseDuration(text: string, bare: TimeBase = 's'): DurationResult {
   const src = text.trim().toLowerCase().replace(/：/g, ':').replace(/^[−－]/, '-');
   if (!src) return { ok: false, error: 'Type a time, for example 2 h 40 min.' };
-  if (src.startsWith('-')) return { ok: false, error: 'A time cannot be negative.' };
+  if (src.startsWith('-')) return { ok: false, error: 'A time can’t be negative.' };
   const bareSeconds = bare === 'ms' ? 0.001 : 1;
 
   // 1:30, 01:30:00, 1:02:03:04 (days), 01:05.250
@@ -64,14 +64,14 @@ export function parseDuration(text: string, bare: TimeBase = 's'): DurationResul
   while (at < body.length && body.slice(at).trim() !== '') {
     re.lastIndex = at;
     const m = re.exec(body);
-    if (!m) return { ok: false, error: 'That is not a time. Try 2 h 40 min, 90 s or 1:30:00.' };
+    if (!m) return { ok: false, error: 'That isn’t a time. Try 2 h 40 min, 90 s or 1:30:00.' };
     at = re.lastIndex;
     const value = Number(m[1]);
     if (!Number.isFinite(value)) return { ok: false, error: 'That number is too large.' };
     let factor: number;
     if (m[2]) {
       const u = UNITS[m[2]];
-      if (!u) return { ok: false, error: 'That is not a unit of time. Use h, min, s, ms, d or w.' };
+      if (!u) return { ok: false, error: 'That isn’t a unit of time. Use h, min, s, ms, d or w.' };
       factor = u.s; prev = u.key;
     } else if (prev === null) {
       factor = bareSeconds;

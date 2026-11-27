@@ -40,17 +40,17 @@ function make(spec: QuantitySpec): ModuleDef {
     keywords: `quantity unit si prefix amount measure ${spec.words} ${spec.units.join(' ')}`,
     chip: (p) => fmtQuantity(Number(p.amount), symbolOf(String(p.prefix)), String(p.unit)),
     inputs: [
-      inp('in', 'Quantity', 'any', `${spec.name} to take in: text like 2.5${spec.units[0]}, or a plain number (an amount in the unit chosen here). It is converted into the Prefix and Unit set on this module and replaces Amount while connected.`, 'top', true),
+      inp('in', 'Quantity', 'any', `${spec.name} to take in: text like 2.5${spec.units[0]}, or a plain number (an amount in the unit chosen here). It’s converted into the Prefix and Unit set on this module and replaces Amount while connected.`, 'top', true),
     ],
     outputs: [
       out('quantity', 'Quantity', 'text', `The ${spec.name.toLowerCase()} as text, <amount><unit>, for example 2.5${symbolOf(prefix0) || ''}${unit0}.`),
       out('amount', 'Amount', 'num', 'The amount alone, in the prefix and unit shown on the module.'),
       out('unit', 'Unit', 'text', `The unit with its prefix, as written in the quantity: ${symbolOf(prefix0)}${unit0}.`),
-      out('base', 'SI value', 'num', `The same ${spec.name.toLowerCase()} in ${grp.baseName} (${grp.base}), the coherent SI unit. Use it to compare or calculate with quantities written in different units.`, 'right'),
+      out('base', 'SI value', 'num', `The same ${spec.name.toLowerCase()} in ${grp.baseName} (${grp.base}), the coherent SI unit. Handy for comparing or calculating with quantities written in different units.`, 'right'),
     ],
     params: [
       num('amount', 'Amount', 1, -1e15, 1e15, 0.1, `How much of ${spec.about}, in the prefix and unit chosen below.`),
-      sel('prefix', 'Prefix', prefix0, PREFIX_OPTIONS, 'SI prefix, a power of ten placed in front of the unit: every unit takes every one of the 24 prefixes. “auto” picks the step of 1000 that keeps the amount between 1 and 999.'),
+      sel('prefix', 'Prefix', prefix0, PREFIX_OPTIONS, 'SI prefix, a power of ten placed in front of the unit. Every unit takes all 24 prefixes. “auto” picks the step of 1000 that keeps the amount between 1 and 999.'),
       sel('unit', 'Unit', unit0, spec.units.map((s) => [s, `${s} · ${UNIT_BY_SYM.get(s)!.name}`] as [string, string]), `The unit of the amount: ${unitNames}.`),
     ],
     run(c) {
@@ -92,10 +92,10 @@ function make(spec: QuantitySpec): ModuleDef {
     },
     doc: {
       summary: `Holds ${spec.about} as an amount with a unit, such as 2.5${spec.units[0]}, and converts it between units and SI prefixes.`,
-      runtime: `Holds ${spec.about} of Amount, Prefix and Unit, and emits it as text (<amount><unit>), as the amount alone, as the unit alone and as an SI value in ${grp.baseName} (${grp.base}). Units: ${unitNames}. Every unit takes every SI prefix, q r y z a f p n μ m c d da h k M G T P E Z Y R Q, and “auto” picks the best fit. When the Quantity pin carries a signal, the quantity it holds is converted into the Prefix and Unit chosen here, so the module also works as a converter${several ? ` between ${spec.units.join(', ')}` : ' between prefixes'}. Text is read as <amount><unit>; a plain number is an amount in the unit chosen here.`,
+      runtime: `Holds ${spec.about} of Amount, Prefix and Unit, and sends out it as text (<amount><unit>), as the amount alone, as the unit alone and as an SI value in ${grp.baseName} (${grp.base}). Units: ${unitNames}. Every unit takes every SI prefix, q r y z a f p n μ m c d da h k M G T P E Z Y R Q, and “auto” picks the best fit. When the Quantity pin carries a signal, the quantity it holds is converted into the Prefix and Unit chosen here, so the module also works as a converter${several ? ` between ${spec.units.join(', ')}` : ' between prefixes'}. Text is read as <amount><unit>; a plain number is an amount in the unit chosen here.`,
       errors: [
-        `A Quantity input in a unit that does not measure ${spec.name.toLowerCase()} raises an error.`,
-        'Text that is not <amount><unit> (for example “km5”) raises an error.',
+        `A Quantity input in a unit that doesn’t measure ${spec.name.toLowerCase()} gives an error.`,
+        'Text that isn’t <amount><unit> (for example “km5”) gives an error.',
       ],
       examples: [
         `${spec.name} Quantity → another ${spec.name} module: convert between units and prefixes.`,
@@ -126,19 +126,19 @@ function makeTime(spec: QuantitySpec): ModuleDef {
     keywords: `quantity unit si prefix amount measure ${spec.words} hours minutes seconds milliseconds hrs min sec hms duration span ${spec.units.join(' ')}`,
     chip: (p) => (String(p.unit) === HMS ? formatDuration(Number(p.span), { compact: true }) : fmtQuantity(tidy(fromBase(Number(p.span), symbolOf(String(p.prefix)), String(p.unit))), symbolOf(String(p.prefix)), String(p.unit))),
     inputs: [
-      inp('in', 'Quantity', 'any', 'A time to take in: text such as 2 hrs 40 min, 1h30m, 1:30:00 or 250ms, or a plain number (seconds, or the unit chosen here). It replaces Duration while connected.', 'top', true),
+      inp('in', 'Quantity', 'any', 'A time to take in: text like 2 hrs 40 min, 1h30m, 1:30:00 or 250ms, or a plain number (seconds, or the unit chosen here). It replaces Duration while it’s connected.', 'top', true),
     ],
     outputs: [
-      out('quantity', 'Quantity', 'text', 'The time as text you can read and feed to any time setting or Time module: 2h 40min (or 9600s when a single unit is chosen).'),
-      out('amount', 'Amount', 'num', 'The whole time as one number in the unit chosen under Show as. With “h · min · s” it is the total in seconds.'),
+      out('quantity', 'Quantity', 'text', 'The time as readable text you can feed to any time setting or Time module: 2h 40min (or 9600s when a single unit is chosen).'),
+      out('amount', 'Amount', 'num', 'The whole time as one number in the unit chosen under Show as. With “h · min · s” it’s the total in seconds.'),
       out('unit', 'Unit', 'text', 'The unit of Amount, with its prefix: s with “h · min · s”.'),
-      out('base', 'SI value', 'num', `The same time in ${grp.baseName} (${grp.base}), the coherent SI unit. Use it to compare or calculate with quantities written in different units.`, 'right'),
+      out('base', 'SI value', 'num', `The same time in ${grp.baseName} (${grp.base}), the coherent SI unit. Handy for comparing or calculating with quantities written in different units.`, 'right'),
       ...timeParts('time'),
     ],
     params: [
       { key: 'span', label: 'Duration', kind: 'number', default: 1, min: 0, max: MAX_SPAN, step: 1, unit: 's', time: 's',
-        doc: 'How long, typed the way you say it: 2 h 40 min, 1h30m, 90 s, 1:30:00, 2.5 hours, 1d 4h. A plain number is seconds.' },
-      sel('prefix', 'Prefix', NONE, PREFIX_OPTIONS, 'SI prefix for a single unit (m + s = milliseconds). It has no effect with “h · min · s”. “auto” picks the step of 1000 that keeps the amount between 1 and 999.'),
+        doc: 'How long, typed the way you’d say it: 2 h 40 min, 1h30m, 90 s, 1:30:00, 2.5 hours, 1d 4h. A plain number is seconds.' },
+      sel('prefix', 'Prefix', NONE, PREFIX_OPTIONS, 'SI prefix for a single unit (m + s = milliseconds). It does nothing with “h · min · s”. “auto” picks the step of 1000 that keeps the amount between 1 and 999.'),
       sel('unit', 'Show as', HMS, unitOptions, `How Quantity and Amount are written: as hours, minutes and seconds together (2h 40min), or in one unit: ${unitNames}. Hours, Minutes, Seconds and Milliseconds always come out as separate pins whatever this says.`),
     ],
     // Older programs held an Amount in a Prefix and Unit: keep that time, written the way it was.
@@ -170,12 +170,12 @@ function makeTime(spec: QuantitySpec): ModuleDef {
           }
         } else {
           const x = toNum(v);
-          if (!Number.isFinite(x)) return c.fail('The Quantity pin needs a time such as 2h 40min, or a number.');
+          if (!Number.isFinite(x)) return c.fail('The Quantity pin needs a time like 2h 40min, or a number.');
           seconds = toBase(x, prefix, unit);
         }
       } else seconds = c.num('span');
       if (!Number.isFinite(seconds)) return c.fail('That time is too large to hold.');
-      if (seconds < 0) return c.fail('A time cannot be negative.');
+      if (seconds < 0) return c.fail('A time can’t be negative.');
       if (mode !== HMS && choice === AUTO) prefix = autoPrefix(fromBase(seconds, '', unit));
       const amount = read(seconds, mode, prefix);
       const symbol = prefix + unit;
@@ -200,11 +200,11 @@ function makeTime(spec: QuantitySpec): ModuleDef {
       c.view({ text, symbol, sub: mode === HMS ? `= ${fmtAmount(si)} s` : symbol === grp.base ? UNIT_BY_SYM.get(unit)!.name : `= ${fmtAmount(si)} ${grp.base}`, amount: fmtAmount(amount) });
     },
     doc: {
-      summary: 'Holds a span of time written the way you say it, such as 2 hrs 40 min, and gives it out as text, as one number and as separate hours, minutes and seconds.',
-      runtime: 'Duration is typed as a sentence (2 h 40 min, 1h30m, 90 s, 1:30:00, 1.5 hours); a plain number is seconds. Show as chooses how Quantity and Amount are written: h · min · s (the default, 2h 40min) or a single unit with an optional SI prefix. Hours, Minutes, Seconds and Milliseconds are always separate outputs, split from the whole time (hours are not wrapped at 24), and SI value is the total in seconds. When the Quantity pin carries a signal it replaces Duration: text such as 2h 40min or 250ms, or a number in the unit chosen here (seconds with h · min · s). Wire Quantity into any time setting (a Timer\'s Duration, a Delay, a Pulse period) to set it from here.',
+      summary: 'Holds a span of time written the way you say it, like 2 hrs 40 min, and gives it out as text, as one number, and as separate hours, minutes and seconds.',
+      runtime: 'Type the duration like a sentence (2 h 40 min, 1h30m, 90 s, 1:30:00, 1.5 hours). A plain number is seconds. Show as picks how Quantity and Amount are written: h · min · s (the default, 2h 40min) or a single unit with an optional SI prefix. Hours, Minutes, Seconds and Milliseconds are always separate outputs, split from the whole time (hours don’t wrap at 24), and SI value is the total in seconds. When the Quantity pin has a signal, it replaces Duration: text like 2h 40min or 250ms, or a number in the unit chosen here (seconds with h · min · s). Wire Quantity into any time setting (a Timer’s Duration, a Delay, a Pulse period) to set it from here.',
       errors: [
-        'A Quantity input that is not a time (text such as 5km, or text with a stray word) raises an error that names the problem.',
-        'A negative time raises an error: a span of time is never below zero.',
+        'A Quantity input that isn’t a time (text like 5km, or text with a stray word) gives an error that names the problem.',
+        'A negative time gives an error, since a span of time is never below zero.',
       ],
       examples: [
         'Time Quantity → Timer Duration pin: a countdown of exactly 2h 40min.',

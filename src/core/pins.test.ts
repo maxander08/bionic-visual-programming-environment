@@ -128,7 +128,7 @@ describe('setting pins', () => {
     expect(e.nodes.get('a')!.driven).toBe(false);
   });
 
-  it('pin values are clamped to the setting range and numbers cannot be driven by text', () => {
+  it('pin values are clamped to the setting range and numbers can’t be driven by text', () => {
     const { e } = build({ nodes: [['c', 'constant', { value: '99999' }], ['i', 'invert'], ['t', 'threshold'], ['k', 'constant', { value: '1' }]], wires: [['c', 'out', 't', 'p:hysteresis'], ['k', 'out', 't', 'in']] });
     e.runFor(100);
     expect(e.nodes.get('t')!.live.hysteresis).toBe(99999);
@@ -139,7 +139,7 @@ describe('setting pins', () => {
     expect(connect(g, 'i', 'number', 'r', 'p:min').error).toBeUndefined();
   });
 
-  it('a setting pin does not look like a data event (Delay does not re-send, Counter does not count)', () => {
+  it('a setting pin doesn’t look like a data event (Delay doesn’t re-send, Counter doesn’t count)', () => {
     const { e } = build({
       nodes: [['k', 'constant', { value: '1' }], ['ms', 'constant', { value: '100' }], ['d', 'delay', { ms: 500 }], ['cnt', 'counter'], ['step', 'constant', { value: '5' }]],
       wires: [['k', 'out', 'd', 'in'], ['ms', 'out', 'd', 'p:ms'], ['step', 'out', 'cnt', 'p:step']],
@@ -149,7 +149,7 @@ describe('setting pins', () => {
     expect(e.out('cnt', 'out')).toBe(0);
   });
 
-  it('pins do not keep source modules from starting and do not count as signal strength', () => {
+  it('pins don’t keep source modules from starting and don’t count as signal strength', () => {
     const { e } = build({ nodes: [['r', 'random'], ['c', 'constant', { value: '3' }]], wires: [] });
     e.runFor(200);
     expect(e.out('r', 'out')).toBeDefined();
