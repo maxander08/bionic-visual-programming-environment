@@ -1,7 +1,7 @@
 // Simplified Chinese for exact decimal arithmetic: the arithmetic nodes keep every digit, and a Decimal carries all of them.
 export const exact: Record<string, string> = {
   /* Constant */
-  'The value to send out. A number keeps every digit you type.': '要输出的值。数字会保留你输入的每一位。',
+  'The value to send. A number keeps every digit you type.': '要输出的值。数字会保留你输入的每一位。',
   /* arithmetic nodes */
   'out = a + b + offset, worked out exactly: every digit of every number is kept (3 + 0.14159265 is 3.14159265, 0.1 + 0.2 is 0.3). A missing b counts as 0, and if a is missing the node sits idle.': 'out = a + b + offset，精确计算：每个数的每一位都会保留（3 + 0.14159265 等于 3.14159265，0.1 + 0.2 等于 0.3）。缺少 b 时按 0 计；缺少 a 时节点保持空闲。',
   'out = a − b − offset, worked out exactly: every digit of every number is kept. A missing b counts as 0, and if a is missing the node sits idle.': 'out = a − b − offset，精确计算：每个数的每一位都会保留。缺少 b 时按 0 计；缺少 a 时节点保持空闲。',

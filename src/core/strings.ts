@@ -36,12 +36,25 @@ export function repeat(s: string, n: number): string {
 
 const isCased = (ch: string) => ch.toLowerCase() !== ch.toUpperCase() || /\p{Lt}/u.test(ch);
 
+/** The words of a text for camelCase: runs of letters or digits, split where the case changes (fooBar, XMLHttp → xml Http). */
+const WORD = /\p{Lu}[\p{Lu}\p{M}]*(?=\p{Lu}\p{Ll})|\p{Lu}?[\p{Ll}\p{Lo}\p{Lm}\p{M}]+|\p{Lu}[\p{Lu}\p{M}]*|\p{Lt}[\p{Ll}\p{M}]*|\p{N}+/gu;
+
+/** camelCase: the first word in lower case, every other word with a capital first letter, and nothing between them. */
+function camel(s: string): string {
+  const words = s.replace(/['’‘`]/g, '').match(WORD) ?? [];
+  return words.map((w, i) => {
+    const a = cps(w.toLowerCase());
+    return i === 0 ? a.join('') : a[0].toUpperCase() + a.slice(1).join('');
+  }).join('');
+}
+
 export function changeCase(s: string, mode: string): string {
   switch (mode) {
     case 'upper': return s.toUpperCase();
     case 'lower': return s.toLowerCase();
     case 'casefold': return s.toLowerCase().replace(/ß/g, 'ss').replace(/ς/g, 'σ').replace(/ﬁ/g, 'fi').replace(/ﬂ/g, 'fl').replace(/ŉ/g, 'ʼn');
     case 'swapcase': return cps(s).map((ch) => { const u = ch.toUpperCase(), l = ch.toLowerCase(); return ch === u && ch !== l ? l : ch === l && ch !== u ? u : ch; }).join('');
+    case 'camel': return camel(s);
     case 'capitalize': { const a = cps(s); return a.length ? a[0].toUpperCase() + a.slice(1).join('').toLowerCase() : ''; }
     case 'title': {
       let prev = false, out = '';

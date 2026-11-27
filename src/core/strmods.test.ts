@@ -117,6 +117,17 @@ describe('case, strip, remove, replace, translate', () => {
     expect(S.changeCase('Straße', 'upper')).toBe('STRASSE');
     expect(go('str-case', { mode: 'upper' }, 'abc')).toBe('ABC');
   });
+  it('writes camelCase', () => {
+    expect(S.changeCase('hello world', 'camel')).toBe('helloWorld');
+    expect(S.changeCase('  Hello_World-foo.bar  ', 'camel')).toBe('helloWorldFooBar');
+    expect(S.changeCase('XMLHttpRequest', 'camel')).toBe('xmlHttpRequest');
+    expect(S.changeCase('fooBar BAZ', 'camel')).toBe('fooBarBaz');
+    expect(S.changeCase("don't stop", 'camel')).toBe('dontStop');
+    expect(S.changeCase('version 2 beta', 'camel')).toBe('version2Beta');
+    expect(S.changeCase('ÄPFEL und Öl', 'camel')).toBe('äpfelUndÖl');
+    expect(S.changeCase('---', 'camel')).toBe('');
+    expect(go('str-case', { mode: 'camel' }, 'make me camel')).toBe('makeMeCamel');
+  });
   it('strips, removes and replaces like Python', () => {
     expect(S.strip('  hi \n', '', 'both')).toBe('hi');
     expect(S.strip('  hi ', '', 'left')).toBe('hi ');

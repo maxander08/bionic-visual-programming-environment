@@ -25,7 +25,7 @@ const POOL = 'abcdfghkmpqrsuvwyz'.split('');
 /** The name a new parameter starts with: a, b, c, d, f … (never e, t, x or n, which mean something). */
 export const defaultParamName = (k: number) => (k <= POOL.length ? POOL[k - 1] : `p${k}`);
 
-const FN_DOC = 'Write it in x, and you can also use t (the simulation time in seconds) and the names of your parameters. You get everything the Equation node has, plus sec, csc, cot and the factorial n!. Constants: pi, e, tau, phi. A leading “y =” is fine.';
+const FN_DOC = 'Write it in x; you can also use t (the simulation time in seconds) and the names of your parameters. It understands everything the Equation node does, plus sec, csc, cot and the factorial n!. Constants: pi, e, tau, phi. A leading “y =” is fine, and an empty expression is skipped.';
 
 /**
  * Every setting of the engine, in the order of its pins. Settings of the other modes are kept (a value typed for one mode is still
@@ -40,48 +40,48 @@ function calculusParams(p: Params, all = false): ParamDef[] {
   const m = (...modes: CalcMode[]) => modes.includes(mode);
   const list: ParamDef[] = [
     sel('mode', 'Analysis', 'derivative', [['derivative', 'Derivative'], ['integral', 'Integral'], ['limit', 'Function limit'], ['series', 'Series'], ['curve', 'Curve analysis']],
-      'What to work out: a derivative, an integral, a limit, a series (a sum, a Taylor series or a Fourier series) or a full curve analysis. Each choice has its own settings. The settings for the others are kept, just hidden.'),
-    { ...num('fn', 'Expressions', 1, 1, CALC_MAX_ITEMS, 1, 'How many expressions the module holds, from 1 to 99. Each one gets its own pin (ƒ₁, ƒ₂ …). Use the + and − buttons on the module, or type a number here. Removing an expression removes its pin and its text.'), pin: false },
+      'What to work out: a derivative, an integral, a limit, a series (a sum, a Taylor series or a Fourier series) or a full curve analysis. Each choice has its own settings, and the settings of the others are kept, just hidden.'),
+    { ...num('fn', 'Expressions', 1, 1, CALC_MAX_ITEMS, 1, 'How many expressions the module holds, from 1 to 99. Each one gets its own pin (ƒ₁, ƒ₂ …). Use the + and − buttons on the module or type a number here. Removing an expression removes its pin and its text.'), pin: false },
   ];
   for (let k = 1; k <= nf; k++) {
     // The pin of each expression takes an Equation (data), not text.
-    list.push({ ...txt(`f${k}`, `ƒ${SUB(k)}(x)`, k === 1 ? 'x^3 - 3x' : '', `Expression ƒ${SUB(k)}. ${FN_DOC} An empty expression is skipped.`, { maxLength: 400, placeholder: 'y = sin(x)' }), pinType: 'data' });
+    list.push({ ...txt(`f${k}`, `ƒ${SUB(k)}(x)`, k === 1 ? 'x^3 - 3x' : '', `Expression ƒ${SUB(k)}. ${FN_DOC}`, { maxLength: 400, placeholder: 'y = sin(x)' }), pinType: 'data' });
   }
-  list.push({ ...num('pn', 'Parameters', 0, 0, CALC_MAX_ITEMS, 1, 'How many named parameters the module holds, from 0 to 99. A parameter is a number with a name (a, b, c …) that every expression can use, and that a signal can change while the program runs. Use the “p” buttons on the module, or type a number here. Removing a parameter removes its pins.'), pin: false });
+  list.push({ ...num('pn', 'Parameters', 0, 0, CALC_MAX_ITEMS, 1, 'How many named parameters the module holds, from 0 to 99. A parameter is a number with a name (a, b, c …) that every expression can use and that a signal can change while the program runs. Use the “p” buttons on the module or type a number here. Removing a parameter removes its pins.'), pin: false });
   for (let k = 1; k <= np; k++) {
     list.push(txt(`pn${k}`, `Name of parameter ${k}`, defaultParamName(k), `The name of parameter ${k}: letters, digits and _, starting with a letter. Use it in your expressions, like a*x^2. Names such as x, t, pi or sin are already taken.`, { maxLength: 20 }));
     list.push(num(`pv${k}`, `Value of parameter ${k}`, 1, -1e9, 1e9, 0.1, `The number that parameter ${k} stands for in every expression.`));
   }
   list.push(
     when(m('derivative', 'integral', 'series'), sel('show', 'Draw', 'both', [['both', 'Function and result'], ['result', 'Result only'], ['function', 'Function only']],
-      'What goes on the graph: the function and its result, only the result, or only the function. Pick “Result only” when you want another Calculus Engine or a Meter to work with just the result.')),
-    num('xMin', 'x min', -4, -1e6, 1e6, 0.1, 'The left edge of the graph, and the stretch of x the curve analysis looks at. While an Equation is connected, its range is used instead.'),
-    num('xMax', 'x max', 4, -1e6, 1e6, 0.1, 'The right edge of the graph. Must be greater than x min. While an Equation is connected, its range is used instead.'),
-    bol('yAuto', 'Auto y range', true, 'Fit the vertical range to the curves (ignoring asymptotes). Off: use y min and y max.'),
-    num('yMin', 'y min', -10, -1e6, 1e6, 0.1, 'Bottom edge of the graph when Auto y range is off.'),
-    num('yMax', 'y max', 10, -1e6, 1e6, 0.1, 'Top edge of the graph when Auto y range is off.'),
-    num('samples', 'Samples', 200, 20, 2000, 10, 'Points computed per curve. More points give smoother curves.'),
+      'What goes on the graph: the function and its result, only the result, or only the function. Pick “Result only” if you want another Calculus Engine or a Meter to work with just the result.')),
+    num('xMin', 'x min', -4, -1e6, 1e6, 0.1, 'The left edge of the graph, and the stretch of x the curve analysis looks at. If an Equation is connected, its range is used instead.'),
+    num('xMax', 'x max', 4, -1e6, 1e6, 0.1, 'The right edge of the graph. It has to be greater than x min. If an Equation is connected, its range is used instead.'),
+    bol('yAuto', 'Auto y range', true, 'Fits the vertical range to the curves (ignoring asymptotes). Off uses y min and y max instead.'),
+    num('yMin', 'y min', -10, -1e6, 1e6, 0.1, 'The bottom edge of the graph when Auto y range is off.'),
+    num('yMax', 'y max', 10, -1e6, 1e6, 0.1, 'The top edge of the graph when Auto y range is off.'),
+    num('samples', 'Samples', 200, 20, 2000, 10, 'How many points to work out for each curve. More points make smoother curves.'),
     num('target', 'Output expression', 1, 1, CALC_MAX_ITEMS, 1, 'Which expression’s result goes to the Value output (1 is ƒ₁). The Values output lists the results of all of them.'),
-    when(m('derivative') || (m('series') && kind !== 'sum') || m('curve'), num('at', 'Point x', 0, -1e6, 1e6, 0.1, 'The x where the result is evaluated: the value of the derivative, of the curve, or of the Taylor or Fourier series.')),
+    when(m('derivative') || (m('series') && kind !== 'sum') || m('curve'), num('at', 'Point x', 0, -1e6, 1e6, 0.1, 'The x where the result is worked out: the value of the derivative, of the curve, or of the Taylor or Fourier series.')),
     // derivative
-    when(m('derivative'), num('order', 'Order', 1, 1, 10, 1, 'Which derivative you want: 1 is the first derivative, 2 the second, and so on up to the tenth.')),
+    when(m('derivative'), num('order', 'Order', 1, 1, 10, 1, 'Which derivative you want: 1 is the first, 2 the second, and so on up to the tenth.')),
     when(m('derivative'), txt('wrt', 'Differentiate by', 'x', 'What to differentiate with respect to: x, t, or the name of a parameter (for a partial derivative).', { maxLength: 20 })),
     when(m('derivative'), bol('tangent', 'Tangent line', false, 'Also draw the tangent line to each function at the point x.')),
     // integral
     when(m('integral'), txt('lower', 'Lower bound', '0', 'The lower bound: a number, an expression of the parameters like pi/2, or -inf for an improper integral.', { maxLength: 40 })),
     when(m('integral'), txt('upper', 'Upper bound', '1', 'The upper bound: a number, an expression of the parameters like pi/2, or inf for an improper integral.', { maxLength: 40 })),
     when(m('integral'), sel('method', 'Method', 'adaptive', [['adaptive', 'Adaptive (Gauss–Kronrod)'], ['simpson', 'Simpson’s rule'], ['trapezoid', 'Trapezoid rule'], ['midpoint', 'Midpoint rule']],
-      'How the definite integral is computed. The adaptive rule is the most accurate and handles improper integrals. The others are the classic fixed-step rules, and they use the number of intervals below.')),
-    when(m('integral'), num('intervals', 'Intervals', 100, 2, 100000, 1, 'How many equal steps the Simpson, trapezoid and midpoint rules use. The adaptive rule ignores this.')),
+      'How the definite integral is computed. The adaptive rule is the most accurate and copes with improper integrals. The others are the classic fixed-step rules, and they use the number of intervals below.')),
+    when(m('integral'), num('intervals', 'Intervals', 100, 2, 100000, 1, 'How many equal steps the Simpson, trapezoid and midpoint rules use. The adaptive rule ignores it.')),
     // limit
-    when(m('limit'), txt('to', 'x approaches', '0', 'The point x approaches: a number, an expression of the parameters, or inf / -inf for a limit at infinity.', { maxLength: 40 })),
+    when(m('limit'), txt('to', 'x approaches', '0', 'The point x heads towards: a number, an expression of the parameters, or inf / -inf for a limit at infinity.', { maxLength: 40 })),
     when(m('limit'), sel('side', 'Side', 'both', [['both', 'Both sides'], ['left', 'From the left'], ['right', 'From the right']], 'Which side to approach from. For a two-sided limit to exist, both sides have to agree.')),
     // series
     when(m('series'), sel('kind', 'Series', 'sum', [['sum', 'Sum of terms'], ['taylor', 'Taylor series'], ['fourier', 'Fourier series']],
-      'A sum of terms Σ ƒ(n) written in n, the Taylor polynomial of the function about a point, or its Fourier series on a symmetric interval.')),
+      'Either a sum of terms Σ ƒ(n) written in n, the Taylor polynomial of the function around a point, or its Fourier series on a symmetric interval.')),
     when(m('series') && kind === 'sum', num('start', 'First n', 1, -1e6, 1e6, 1, 'The first value of n in the sum. The expression is the general term, written in n.')),
     when(m('series') && kind === 'sum', num('terms', 'Terms', 100, 2, 20000, 1, 'How many terms to add. An infinite series is also estimated beyond them.')),
-    when(m('series') && kind === 'sum', bol('infinite', 'Infinite series', true, 'On: treat the sum as infinite, test whether it converges and estimate its value. Off: add exactly the terms given.')),
+    when(m('series') && kind === 'sum', bol('infinite', 'Infinite series', true, 'On: treat the sum as infinite, test whether it converges and estimate its value. Off: add up exactly the terms given.')),
     when(m('series') && kind === 'taylor', num('center', 'Centre a', 0, -1e6, 1e6, 0.1, 'The point the Taylor polynomial is built around (a = 0 gives a Maclaurin series).')),
     when(m('series') && kind === 'taylor', num('degree', 'Degree', 5, 0, 16, 1, 'The highest power in the Taylor polynomial.')),
     when(m('series') && kind === 'fourier', num('halfPeriod', 'Half period L', Math.PI, 0.001, 1e6, 0.1, 'The Fourier series is built on the interval from −L to L and repeats with period 2L.')),

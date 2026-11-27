@@ -25,9 +25,9 @@ export const sensors: ModuleDef[] = [
     inputs: [],
     outputs: [out('image', 'Image', 'image', 'Latest frame, downscaled to about 64 pixels wide.'), out('luma', 'Luma', 'num', 'Mean brightness of the frame, 0–1.', 'right')],
     params: [
-      sel('source', 'Source', 'sim', [['sim', 'Simulated scene'], ['camera', 'Camera (needs permission)'], ['file', 'Image file']], 'Where the frames come from. The camera needs a device and your permission. The simulated scene needs nothing.'),
+      sel('source', 'Source', 'sim', [['sim', 'Simulated scene'], ['camera', 'Camera (needs permission)'], ['file', 'Image file']], 'Where the frames come from. The camera needs a device and your permission, while the simulated scene needs nothing.'),
       RATE(5),
-      txt('fileData', 'Image data', '', 'A smaller copy of the image, kept inside the program when the source is a file.', { hidden: true, maxLength: 400000 }),
+      txt('fileData', 'Image data', '', 'A small copy of the image, kept inside the program when the source is a file.', { hidden: true, maxLength: 400000 }),
     ],
     source: true,
     run(c) {
@@ -60,9 +60,9 @@ export const sensors: ModuleDef[] = [
     inputs: [],
     outputs: [out('level', 'Level', 'num', 'Loudness (RMS), 0–1.'), out('pitch', 'Pitch', 'num', 'Dominant frequency in Hz (0 when silent).', 'right')],
     params: [
-      sel('source', 'Source', 'sim', [['sim', 'Simulated melody'], ['mic', 'Microphone (needs permission)']], 'Simulated melody needs no hardware.'),
+      sel('source', 'Source', 'sim', [['sim', 'Simulated melody'], ['mic', 'Microphone (needs permission)']], 'The simulated melody doesn’t need any hardware.'),
       RATE(10),
-      num('gain', 'Gain', 1, 0.1, 10, 0.1, 'Multiplies the level.'),
+      num('gain', 'Gain', 1, 0.1, 10, 0.1, 'Turns the level up or down by multiplying it.'),
     ],
     source: true,
     run(c) {
@@ -111,7 +111,7 @@ export const sensors: ModuleDef[] = [
     inputs: [],
     outputs: [out('x', 'X', 'num', 'Horizontal tilt or position, −1…1.'), out('y', 'Y', 'num', 'Vertical tilt or position, −1…1.', 'right')],
     params: [
-      sel('source', 'Source', 'sim', [['sim', 'Simulated sway'], ['pointer', 'Pointer position'], ['device', 'Device orientation']], 'Device orientation needs a phone or tablet sensor, and on iOS you have to give permission.'),
+      sel('source', 'Source', 'sim', [['sim', 'Simulated sway'], ['pointer', 'Pointer position'], ['device', 'Device orientation']], 'Device orientation needs a phone or tablet with the sensor, and on iOS you also have to allow it.'),
       RATE(10),
     ],
     source: true,
@@ -157,7 +157,7 @@ export const sensors: ModuleDef[] = [
     keywords: 'text number manual input',
     inputs: [],
     outputs: [out('text', 'Text', 'text', 'The text set in the inspector.'), out('number', 'Number', 'num', 'The text parsed as a number; empty if it isn’t numeric.', 'right')],
-    params: [txt('text', 'Text', 'hello', 'The information this node holds. Edit it here in the inspector. The node itself only displays it.', { multiline: true })],
+    params: [txt('text', 'Text', 'hello', 'The text this node holds. Edit it here, because the node itself only shows it.', { multiline: true })],
     source: true,
     run(c) {
       const t = c.str('text');
@@ -174,7 +174,7 @@ export const sensors: ModuleDef[] = [
     keywords: 'toggle boolean button manual',
     inputs: [],
     outputs: [out('on', 'On', 'bool', 'True when the switch is on.')],
-    params: [bol('on', 'On', false, 'Whether the switch is on. Click the inner pad of the node to toggle it.')],
+    params: [bol('on', 'On', false, 'Whether the switch is on. Click the inner pad on the node to flip it.')],
     source: true,
     run(c) {
       c.emit('on', c.bool('on'));
@@ -186,7 +186,7 @@ export const sensors: ModuleDef[] = [
     keywords: 'platform online network',
     inputs: [],
     outputs: [out('name', 'Name', 'text', 'Browser platform and screen size.'), out('online', 'Online', 'bool', 'Whether the browser reports a network connection.', 'right')],
-    params: [txt('label', 'Fallback label', 'unknown device', 'Shown when the browser doesn’t share any platform information.')],
+    params: [txt('label', 'Fallback label', 'unknown device', 'What to show when the browser won’t tell us anything about the platform.')],
     source: true,
     run(c) {
       c.emit('name', String(c.injected?.name ?? c.str('label')));

@@ -19,8 +19,8 @@ export const time: Record<string, string> = {
   'seconds': '秒',
   // Timekeeping updated setting docs
   'How long the countdown lasts. Type it the way you’d say it: 2 h 40 min, 1h30m, 90 s, 1:30:00 or 2.5 hours. A plain number is seconds. The timer follows this setting while it’s waiting, but a countdown that’s already running keeps its length until it restarts.': '倒计时的时长。按口语方式输入：2 h 40 min、1h30m、90 s、1:30:00 或 2.5 hours；纯数字按秒计。定时器处于等待状态时它会跟随此设置；已在运行的倒计时会保持原时长，直到重新开始。',
-  'The stopwatch stops by itself when it reaches this time, typed as 2 h 40 min, 90 s or 1:30:00 (a plain number is seconds). 0 means no limit.': '秒表达到此时间时自动停止，可输入 2 h 40 min、90 s 或 1:30:00（纯数字按秒计）。0 表示不限。',
-  'How long Ringing stays true when nobody dismisses the alarm, typed as 2 min, 90 s or 1 h (a plain number is seconds). It’s counted in simulation time.': '无人关闭闹钟时，“响铃中”保持为真的时长，可输入 2 min、90 s 或 1 h（纯数字按秒计）。按仿真时间计。',
+  'The stopwatch stops by itself when it reaches this time. Type 2 h 40 min, 90 s or 1:30:00 (a plain number is seconds). 0 means no limit.': '秒表达到此时间时自动停止，可输入 2 h 40 min、90 s 或 1:30:00（纯数字按秒计）。0 表示不限。',
+  'How long Ringing stays true if nobody dismisses the alarm. Type 2 min, 90 s or 1 h (a plain number is seconds). It’s counted in simulation time.': '无人关闭闹钟时，“响铃中”保持为真的时长，可输入 2 min、90 s 或 1 h（纯数字按秒计）。按仿真时间计。',
   // Time quantity
   'Hours': '小时',
   'Minutes': '分钟',
@@ -28,8 +28,8 @@ export const time: Record<string, string> = {
   'Show as': '显示为',
   'h · min · s (as you say it)': 'h · min · s（按口语方式）',
   'How long, typed the way you’d say it: 2 h 40 min, 1h30m, 90 s, 1:30:00, 2.5 hours, 1d 4h. A plain number is seconds.': '时长，按口语方式输入：2 h 40 min、1h30m、90 s、1:30:00、2.5 hours、1d 4h。纯数字按秒计。',
-  'SI prefix for a single unit (m + s = milliseconds). It does nothing with “h · min · s”. “auto” picks the step of 1000 that keeps the amount between 1 and 999.': '单个单位使用的 SI 前缀（m + s = 毫秒）。选择“h · min · s”时不起作用。“自动”会选取使数值保持在 1 到 999 之间的千进位前缀。',
-  'How Quantity and Amount are written: as hours, minutes and seconds together (2h 40min), or in one unit: s (second), min (minute), h (hour), d (day), a (year (Julian, 365.25 d)). Hours, Minutes, Seconds and Milliseconds always come out as separate pins, whatever you pick here.': '“物理量”和“数值”的写法：以小时、分钟和秒组合表示（2h 40min），或使用单一单位：s（秒）、min（分钟）、h（小时）、d（天）、a（儒略年，365.25 天）。无论此处如何选择，“小时”、“分钟”、“秒”和“毫秒”始终作为独立引脚输出。',
+  'The SI prefix for a single unit (m + s = milliseconds). It does nothing with “h · min · s”. “auto” picks the step of 1000 that keeps the amount between 1 and 999.': '单个单位使用的 SI 前缀（m + s = 毫秒）。选择“h · min · s”时不起作用。“自动”会选取使数值保持在 1 到 999 之间的千进位前缀。',
+  'How Quantity and Amount are written: as hours, minutes and seconds together (2h 40min), or in a single unit: s (second), min (minute), h (hour), d (day), a (year (Julian, 365.25 d)). The Hours, Minutes, Seconds and Milliseconds pins always come out separately, whatever this says.': '“物理量”和“数值”的写法：以小时、分钟和秒组合表示（2h 40min），或使用单一单位：s（秒）、min（分钟）、h（小时）、d（天）、a（儒略年，365.25 天）。无论此处如何选择，“小时”、“分钟”、“秒”和“毫秒”始终作为独立引脚输出。',
   'A time to take in: text like 2 hrs 40 min, 1h30m, 1:30:00 or 250ms, or a plain number (seconds, or the unit chosen here). It replaces Duration while it’s connected.': '要接收的时间：可以是 2 hrs 40 min、1h30m、1:30:00 或 250ms 这样的文字，也可以是纯数字（秒，或此处选择的单位）。连接后会取代“时长”。',
   'The time as readable text you can feed to any time setting or Time module: 2h 40min (or 9600s when a single unit is chosen).': '以文字表示的时间，可读，也可接入任何时间设置或时间模块：2h 40min（选择单一单位时为 9600s）。',
   'The whole time as one number in the unit chosen under Show as. With “h · min · s” it’s the total in seconds.': '整个时间的单一数值，单位由“显示为”决定。选择“h · min · s”时为总秒数。',

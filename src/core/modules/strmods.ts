@@ -40,7 +40,7 @@ const bound$ = (c: Ctx, key: string, label: string): number | undefined => {
 const q = (s: unknown) => `"${String(s)}"`;
 
 const START = txt('start', 'Start', '', 'Where to start looking, counting characters from 0 (a negative number counts from the end). Blank means the beginning.', { maxLength: 8 });
-const END = txt('end', 'End', '', 'Where to stop looking (the character at this position is not included; a negative number counts from the end). Blank means the end of the string.', { maxLength: 8 });
+const END = txt('end', 'End', '', 'Where to stop looking. The character at this position isn’t included, and a negative number counts from the end. Blank means the end of the string.', { maxLength: 8 });
 
 export const strmods: ModuleDef[] = [
   /* ───── + ───── */
@@ -49,11 +49,11 @@ export const strmods: ModuleDef[] = [
     keywords: 'concatenate concat append join plus add strings text + python',
     inputs: [inp('in', 'A', 'text', 'The first string.'), inp('b', 'B', 'text', 'A second string, added after the first; nothing when not connected.', 'top', true)],
     outputs: [OUT('A + B + the Add setting, one string.', 'Sum')],
-    params: [{ ...txt('add', 'Add', '', `A string added at the end.${ESC}`), pinSide: 'left' }],
+    params: [{ ...txt('add', 'Add', '', `Text to add at the end.${ESC}`), pinSide: 'left' }],
     run(c) { emitStr(c, 'out', str$(c) + (c.has('b') ? str$(c, 'b') : '') + esc$(c, 'add')); },
     doc: {
-      summary: 'Adds strings together, end to end: Python’s a + b.',
-      runtime: 'out = a + b + add. A missing b counts as an empty string, and if the first string is missing the node sits idle. Numbers are added as their text (“1” + “2” is “12”).',
+      summary: 'Adds strings together, end to end, like Python’s a + b.',
+      runtime: 'The result is a + b + whatever is in the Add setting. If b is missing it counts as an empty string, and if the first string is missing the node just sits idle. Numbers are added as text, so “1” + “2” is “12”.',
     },
   },
 
@@ -63,12 +63,12 @@ export const strmods: ModuleDef[] = [
     keywords: 'repeat multiply times duplicate copies * python',
     inputs: [inp('in', 'A', 'text', 'The string to repeat.'), inp('b', 'B', 'num', 'Replaces the Times setting when connected.', 'top', true)],
     outputs: [OUT('The string repeated that many times.', 'Product')],
-    params: [{ ...num('times', 'Times', 2, -1000000, 1000000, 1, 'How many copies to make. Zero or less gives an empty string.'), pinSide: 'left' }],
+    params: [{ ...num('times', 'Times', 2, -1000000, 1000000, 1, 'How many copies to make. Zero or less gives you an empty string.'), pinSide: 'left' }],
     run(c) { py(c, () => emitStr(c, 'out', S.repeat(str$(c), c.has('b') ? toNum(c.get('b')) : c.num('times')))); },
     doc: {
       summary: 'Repeats a string, like Python’s s * n.',
-      runtime: 'out = the string repeated n times, where n is B, or Times when B isn’t connected. Zero or a negative number gives an empty string. n has to be a whole number, as in Python. The result can be at most 1 000 000 characters long.',
-      errors: ['A number with a fraction (2.5) gives an error, because Python can’t multiply a string by a float.', 'A result longer than 1 000 000 characters gives an error.'],
+      runtime: 'Repeats the string n times, where n comes from B, or from Times when B isn’t connected. Zero or a negative number gives an empty string. n has to be a whole number, just like in Python, and the result can be at most 1 000 000 characters long.',
+      errors: ['A number with a fraction (like 2.5) gives an error, since Python can’t multiply a string by a float.', 'A result longer than 1 000 000 characters gives an error.'],
     },
   },
 
@@ -79,10 +79,10 @@ export const strmods: ModuleDef[] = [
     inputs: [IN('The string to split.')],
     outputs: [out('out', 'List', 'data', 'The pieces, as a list of strings.'), out('count', 'Count', 'num', 'How many pieces there are.')],
     params: [
-      sel('mode', 'Method', 'split', [['split', 'split: from the left'], ['rsplit', 'rsplit: from the right'], ['splitlines', 'splitlines: at line breaks']], 'split and rsplit cut at the Separator (they only differ when Max splits is set). splitlines cuts at line breaks and ignores the Separator.'),
-      txt('sep', 'Separator', ',', `What to cut at. Leave it empty to cut at runs of whitespace, as Python’s split() does with no argument.${ESC}`, { maxLength: 40 }),
-      num('max', 'Max splits', -1, -1, 100000, 1, 'The most cuts to make; the rest of the string stays in one piece. −1 means no limit.'),
-      bol('keep', 'Keep line ends', false, 'splitlines only: keep the line break at the end of every line (Python’s keepends=True).'),
+      sel('mode', 'Method', 'split', [['split', 'split: from the left'], ['rsplit', 'rsplit: from the right'], ['splitlines', 'splitlines: at line breaks']], 'split and rsplit cut at the Separator, and they only differ when Max splits is set. splitlines cuts at line breaks and ignores the Separator.'),
+      txt('sep', 'Separator', ',', `What to cut at. Leave it empty and it cuts at runs of whitespace, like Python’s split() does with no argument.${ESC}`, { maxLength: 40 }),
+      num('max', 'Max splits', -1, -1, 100000, 1, 'The most cuts to make. Whatever is left stays in one piece. −1 means no limit.'),
+      bol('keep', 'Keep line ends', false, 'splitlines only: keeps the line break at the end of every line (Python’s keepends=True).'),
     ],
     run(c) {
       py(c, () => {
@@ -93,8 +93,8 @@ export const strmods: ModuleDef[] = [
       });
     },
     doc: {
-      summary: 'Cuts a string into a list of pieces: Python’s split, rsplit and splitlines.',
-      runtime: 'Sends the pieces as a list, and how many there are. With an empty Separator the string is cut at runs of whitespace and empty pieces are dropped; with a Separator, neighbouring separators give empty pieces (“a,,b” gives a, an empty string and b). Max splits limits the cuts: split keeps the rest on the right in one piece, rsplit on the left.',
+      summary: 'Cuts a string into a list of pieces, like Python’s split, rsplit and splitlines.',
+      runtime: 'Sends the pieces as a list, plus how many there are. With an empty Separator it cuts at runs of whitespace and drops the empty pieces. With a real Separator, two in a row leave an empty piece between them (“a,,b” gives a, an empty string and b). Max splits caps the number of cuts: split keeps what’s left on the right in one piece, and rsplit keeps it on the left.',
       examples: ['String Separator (“,”) → Array: turn a line of comma-separated values into a list.', 'String Separator (splitlines) → Array Length: count the lines of a text.'],
     },
   },
@@ -105,15 +105,15 @@ export const strmods: ModuleDef[] = [
     keywords: 'join glue combine concatenate list array merge items python',
     inputs: [inp('in', 'List', 'any', 'A list of values to glue together (the List output of a String Separator or an Array). A text is joined character by character, and a single value stays as it is.')],
     outputs: [OUT('The items joined into one string.')],
-    params: [txt('sep', 'Separator', ', ', `Put between every two items. Leave it empty to glue them with nothing in between.${ESC}`, { maxLength: 40 })],
+    params: [txt('sep', 'Separator', ', ', `What goes between every two items. Leave it empty to glue them together with nothing in between.${ESC}`, { maxLength: 40 })],
     run(c) {
       const v = c.get('in');
       const items = Array.isArray(v) ? v : typeof v === 'string' ? S.cps(v) : [v];
       emitStr(c, 'out', items.map(toExactText).join(esc$(c, 'sep')));
     },
     doc: {
-      summary: 'Glues a list of values into one string with a separator in between: Python’s sep.join(list).',
-      runtime: 'Every item is written as text (numbers keep all their digits) and the items are joined with the Separator. An empty list gives an empty string. Python only joins strings; this node also accepts numbers and booleans.',
+      summary: 'Glues a list of values into one string with a separator in between, like Python’s sep.join(list).',
+      runtime: 'Every item is turned into text (numbers keep all their digits) and the items are glued together with the Separator. An empty list gives an empty string. Python only joins strings, but this node takes numbers and booleans too.',
       examples: ['String Separator → String Joiner (Separator “-”): swap the separator of a line of text.'],
     },
   },
@@ -121,17 +121,17 @@ export const strmods: ModuleDef[] = [
   /* ───── case ───── */
   {
     ...chip, type: 'str-case', name: 'String Caser', caption: 'String Caser', glyph: 'A↔a', chip: (p) => `${p.mode}`,
-    keywords: 'upper lower title capitalize swapcase casefold uppercase lowercase capital letters case python',
+    keywords: 'upper lower title capitalize camel camelcase swapcase casefold uppercase lowercase capital letters case python',
     inputs: [IN()],
     outputs: [OUT('The string in the chosen case.')],
     params: [sel('mode', 'Method', 'upper', [
       ['upper', 'upper: ALL CAPITALS'], ['lower', 'lower: all small letters'], ['title', 'title: Every Word Starts Capital'], ['capitalize', 'capitalize: First letter only'],
-      ['swapcase', 'swapcase: swap big and small'], ['casefold', 'casefold: aggressive lower case'],
-    ], 'upper, lower and swapcase change every letter. title capitalizes the first letter of every word (after anything that isn’t a letter, so “they’re” becomes “They’Re”, as in Python). capitalize capitalizes the first letter and lowers the rest. casefold is lower for comparing: ß becomes ss.')],
+      ['camel', 'camel: wordsJoinedLikeThis'], ['swapcase', 'swapcase: swap big and small'], ['casefold', 'casefold: aggressive lower case'],
+    ], 'upper, lower and swapcase work on every letter. title capitalizes each word, but a word starts after anything that isn’t a letter, so “they’re” becomes “They’Re” (Python does the same). capitalize only capitalizes the first letter and lowers everything else. camel joins the words together, with the first one in lower case and the rest starting with a capital, so “make me camel” becomes “makeMeCamel”. casefold is a stronger lower, good for comparing text: ß becomes ss.')],
     run(c) { py(c, () => emitStr(c, 'out', S.changeCase(str$(c), c.str('mode')))); },
     doc: {
-      summary: 'Changes the case of a string: Python’s upper, lower, title, capitalize, swapcase and casefold.',
-      runtime: 'Applies the chosen method to the string. Letters of every alphabet that has two cases are changed (ä ↔ Ä), and characters that aren’t letters are left alone.',
+      summary: 'Changes the case of a string. You get Python’s upper, lower, title, capitalize, swapcase and casefold, plus camelCase.',
+      runtime: 'Applies the method you picked. Letters from any alphabet that has two cases get changed (ä ↔ Ä), and anything that isn’t a letter is left alone. camel is the exception: it throws away spaces, punctuation and symbols and joins the words up. A new word starts after every space, dash, underscore or dot, wherever a capital follows a small letter (“fooBar” is foo + Bar), and digits count as a word of their own. An apostrophe doesn’t split a word (“don’t” becomes “dont”). The first word comes out all lower case and every later word starts with a capital.',
     },
   },
 
@@ -142,13 +142,13 @@ export const strmods: ModuleDef[] = [
     inputs: [IN()],
     outputs: [OUT('The string without the stripped characters at its ends.')],
     params: [
-      sel('mode', 'Method', 'strip', [['strip', 'strip: both ends'], ['lstrip', 'lstrip: the start only'], ['rstrip', 'rstrip: the end only']], 'Which end or ends to strip.'),
-      txt('chars', 'Characters', '', `Every character listed here is stripped (in any order, not as a word). Leave it empty to strip whitespace.${ESC}`, { maxLength: 40 }),
+      sel('mode', 'Method', 'strip', [['strip', 'strip: both ends'], ['lstrip', 'lstrip: the start only'], ['rstrip', 'rstrip: the end only']], 'Which end (or ends) to strip.'),
+      txt('chars', 'Characters', '', `Every character you list here gets stripped, in any order. It isn’t matched as a word. Leave it empty to strip whitespace.${ESC}`, { maxLength: 40 }),
     ],
     run(c) { py(c, () => emitStr(c, 'out', S.strip(str$(c), esc$(c, 'chars'), c.str('mode') === 'lstrip' ? 'left' : c.str('mode') === 'rstrip' ? 'right' : 'both'))); },
     doc: {
       summary: 'Removes characters from the ends of a string: Python’s strip, lstrip and rstrip.',
-      runtime: 'Takes characters off the chosen end(s) for as long as they are in the Characters list, or whitespace (spaces, tabs, line breaks) when the list is empty. Characters in the middle are never touched: “xxhixx” stripped of “x” is “hi”.',
+      runtime: 'Takes characters off the end (or ends) you chose for as long as they’re in the Characters list, or whitespace (spaces, tabs, line breaks) when the list is empty. Anything in the middle is left alone: “xxhixx” stripped of “x” is “hi”.',
     },
   },
 
@@ -160,12 +160,12 @@ export const strmods: ModuleDef[] = [
     outputs: [OUT('The string without the prefix or suffix.')],
     params: [
       sel('mode', 'Method', 'prefix', [['prefix', 'removeprefix: from the start'], ['suffix', 'removesuffix: from the end']], 'Whether to remove the text from the start or from the end of the string.'),
-      txt('text', 'Text', '', `The prefix or suffix to remove, only when the string really starts or ends with it.${ESC}`, { maxLength: 100 }),
+      txt('text', 'Text', '', `The prefix or suffix to remove. It only comes off if the string really starts or ends with it.${ESC}`, { maxLength: 100 }),
     ],
     run(c) { emitStr(c, 'out', S.removeAffix(str$(c), esc$(c, 'text'), c.str('mode'))); },
     doc: {
       summary: 'Removes a prefix or a suffix, once: Python’s removeprefix and removesuffix.',
-      runtime: 'If the string starts (removeprefix) or ends (removesuffix) with the Text, that part is cut off, once. Otherwise the string comes out unchanged. Unlike strip, the Text is a whole word, not a list of characters.',
+      runtime: 'If the string starts (removeprefix) or ends (removesuffix) with the Text, that part is cut off, once. If it doesn’t, the string comes out unchanged. Unlike strip, the Text is matched as a whole, not as a list of characters.',
     },
   },
 
@@ -177,13 +177,13 @@ export const strmods: ModuleDef[] = [
     outputs: [OUT('The string with the replacements made.')],
     params: [
       txt('old', 'Replace', ' ', `The text to look for. Empty text matches between every two characters.${ESC}`, { maxLength: 100 }),
-      txt('new', 'With', '_', `The text to put in its place. Leave it empty to delete what was found.${ESC}`, { maxLength: 100 }),
-      num('count', 'Count', -1, -1, 1000000, 1, 'The most replacements to make, from the left. −1 replaces every match.'),
+      txt('new', 'With', '_', `What to put in its place. Leave it empty to delete whatever was found.${ESC}`, { maxLength: 100 }),
+      num('count', 'Count', -1, -1, 1000000, 1, 'The most replacements to make, counting from the left. −1 replaces every match.'),
     ],
     run(c) { py(c, () => emitStr(c, 'out', S.replace(str$(c), esc$(c, 'old'), esc$(c, 'new'), c.num('count')))); },
     doc: {
       summary: 'Replaces text inside a string: Python’s s.replace(old, new, count).',
-      runtime: 'Looks for Replace from the left, takes each match out and puts With in its place, until Count replacements are made (all of them when Count is −1). The search is case-sensitive and the matches don’t overlap.',
+      runtime: 'Looks for Replace from the left and swaps each match for With, until Count replacements are done (all of them when Count is −1). The search is case-sensitive, and matches can’t overlap.',
     },
   },
 
@@ -194,7 +194,7 @@ export const strmods: ModuleDef[] = [
     inputs: [IN('The string to search in.')],
     outputs: [out('index', 'Index', 'num', 'Where the match starts, counting characters from 0. −1 means there is none (find and rfind).'), out('found', 'Found', 'bool', 'True when the text was found.')],
     params: [
-      sel('mode', 'Method', 'find', [['find', 'find: first match'], ['rfind', 'rfind: last match'], ['index', 'index: first match, or an error'], ['rindex', 'rindex: last match, or an error']], 'find and rfind give −1 when there is no match. index and rindex fail instead, as Python raises a ValueError.'),
+      sel('mode', 'Method', 'find', [['find', 'find: first match'], ['rfind', 'rfind: last match'], ['index', 'index: first match, or an error'], ['rindex', 'rindex: last match, or an error']], 'find and rfind give −1 when nothing matches. index and rindex fail instead, the way Python raises a ValueError.'),
       txt('sub', 'Text', '', `The text to look for.${ESC}`, { maxLength: 100 }),
       START, END,
     ],
@@ -209,8 +209,8 @@ export const strmods: ModuleDef[] = [
     },
     doc: {
       summary: 'Finds where a piece of text sits in a string: Python’s find, rfind, index and rindex.',
-      runtime: 'Sends the position of the first (find, index) or last (rfind, rindex) match, counting characters from 0, and whether there was one. Start and End limit the part that is searched, like Python’s s.find(sub, start, end). The positions count characters, so an emoji is one.',
-      errors: ['index and rindex fail with “substring not found” when there is no match.', 'Start or End that isn’t a whole number gives an error.'],
+      runtime: 'Sends the position of the first (find, index) or last (rfind, rindex) match, counting characters from 0, and whether there was a match at all. Start and End narrow down the part that’s searched, like Python’s s.find(sub, start, end). Positions count characters, so an emoji counts as one.',
+      errors: ['index and rindex fail with “substring not found” when there is no match.', 'A Start or End that isn’t a whole number gives an error.'],
     },
   },
 
@@ -224,7 +224,7 @@ export const strmods: ModuleDef[] = [
     run(c) { py(c, () => c.emit('out', S.count(str$(c), esc$(c, 'sub'), bound$(c, 'start', 'Start'), bound$(c, 'end', 'End')))); },
     doc: {
       summary: 'Counts how many times a piece of text occurs: Python’s s.count(sub, start, end).',
-      runtime: 'Counts the matches that don’t overlap (“aaa” holds “aa” once). Empty text counts the gaps between characters: the length plus one.',
+      runtime: 'Counts matches that don’t overlap (“aaa” holds “aa” only once). Empty text counts the gaps between characters, which is the length plus one.',
     },
   },
 
@@ -235,14 +235,14 @@ export const strmods: ModuleDef[] = [
     inputs: [IN()],
     outputs: [OUT('The string padded to the width.')],
     params: [
-      sel('mode', 'Method', 'center', [['center', 'center: in the middle'], ['ljust', 'ljust: to the left'], ['rjust', 'rjust: to the right'], ['zfill', 'zfill: zeros in front']], 'Where the string sits inside the padding. zfill puts zeros in front, after a + or − sign.'),
-      num('width', 'Width', 10, 0, 100000, 1, 'The length to pad up to. A string that is already this long or longer is left alone.', 'characters'),
-      txt('fill', 'Fill character', ' ', 'The one character used for padding. zfill always uses 0.', { maxLength: 2 }),
+      sel('mode', 'Method', 'center', [['center', 'center: in the middle'], ['ljust', 'ljust: to the left'], ['rjust', 'rjust: to the right'], ['zfill', 'zfill: zeros in front']], 'Where the string sits inside the padding. zfill puts zeros in front, after any + or − sign.'),
+      num('width', 'Width', 10, 0, 100000, 1, 'How long to pad it up to. A string that’s already this long (or longer) is left alone.', 'characters'),
+      txt('fill', 'Fill character', ' ', 'The single character to pad with. zfill always uses 0.', { maxLength: 2 }),
     ],
     run(c) { py(c, () => emitStr(c, 'out', S.align(str$(c), c.str('mode'), c.num('width'), c.str('fill')))); },
     doc: {
       summary: 'Pads a string to a width: Python’s center, ljust, rjust and zfill.',
-      runtime: 'Adds Fill characters until the string is Width characters long, around it (center), after it (ljust) or before it (rjust). zfill puts zeros in front and keeps a leading + or − first, so “-42” becomes “-0042”.',
+      runtime: 'Adds Fill characters until the string is Width characters long: around it (center), after it (ljust) or before it (rjust). zfill puts zeros in front and keeps a leading + or − where it is, so “-42” becomes “-0042”.',
       errors: ['A Fill character that isn’t exactly one character gives an error (Python: “The fill character must be exactly one character long”).'],
     },
   },
@@ -254,7 +254,7 @@ export const strmods: ModuleDef[] = [
     inputs: [IN()],
     outputs: [out('out', 'Result', 'bool', 'True when the test holds.')],
     params: [
-      sel('mode', 'Test', 'startswith', [['startswith', 'startswith: begins with'], ['endswith', 'endswith: ends with'], ['contains', 'x in s: contains']], 'What to check.'),
+      sel('mode', 'Test', 'startswith', [['startswith', 'startswith: begins with'], ['endswith', 'endswith: ends with'], ['contains', 'x in s: contains']], 'What to check for.'),
       txt('sub', 'Text', '', `The text to look for. Empty text is found in every string.${ESC}`, { maxLength: 100 }),
     ],
     run(c) {
@@ -263,7 +263,7 @@ export const strmods: ModuleDef[] = [
     },
     doc: {
       summary: 'Checks whether a string begins with, ends with or contains some text: Python’s startswith, endswith and the in operator.',
-      runtime: 'Sends true or false. The check is case-sensitive; run the string through a String Caser first to ignore case.',
+      runtime: 'Sends true or false. The check is case-sensitive, so if you want to ignore case, run the string through a String Caser first.',
     },
   },
 
@@ -277,11 +277,11 @@ export const strmods: ModuleDef[] = [
       ['isalpha', 'isalpha: only letters'], ['isdecimal', 'isdecimal: only decimal digits'], ['isdigit', 'isdigit: only digits'], ['isnumeric', 'isnumeric: only numeric characters'],
       ['isalnum', 'isalnum: only letters and numbers'], ['isspace', 'isspace: only whitespace'], ['isupper', 'isupper: all letters are capitals'], ['islower', 'islower: all letters are small'],
       ['istitle', 'istitle: Title Case'], ['isidentifier', 'isidentifier: a valid name'], ['isascii', 'isascii: only ASCII characters'], ['isprintable', 'isprintable: nothing invisible'],
-    ], 'The test to run on the string.')],
+    ], 'Which test to run on the string.')],
     run(c) { c.emit('out', S.TESTS[c.str('mode')](str$(c))); },
     doc: {
       summary: 'Tests what kind of characters a string holds: Python’s isalpha, isdigit, isnumeric, isalnum, isspace, isupper, islower, istitle and the rest.',
-      runtime: 'Sends true or false. As in Python, an empty string fails every test except isascii and isprintable. isdecimal is the strictest digit test (0–9 and the digits of other scripts), isdigit adds superscripts such as ², and isnumeric adds fractions and numerals such as ½ and 五.',
+      runtime: 'Sends true or false. Just like Python, an empty string fails every test except isascii and isprintable. isdecimal is the strictest digit test (0–9 and the digits of other scripts), isdigit also lets in superscripts such as ², and isnumeric adds fractions and numerals such as ½ and 五.',
       examples: ['String Validator (isdigit) → Gate: let only numeric text through.'],
     },
   },
@@ -304,7 +304,7 @@ export const strmods: ModuleDef[] = [
     },
     doc: {
       summary: 'Cuts a string in exactly three at a separator: Python’s partition and rpartition.',
-      runtime: 'Finds the first (partition) or last (rpartition) Separator and sends what comes before it, the separator, and what comes after. If there is no match, partition sends the whole string as Before and nothing else, and rpartition sends the whole string as After.',
+      runtime: 'Finds the first (partition) or last (rpartition) Separator and sends what comes before it, the separator itself, and what comes after. With no match, partition sends the whole string as Before and nothing else, and rpartition sends the whole string as After.',
       errors: ['An empty Separator gives an error (Python: “empty separator”).'],
       examples: ['String Partitioner (“=”) on “volume=7”: Before is “volume”, After is “7”.'],
     },
@@ -317,16 +317,16 @@ export const strmods: ModuleDef[] = [
     inputs: [IN()],
     outputs: [OUT('The slice of the string.', 'Slice')],
     params: [
-      txt('start', 'Start', '', 'Where the slice starts, counting characters from 0. A negative number counts from the end. Blank means the beginning (or the end, for a negative Step).', { maxLength: 8 }),
-      txt('stop', 'Stop', '', 'Where the slice stops. The character at this position is not included. A negative number counts from the end. Blank means the end (or the beginning, for a negative Step).', { maxLength: 8 }),
-      txt('step', 'Step', '', 'Take every nth character. A negative step walks backwards, so −1 reverses. Blank means 1.', { maxLength: 8 }),
+      txt('start', 'Start', '', 'Where the slice starts, counting characters from 0. A negative number counts from the end. Blank means the beginning (or the end, if Step is negative).', { maxLength: 8 }),
+      txt('stop', 'Stop', '', 'Where the slice stops. The character at this position isn’t included, and a negative number counts from the end. Blank means the end (or the beginning, if Step is negative).', { maxLength: 8 }),
+      txt('step', 'Step', '', 'Take every nth character. A negative step walks backwards, so −1 reverses the string. Blank means 1.', { maxLength: 8 }),
     ],
     run(c) {
       py(c, () => emitStr(c, 'out', S.slice(str$(c), bound$(c, 'start', 'Start'), bound$(c, 'stop', 'Stop'), bound$(c, 'step', 'Step') ?? 1)));
     },
     doc: {
       summary: 'Takes a part of a string: Python’s s[start:stop:step].',
-      runtime: 'Follows Python’s slicing rules exactly: a bound beyond the ends is clamped (never an error), negative bounds count from the end, and a blank bound means as far as it goes. “hello” with Start 1 and Stop −1 is “ell”.',
+      runtime: 'Follows Python’s slicing rules to the letter: a bound past either end is clamped (never an error), negative bounds count from the end, and a blank bound means “as far as it goes”. “hello” with Start 1 and Stop −1 gives “ell”.',
       errors: ['A Step of 0 gives an error (Python: “slice step cannot be zero”).', 'A bound that isn’t a whole number gives an error.'],
     },
   },
@@ -337,11 +337,11 @@ export const strmods: ModuleDef[] = [
     keywords: 'index character at nth letter get item s[i] position python',
     inputs: [IN()],
     outputs: [OUT('The one character at that position.', 'Character')],
-    params: [num('index', 'Index', 0, -100000, 100000, 1, 'Which character to take. 0 is the first; a negative index counts from the end, so −1 is the last.')],
+    params: [num('index', 'Index', 0, -100000, 100000, 1, 'Which character to take. 0 is the first, and a negative index counts from the end, so −1 is the last.')],
     run(c) { py(c, () => c.emit('out', S.charAt(str$(c), c.num('index')))); },
     doc: {
       summary: 'Takes one character from a string: Python’s s[i].',
-      runtime: 'Sends the character at Index (0 is the first, −1 the last). An Index outside the string fails the module, as Python raises an IndexError.',
+      runtime: 'Sends the character at Index (0 is the first, −1 the last). An Index outside the string makes the module fail, the way Python raises an IndexError.',
       errors: ['An Index outside the string gives an error: “string index out of range”.'],
     },
   },
@@ -352,11 +352,11 @@ export const strmods: ModuleDef[] = [
     keywords: 'reverse reversed backwards flip mirror palindrome [::-1] python',
     inputs: [IN()],
     outputs: [OUT('The reversed string.')],
-    params: [sel('unit', 'Reverse', 'chars', [['chars', 'characters: [::-1]'], ['words', 'words: in reverse order']], 'Characters turns the string back to front (“abc” becomes “cba”). Words keeps each word the way it is and reverses their order.')],
+    params: [sel('unit', 'Reverse', 'chars', [['chars', 'characters: [::-1]'], ['words', 'words: in reverse order']], 'Characters turns the string back to front (“abc” becomes “cba”). Words leaves each word as it is and only flips their order.')],
     run(c) { emitStr(c, 'out', S.reverse(str$(c), c.str('unit'))); },
     doc: {
       summary: 'Reverses a string: Python’s s[::-1], or the words of it in reverse order.',
-      runtime: 'Characters reverses whole characters, so an emoji stays an emoji. Words splits at whitespace, reverses the order, and joins with single spaces.',
+      runtime: 'Characters reverses whole characters, so an emoji stays an emoji. Words splits at whitespace, flips the order and joins the words back together with single spaces.',
       examples: ['String Reverser → Compare (against the original string): check for a palindrome.'],
     },
   },
@@ -367,11 +367,11 @@ export const strmods: ModuleDef[] = [
     keywords: 'length len size count characters bytes words lines how long python',
     inputs: [IN()],
     outputs: [out('out', 'Length', 'num', 'The length.')],
-    params: [sel('unit', 'Count', 'chars', [['chars', 'characters: len(s)'], ['bytes', 'bytes: len(s.encode())'], ['words', 'words: len(s.split())'], ['lines', 'lines: len(s.splitlines())']], 'What to count. Characters is Python’s len(s). Bytes is the size when written as UTF-8.')],
+    params: [sel('unit', 'Count', 'chars', [['chars', 'characters: len(s)'], ['bytes', 'bytes: len(s.encode())'], ['words', 'words: len(s.split())'], ['lines', 'lines: len(s.splitlines())']], 'What to count. Characters is Python’s len(s), and Bytes is the size when written as UTF-8.')],
     run(c) { c.emit('out', S.lengthOf(str$(c), c.str('unit'))); },
     doc: {
       summary: 'Measures a string: Python’s len(s), and the bytes, words and lines of it.',
-      runtime: 'Characters counts whole characters (an emoji is one). Bytes counts the bytes of the UTF-8 form, where “é” takes two and “五” three. Words and lines count the pieces split() and splitlines() would give.',
+      runtime: 'Characters counts whole characters (an emoji is one). Bytes counts the bytes of the UTF-8 form, where “é” takes two and “五” takes three. Words and lines count the pieces that split() and splitlines() would give you.',
     },
   },
 
@@ -381,7 +381,7 @@ export const strmods: ModuleDef[] = [
     keywords: 'format template placeholder fstring f-string interpolate insert variables fill in printf python',
     inputs: [inp('a', 'A', 'any', 'The value for {0} (or {a}).', 'top', true), inp('b', 'B', 'any', 'The value for {1} (or {b}).', 'top', true), inp('c', 'C', 'any', 'The value for {2} (or {c}).', 'top', true)],
     outputs: [OUT('The template with the values filled in.')],
-    params: [txt('template', 'Template', '{}', 'The text to fill in. {} or {0} is the first value, {1} the second, {2} the third; {a}, {b} and {c} work too. After a colon comes Python’s format spec: {:>8} right-aligns in 8 characters, {:.2f} rounds to 2 decimals, {:05d} pads with zeros, {:,} groups thousands, {!r} shows quotes. {{ and }} write braces. Write \\n for a new line.', { multiline: true, maxLength: 500 })],
+    params: [txt('template', 'Template', '{}', 'The text to fill in. {} or {0} is the first value, {1} the second and {2} the third; {a}, {b} and {c} work too. A colon adds a Python format spec: {:>8} right-aligns in 8 characters, {:.2f} rounds to 2 decimals, {:05d} pads with zeros, {:,} groups thousands and {!r} shows quotes. {{ and }} give you real braces. Write \\n for a new line.', { multiline: true, maxLength: 500 })],
     run(c) {
       if (!['a', 'b', 'c'].some((p) => c.has(p))) return;
       py(c, () => {
@@ -395,7 +395,7 @@ export const strmods: ModuleDef[] = [
     },
     doc: {
       summary: 'Fills values into a template, like Python’s str.format and f-strings.',
-      runtime: 'Replaces every {} in the Template with a connected value: {} and {0} take A, {1} takes B, {2} takes C, and {a} {b} {c} name them. A colon adds a format spec ({:.2f}, {:>8}, {:05d}, {:,}, {:x}), and !r shows the value with quotes. Only numbers take number specs, as in Python. A field whose value isn’t connected gives an error.',
+      runtime: 'Fills every {} in the Template with a connected value: {} and {0} take A, {1} takes B, {2} takes C, and {a} {b} {c} work as names for them. A colon adds a format spec ({:.2f}, {:>8}, {:05d}, {:,}, {:x}), and !r shows the value with quotes. Only numbers take number specs, as in Python. A field with no connected value gives an error.',
       errors: ['A {} or {n} field that has no connected value gives an error (Python: IndexError).', 'A { or } without its partner gives an error. Write {{ and }} for literal braces.'],
       examples: ['Number → String Formatter (“{:.1f} °C”) → Projector: show a reading with one decimal.'],
     },
@@ -416,7 +416,7 @@ export const strmods: ModuleDef[] = [
     run(c) { py(c, () => emitStr(c, 'out', S.translate(str$(c), esc$(c, 'from'), esc$(c, 'to'), esc$(c, 'delete')))); },
     doc: {
       summary: 'Swaps or deletes single characters in one pass: Python’s str.maketrans and translate.',
-      runtime: 'Every character found in From is replaced by the character at the same position in To, and every character in Delete is removed. Unlike the String Replacer it works on single characters, all at once: From “ab” and To “ba” swaps a and b.',
+      runtime: 'Every character found in From is swapped for the character at the same position in To, and every character in Delete is removed. Unlike the String Replacer, it works on single characters, all at once: From “ab” and To “ba” swaps a and b.',
       errors: ['From and To of different lengths give an error (Python: “the first two maketrans arguments must have equal length”).'],
     },
   },
@@ -439,7 +439,7 @@ export const strmods: ModuleDef[] = [
     },
     doc: {
       summary: 'Converts between a character and its Unicode number: Python’s ord and chr.',
-      runtime: 'ord needs a text of exactly one character and sends its code point (0 to 1 114 111). chr needs a whole number in that range and sends the character. 😀 is 128512.',
+      runtime: 'ord needs a text of exactly one character and sends its code point (0 to 1 114 111). chr needs a whole number in that range and sends the matching character. For example, 😀 is 128512.',
       errors: ['ord of a text that isn’t exactly one character gives an error (Python: TypeError).', 'chr of a number that isn’t a whole number from 0 to 1 114 111 gives an error.'],
     },
   },
@@ -450,7 +450,7 @@ export const strmods: ModuleDef[] = [
     keywords: 'repr ascii escape quote quoted representation printable debug invisible python',
     inputs: [IN()],
     outputs: [OUT('The string as Python would print it, with quotes and escapes.', 'Repr')],
-    params: [sel('mode', 'Method', 'repr', [['repr', 'repr: keep readable characters'], ['ascii', 'ascii: escape all non-ASCII']], 'repr keeps every printable character as it is. ascii writes every character outside ASCII as an escape such as \\u00e9.')],
+    params: [sel('mode', 'Method', 'repr', [['repr', 'repr: keep readable characters'], ['ascii', 'ascii: escape all non-ASCII']], 'repr leaves every printable character as it is. ascii writes every character outside ASCII as an escape, like \\u00e9.')],
     run(c) { emitStr(c, 'out', S.repr(str$(c), c.str('mode') === 'ascii')); },
     doc: {
       summary: 'Shows a string the way Python prints it, with quotes, and line breaks and tabs written as \\n and \\t: Python’s repr and ascii.',
@@ -468,7 +468,7 @@ export const strmods: ModuleDef[] = [
     run(c) { py(c, () => emitStr(c, 'out', S.expandTabs(str$(c), c.num('tabsize')))); },
     doc: {
       summary: 'Turns tabs into spaces, up to the next tab stop: Python’s expandtabs.',
-      runtime: 'Every tab is replaced by enough spaces to reach the next multiple of Tab size, counting from the start of the line (a line break restarts the count). That keeps columns lined up.',
+      runtime: 'Every tab becomes just enough spaces to reach the next multiple of Tab size, counting from the start of the line (a line break restarts the count). That’s what keeps columns lined up.',
     },
   },
 ];

@@ -27,10 +27,10 @@ export const nuclei: ModuleDef[] = [
     inputs: [inp('in', 'Input', 'any', 'A number, boolean or image.')],
     outputs: [{ id: 'level', label: 'Level', type: 'num', side: 'bottom', doc: 'Normalized feature, 0–1.' }, { id: 'onset', label: 'Onset', type: 'bool', side: 'right', doc: 'True while level ≥ onset threshold.' }],
     params: [
-      sel('feature', 'Feature', 'auto', [['auto', 'Auto-range number'], ['raw', 'Raw 0–1 × gain'], ['brightness', 'Image brightness'], ['contrast', 'Image contrast'], ['change', 'Image change']], 'What to measure. Auto-range follows the signal’s recent minimum and maximum and rescales it into 0–1.'),
-      num('gain', 'Gain', 1, 0, 20, 0.1, 'Multiplies the level before it’s clamped to 0–1.'),
-      num('decay', 'Range memory', 20, 0.5, 600, 0.5, 'How quickly auto-range forgets old extremes.', 's'),
-      num('onset', 'Onset threshold', 0.6, 0, 1, 0.01, 'The level where onset turns true. It turns false again 0.1 lower.'),
+      sel('feature', 'Feature', 'auto', [['auto', 'Auto-range number'], ['raw', 'Raw 0–1 × gain'], ['brightness', 'Image brightness'], ['contrast', 'Image contrast'], ['change', 'Image change']], 'What to measure. Auto-range watches the signal’s recent lowest and highest values and stretches them to fit 0–1.'),
+      num('gain', 'Gain', 1, 0, 20, 0.1, 'Multiplies the level before it gets squeezed into 0–1.'),
+      num('decay', 'Range memory', 20, 0.5, 600, 0.5, 'How fast auto-range lets go of old highs and lows.', 's'),
+      num('onset', 'Onset threshold', 0.6, 0, 1, 0.01, 'The level where onset turns true. It goes back to false 0.1 below that.'),
     ],
     delaying: true,
     run(c) {
@@ -109,9 +109,9 @@ export const nuclei: ModuleDef[] = [
     inputs: [inp('a', 'A', 'num', 'Candidate A.', 'top', true), inp('b', 'B', 'num', 'Candidate B.', 'top', true), inp('c', 'C', 'num', 'Candidate C.', 'top', true)],
     outputs: [{ id: 'focus', label: 'Focus', type: 'num', side: 'bottom', doc: 'Raw value of the attended candidate.' }, { id: 'index', label: 'Index', type: 'num', side: 'right', doc: '0, 1, 2 for A, B, C; −1 if nothing is salient.' }],
     params: [
-      num('wa', 'Weight A', 1, 0, 10, 0.05, 'Bias toward input A.'), num('wb', 'Weight B', 1, 0, 10, 0.05, 'Bias toward input B.'), num('wc', 'Weight C', 1, 0, 10, 0.05, 'Bias toward input C.'),
-      num('min', 'Minimum salience', 0.1, 0, 10, 0.01, 'Below this weighted salience, nothing gets attention.'),
-      num('sticky', 'Stickiness', 0.1, 0, 5, 0.01, 'The current focus stays unless a rival beats it by at least this much.'),
+      num('wa', 'Weight A', 1, 0, 10, 0.05, 'How much to favor input A.'), num('wb', 'Weight B', 1, 0, 10, 0.05, 'How much to favor input B.'), num('wc', 'Weight C', 1, 0, 10, 0.05, 'How much to favor input C.'),
+      num('min', 'Minimum salience', 0.1, 0, 10, 0.01, 'If the weighted salience is below this, nothing gets attention.'),
+      num('sticky', 'Stickiness', 0.1, 0, 5, 0.01, 'The current focus holds on unless something else beats it by at least this much.'),
     ],
     run(c) {
       const w = [c.num('wa'), c.num('wb'), c.num('wc')];
@@ -139,9 +139,9 @@ export const nuclei: ModuleDef[] = [
     inputs: [inp('threat', 'Threat', 'num', 'Perceived threat, 0–1.')],
     outputs: [{ id: 'fear', label: 'Fear', type: 'num', side: 'bottom', doc: 'Fear level, 0–1.' }, { id: 'alarm', label: 'Alarm', type: 'bool', side: 'right', doc: 'True when fear exceeds the alarm level.' }],
     params: [
-      num('sensitivity', 'Sensitivity', 1, 0, 5, 0.05, 'How much threat above the floor is amplified.'), num('floor', 'Threat floor', 0.2, 0, 0.95, 0.01, 'Threat below this is ignored.'),
-      num('rise', 'Rise time', 300, 10, 10000, 10, 'How quickly fear rises (a time constant).', 'ms'), num('decay', 'Decay time', 2500, 10, 60000, 10, 'How quickly fear fades (a time constant). A slow fade models lingering anxiety.', 'ms'),
-      num('alarm', 'Alarm level', 0.6, 0.05, 1, 0.01, 'The fear level that sets off the alarm. It stops 0.1 below that.'),
+      num('sensitivity', 'Sensitivity', 1, 0, 5, 0.05, 'How much any threat above the floor gets boosted.'), num('floor', 'Threat floor', 0.2, 0, 0.95, 0.01, 'Threats below this are ignored.'),
+      num('rise', 'Rise time', 300, 10, 10000, 10, 'How fast fear builds up (a time constant).', 'ms'), num('decay', 'Decay time', 2500, 10, 60000, 10, 'How fast fear dies down (a time constant). A slow fade works like lingering anxiety.', 'ms'),
+      num('alarm', 'Alarm level', 0.6, 0.05, 1, 0.01, 'The fear level that sets off the alarm. It switches off again 0.1 below that.'),
     ],
     delaying: true,
     run(c) {
@@ -169,8 +169,8 @@ export const nuclei: ModuleDef[] = [
     inputs: [inp('in', 'Input', 'num', 'Value to remember.'), inp('store', 'Store', 'bool', 'Optional gate: when connected, values are stored only on its rising edge.', 'left', true), inp('clear', 'Clear', 'bool', 'Rising edge erases the memory.', 'left', true)],
     outputs: [{ id: 'recall', label: 'Recall', type: 'num', side: 'bottom', doc: 'Exponential trace of stored values.' }, { id: 'previous', label: 'Previous', type: 'any', side: 'right', doc: 'The value stored before the latest one.' }, { id: 'count', label: 'Count', type: 'num', side: 'right', doc: 'Number of values currently held.' }],
     params: [
-      num('remember', 'Remember', 0.3, 0, 1, 0.01, 'How strongly each new value shifts the trace (1 replaces it). The trace starts at 0.'), num('forget', 'Forget', 0, 0, 5, 0.001, 'How fast the trace fades each second.', '/s'),
-      num('capacity', 'Capacity', 16, 1, 256, 1, 'How many recent values are kept.'), act('clearNow', 'CLEAR', 'clear', 'Erase the memory now.'),
+      num('remember', 'Remember', 0.3, 0, 1, 0.01, 'How strongly each new value pushes the trace around (1 replaces it outright). The trace starts at 0.'), num('forget', 'Forget', 0, 0, 5, 0.001, 'How quickly the trace fades, per second.', '/s'),
+      num('capacity', 'Capacity', 16, 1, 256, 1, 'How many recent values to hold on to.'), act('clearNow', 'CLEAR', 'clear', 'Wipe the memory right now.'),
     ],
     delaying: true,
     run(c) {
@@ -208,7 +208,7 @@ export const nuclei: ModuleDef[] = [
     keywords: 'mood valence arousal feeling emoji',
     inputs: [inp('reward', 'Reward', 'num', 'Positive drive.', 'top', true), inp('fear', 'Fear', 'num', 'Negative drive.', 'top', true)],
     outputs: [{ id: 'mood', label: 'Mood', type: 'text', side: 'bottom', doc: 'Word or emoji for the current mood.' }, { id: 'valence', label: 'Valence', type: 'num', side: 'right', doc: '−1 unpleasant … +1 pleasant.' }, { id: 'arousal', label: 'Arousal', type: 'num', side: 'right', doc: '0 calm … 1 aroused.' }],
-    params: [num('inertia', 'Inertia', 1500, 10, 60000, 10, 'How quickly mood changes (a time constant).', 'ms'), sel('style', 'Mood as', 'word', [['word', 'Word'], ['emoji', 'Emoji']], 'Format of the mood output.')],
+    params: [num('inertia', 'Inertia', 1500, 10, 60000, 10, 'How quickly the mood changes, as a time constant.', 'ms'), sel('style', 'Mood as', 'word', [['word', 'Word'], ['emoji', 'Emoji']], 'How the mood output is written.')],
     delaying: true,
     run(c) {
       const r = c.has('reward') ? toNum(c.get('reward')) : 0;
@@ -235,8 +235,8 @@ export const nuclei: ModuleDef[] = [
     inputs: [inp('goal', 'Goal', 'num', 'Progress or outcome, usually 0–1.'), inp('cost', 'Cost', 'num', 'Effort or penalty.', 'top', true)],
     outputs: [{ id: 'reward', label: 'Reward', type: 'num', side: 'bottom', doc: 'gain·goal − costWeight·cost.' }, { id: 'error', label: 'Error', type: 'num', side: 'right', doc: 'Reward minus the previous expectation.' }, { id: 'expected', label: 'Expected', type: 'num', side: 'right', doc: 'Learned expectation of reward.' }],
     params: [
-      num('gain', 'Gain', 1, -10, 10, 0.05, 'Scales the goal.'), num('costWeight', 'Cost weight', 0.5, 0, 10, 0.05, 'How much the cost takes away.'), num('learn', 'Learning rate', 0.2, 0, 1, 0.01, 'How fast expectation follows reward.'),
-      num('refractory', 'Refractory', 0, 0, 60000, 10, 'After a positive reward, further positive rewards are held back for this long.', 'ms'), num('limit', 'Limit', 10, 0.1, 1000, 0.1, 'Reward is kept within ± this limit.'),
+      num('gain', 'Gain', 1, -10, 10, 0.05, 'Scales the goal up or down.'), num('costWeight', 'Cost weight', 0.5, 0, 10, 0.05, 'How much the cost takes off.'), num('learn', 'Learning rate', 0.2, 0, 1, 0.01, 'How fast the expectation catches up with the reward.'),
+      num('refractory', 'Refractory', 0, 0, 60000, 10, 'After a positive reward, any further positive reward is held back for this long.', 'ms'), num('limit', 'Limit', 10, 0.1, 1000, 0.1, 'Reward stays within plus or minus this limit.'),
     ],
     delaying: true,
     run(c) {
@@ -267,9 +267,9 @@ export const nuclei: ModuleDef[] = [
     inputs: [inp('a', 'A', 'num', 'Score of option A.', 'top', true), inp('b', 'B', 'num', 'Score of option B.', 'top', true), inp('c', 'C', 'num', 'Score of option C.', 'top', true)],
     outputs: [{ id: 'choice', label: 'Choice', type: 'num', side: 'bottom', doc: 'Index of the chosen option, −1 if none.' }, { id: 'label', label: 'Label', type: 'text', side: 'right', doc: 'Name of the chosen option.' }, { id: 'margin', label: 'Margin', type: 'num', side: 'right', doc: 'Lead of the winner over the runner-up.' }],
     params: [
-      sel('policy', 'Policy', 'argmax', [['argmax', 'Highest score'], ['epsilon', 'Epsilon-greedy (seeded)']], 'Highest score always picks the best option. Epsilon-greedy sometimes tries a random one, with the probability you set.'),
-      txt('labels', 'Labels', 'A, B, C', 'Comma-separated option names.'), num('min', 'Minimum score', 0.05, -100, 100, 0.01, 'The winner has to reach this score, or no choice is made.'),
-      num('hysteresis', 'Hysteresis', 0.05, 0, 10, 0.01, 'The current choice stays unless it’s beaten by at least this much.'), num('epsilon', 'Epsilon', 0.1, 0, 1, 0.01, 'How often the epsilon-greedy policy tries a random option.'),
+      sel('policy', 'Policy', 'argmax', [['argmax', 'Highest score'], ['epsilon', 'Epsilon-greedy (seeded)']], 'Highest score always takes the best option. Epsilon-greedy now and then tries a random one, as often as you set below.'),
+      txt('labels', 'Labels', 'A, B, C', 'Option names, separated by commas.'), num('min', 'Minimum score', 0.05, -100, 100, 0.01, 'The winner needs at least this score, or no choice gets made.'),
+      num('hysteresis', 'Hysteresis', 0.05, 0, 10, 0.01, 'The current choice stays unless something beats it by at least this much.'), num('epsilon', 'Epsilon', 0.1, 0, 1, 0.01, 'How often epsilon-greedy goes for a random option.'),
     ],
     delaying: true,
     run(c) {
@@ -303,8 +303,8 @@ export const nuclei: ModuleDef[] = [
     inputs: [inp('event', 'Event', 'any', 'Events: true (as “on”) or any text/number (its text).'), inp('reset', 'Reset', 'bool', 'Rising edge returns to the first state.', 'left', true)],
     outputs: [{ id: 'state', label: 'State', type: 'text', side: 'bottom', doc: 'Name of the current state.' }, { id: 'index', label: 'Index', type: 'num', side: 'right', doc: 'Position of the state in the list.' }],
     params: [
-      txt('states', 'States', 'idle, active, done', 'Comma-separated state names. The first is the initial state.'),
-      txt('transitions', 'Transitions', 'idle>active\nactive>done\ndone>idle', 'One per line: “from>to” (any event) or “from:event>to”. “*” matches any state. First match wins.', { multiline: true }),
+      txt('states', 'States', 'idle, active, done', 'State names, separated by commas. The first one is where it starts.'),
+      txt('transitions', 'Transitions', 'idle>active\nactive>done\ndone>idle', 'One rule per line: “from>to” (any event) or “from:event>to”. “*” matches any state, and the first rule that matches wins.', { multiline: true }),
     ],
     delaying: true,
     source: true,

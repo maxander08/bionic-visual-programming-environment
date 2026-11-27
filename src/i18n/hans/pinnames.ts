@@ -1,7 +1,7 @@
 // Simplified Chinese for “Show details” (the setting that adds a module's secondary lines to its face, and its setting pin)
 // and for the “Setting pin names” workspace setting. Traditional Chinese is generated from this file (see zh-Hans.ts).
 // The English keys of the module hints are built by the same sentence as `details()` in core/modules/kit.ts.
-const hint = (what: string) => `Also show ${what} on the node. Off keeps the node’s face short, and the same information is always available from the module’s output pins and the inspector.`;
+const hint = (what: string) => `Also show ${what} on the node. Leave it off to keep the node’s face short, since the same information is always there on the output pins and in the inspector.`;
 const hintZh = (what: string) => `在节点上同时显示${what}。关闭时节点表面保持简洁；这些信息始终可以从模块的输出引脚和检查器中获得。`;
 
 export const pinnames: Record<string, string> = {

@@ -1,6 +1,6 @@
 // Simplified Chinese for the Map and Globe modules, the full-size windows of the Meter and Image, the Projector's Font size, and the names of units.
 // Traditional Chinese is generated from this dictionary by scripts/i18n/gen-hant.ts.
-const hint = (what: string) => `Also show ${what} on the node. Off keeps the node’s face short, and the same information is always available from the module’s output pins and the inspector.`;
+const hint = (what: string) => `Also show ${what} on the node. Leave it off to keep the node’s face short, since the same information is always there on the output pins and in the inspector.`;
 const PLACE = 'a city, country, province, district, street address or landmark, or coordinates like 35.68, 139.76.';
 
 export const geo: Record<string, string> = {
@@ -26,22 +26,22 @@ export const geo: Record<string, string> = {
   'Longitude of the place in degrees, east positive.': '地点的经度，单位为度，东经为正。',
   'The name of the place as it was found, with its country.': '找到的地点名称，附带所在国家。',
   'Default place': '默认地点',
-  'The place to show when the Place pin has no signal: a city, country, province, district, address or landmark anywhere on Earth, in English, 简体中文 or 繁體中文 (for example “Paris, France”, “Bavaria”, “Eiffel Tower” or “东京”), or coordinates like 35.68, 139.76.':
+  'The place to show when the Place pin has no signal. It can be a city, country, province, district, address or landmark anywhere on Earth, written in English, 简体中文 or 繁體中文 (like “Paris, France”, “Bavaria”, “Eiffel Tower” or “东京”), or coordinates like 35.68, 139.76.':
     '“地点”引脚没有信号时显示的地点：地球上任何地方的城市、国家、省份、区县、地址或地标，可用英文、简体中文或繁体中文（例如“Paris, France”、“巴伐利亚”、“埃菲尔铁塔”或“东京”），或 35.68, 139.76 这样的坐标。',
   'e.g. Kyoto, Texas, 1 Infinite Loop, 35.68 139.76': '例如 京都、德克萨斯、无限循环路 1 号、35.68 139.76',
-  'Fit to place': '适应地点', 'Zoom so the whole place is in view: you’ll see all of a country, or the streets of a city. Off uses the Zoom setting.': '缩放到能看到整个地点：国家显示全貌，城市显示街道。关闭时使用“缩放”设置。',
-  'Zoom': '缩放', 'Used when Fit to place is off. 3 is a continent, 10 a city, 16 shows streets and buildings, and 19 is as close as the map goes.': '“适应地点”关闭时使用。3 是大洲，10 是城市，16 可看到街道和建筑，19 是地图的最大放大倍数。',
-  'Show pin': '显示图钉', 'Draw a pin on the exact spot.': '在确切位置画一枚图钉。',
-  'Draw a marker on the exact spot, plus the outline of the area when the place is one.': '在确切位置画标记；地点是一片区域时同时画出其轮廓。',
+  'Fit to place': '适应地点', 'Zoom so the whole place fits: you’ll see all of a country, or the streets of a city. Off uses the Zoom setting instead.': '缩放到能看到整个地点：国家显示全貌，城市显示街道。关闭时使用“缩放”设置。',
+  'Zoom': '缩放', 'Used when Fit to place is off. 3 shows a continent, 10 a city, 16 the streets and buildings, and 19 is as close as the map goes.': '“适应地点”关闭时使用。3 是大洲，10 是城市，16 可看到街道和建筑，19 是地图的最大放大倍数。',
+  'Show pin': '显示图钉', 'Drops a pin on the exact spot.': '在确切位置画一枚图钉。',
+  'Puts a marker on the exact spot, and outlines the area too when the place is one.': '在确切位置画标记；地点是一片区域时同时画出其轮廓。',
   'Appearance': '外观', 'Dark matches the rest of the program. Light is the usual OpenStreetMap look.': '深色与程序其他部分一致；浅色是常见的 OpenStreetMap 配色。',
   'Dark': '深色', 'Light map': '浅色地图',
   [hint('the place’s name and coordinates')]: '在节点上同时显示地点的名称和坐标。关闭时节点表面保持简洁；这些信息始终可以从模块的输出引脚和检查器中获得。',
-  'Show borders': '显示边界', 'Draw the borders between countries, dimmer than the coastlines.': '绘制国家之间的边界，比海岸线更暗。',
-  'Show grid': '显示网格', 'Draw the lines of latitude and longitude every 30 degrees.': '每 30 度绘制一条纬线和经线。',
-  'Auto-rotate': '自动旋转', 'Turn the globe slowly. Off keeps the place facing you.': '让地球仪缓慢转动。关闭时地点始终正对着你。',
+  'Show borders': '显示边界', 'Draws the borders between countries, dimmer than the coastlines.': '绘制国家之间的边界，比海岸线更暗。',
+  'Show grid': '显示网格', 'Draws the lines of latitude and longitude every 30 degrees.': '每 30 度绘制一条纬线和经线。',
+  'Auto-rotate': '自动旋转', 'Turns the globe slowly. Off keeps the place facing you.': '让地球仪缓慢转动。关闭时地点始终正对着你。',
   // Projector font size
   'Font size': '字号', 'px': '像素',
-  'Size of numbers and text, in pixels, on the node and in the full-size window. 0 keeps the automatic size, which follows the length of the value.': '节点和全尺寸窗口中数字与文本的大小，单位为像素。0 表示保持自动大小，会随数值长度变化。',
+  'The size of numbers and text in pixels, on the node and in the full-size window. 0 picks a size for you, based on how long the value is.': '节点和全尺寸窗口中数字与文本的大小，单位为像素。0 表示保持自动大小，会随数值长度变化。',
   // interface
   'Zoom in': '放大', 'Zoom out': '缩小', 'Back to the place': '回到该地点', 'Globe showing {place}': '显示 {place} 的地球仪',
   'Open the image full size': '全尺寸打开图像', 'Open the map full size': '全尺寸打开地图', 'Open the globe full size': '全尺寸打开地球仪',

@@ -62,15 +62,15 @@ export const colorModel = (p: Params): string => (COLOR_MODELS.some(([v]) => v =
 function colorParams(p: Params, all: boolean): ParamDef[] {
   const model = colorModel(p);
   const of = (m: string, d: ParamDef): ParamDef => (all || model === m ? { ...d, pinSide: 'top' } : { ...d, hidden: true });
-  const cmyk = (key: string, label: string, def: number, ink: string) => of('cmyk', num(key, label, def, 0, 100, 1, `Amount of ${ink} ink, 0–100 %. Used when the model is CMYK.`, '%'));
+  const cmyk = (key: string, label: string, def: number, ink: string) => of('cmyk', num(key, label, def, 0, 100, 1, `How much ${ink} ink, from 0 to 100 %. Used when the model is CMYK.`, '%'));
   return [
     { pinSide: 'left' as const, ...sel('model', 'Color model', 'hsv', COLOR_MODELS, 'How you write the color: HSV, CMYK, Pantone or Hex. Each model has its own settings.') },
-    of('hsv', num('h', 'Hue', 0.6, 0, 1, 0.01, 'Used when H is unconnected.')),
-    of('hsv', num('s', 'Saturation', 1, 0, 1, 0.01, 'Used when S is unconnected.')),
-    of('hsv', num('v', 'Value', 1, 0, 1, 0.01, 'Used when V is unconnected.')),
+    of('hsv', num('h', 'Hue', 0.6, 0, 1, 0.01, 'Used when H isn’t connected.')),
+    of('hsv', num('s', 'Saturation', 1, 0, 1, 0.01, 'Used when S isn’t connected.')),
+    of('hsv', num('v', 'Value', 1, 0, 1, 0.01, 'Used when V isn’t connected.')),
     cmyk('c', 'Cyan', 100, 'cyan'), cmyk('m', 'Magenta', 60, 'magenta'), cmyk('y', 'Yellow', 0, 'yellow'), cmyk('k', 'Black', 0, 'black'),
     of('pantone', txt('pantone', 'Pantone', '300 C', 'A Pantone code like 485 C or 19-4052 TCX, or a name like Classic Blue. Used when the model is Pantone.', { maxLength: 60, placeholder: '485 C' })),
-    of('hex', txt('hex', 'Hex', '#0066ff', 'A hex color: #rrggbb or #rgb. Used when the model is Hex.', { maxLength: 9, placeholder: '#rrggbb' })),
+    of('hex', txt('hex', 'Hex', '#0066ff', 'A hex color, written #rrggbb or #rgb. Used when the model is Hex.', { maxLength: 9, placeholder: '#rrggbb' })),
   ];
 }
 
@@ -92,7 +92,7 @@ export const behaviors: ModuleDef[] = [
     inputs: [inp('in', 'Input', 'any', 'Any value: numbers, text and images are drawn appropriately.')], outputs: [],
     params: [
       sel('format', 'Number format', 'auto', [['auto', 'Automatic'], ['int', 'Integer'], ['fixed2', '2 decimals'], ['percent', 'Percent (×100)']], 'How numbers are shown.'),
-      num('fontSize', 'Font size', 0, 0, 200, 1, 'Size of numbers and text, in pixels, on the node and in the full-size window. 0 keeps the automatic size, which follows the length of the value.', 'px'),
+      num('fontSize', 'Font size', 0, 0, 200, 1, 'The size of numbers and text in pixels, on the node and in the full-size window. 0 picks a size for you, based on how long the value is.', 'px'),
     ],
     run(c) { c.view({ ...projectView(c.get('in'), c.str('format')), fontSize: c.num('fontSize') }); },
     doc: {
@@ -105,7 +105,7 @@ export const behaviors: ModuleDef[] = [
   {
     ...base, type: 'meter', name: 'Meter', caption: 'Meter Display', glyph: 'meter', size: 'square', keywords: 'plot graph scope history equation function curve axes',
     inputs: [inp('in', 'Input', 'any', 'A numeric signal (plotted over time) or an Equation (graphed as y against x).')], outputs: [],
-    params: [num('window', 'Window', 80, 10, 400, 1, 'Samples kept in the plot (numeric signals only).'), bol('auto', 'Auto scale', true, 'Fit the plot to the data range; otherwise 0–1. Equations use the range set on the Equation node.'), bol('showNumber', 'Show number', true, 'Show the latest value as a number at the top of the node, level with the name (numeric signals only).')],
+    params: [num('window', 'Window', 80, 10, 400, 1, 'How many samples the plot keeps (numeric signals only).'), bol('auto', 'Auto scale', true, 'Fit the plot to the range of the data. Otherwise it shows 0–1. Equations use the range set on the Equation node.'), bol('showNumber', 'Show number', true, 'Show the latest value as a number at the top of the node, next to its name (numeric signals only).')],
     run(c) {
       const v = c.get('in');
       if (isEquation(v)) {
@@ -125,7 +125,7 @@ export const behaviors: ModuleDef[] = [
   {
     ...base, type: 'audio', name: 'Audio', caption: 'Audio Speaker', glyph: 'audio', size: 'small', keywords: 'sound speaker tone oscillator play',
     inputs: [inp('freq', 'Frequency', 'num', 'Pitch in Hz.', 'top', true), inp('amp', 'Amplitude', 'num', 'Loudness 0–1 (multiplied by volume).', 'top', true)], outputs: [],
-    params: [sel('wave', 'Waveform', 'sine', [['sine', 'Sine'], ['triangle', 'Triangle'], ['square', 'Square'], ['sawtooth', 'Saw']], 'Oscillator shape.'), num('freq', 'Default pitch', 440, 20, 8000, 1, 'Used when Frequency is unconnected.', 'Hz'), num('volume', 'Volume', 0.15, 0, 1, 0.01, 'Overall volume, kept low by default.'), bol('mute', 'Mute', false, 'Silence the output without stopping the program.')],
+    params: [sel('wave', 'Waveform', 'sine', [['sine', 'Sine'], ['triangle', 'Triangle'], ['square', 'Square'], ['sawtooth', 'Saw']], 'The shape of the oscillator’s wave.'), num('freq', 'Default pitch', 440, 20, 8000, 1, 'Used when Frequency isn’t connected.', 'Hz'), num('volume', 'Volume', 0.15, 0, 1, 0.01, 'The overall volume. It starts low on purpose.'), bol('mute', 'Mute', false, 'Silences the output without stopping the program.')],
     run(c) {
       const f = c.has('freq') ? toNum(c.get('freq')) : c.num('freq');
       const a = c.has('amp') ? clamp(toNum(c.get('amp')), 0, 1) : 1;
@@ -137,28 +137,28 @@ export const behaviors: ModuleDef[] = [
   {
     ...base, type: 'haptic', name: 'Haptic', caption: 'Haptic Generator', glyph: 'haptic', size: 'small', keywords: 'vibrate vibration touch feedback',
     inputs: [inp('in', 'Trigger', 'any', 'A true value vibrates the device.')], outputs: [],
-    params: [num('ms', 'Duration', 40, 5, 1000, 5, 'Vibration length.', 'ms')],
+    params: [num('ms', 'Duration', 40, 5, 1000, 5, 'How long the vibration lasts.', 'ms')],
     run(c) { if (c.changed('in') && toBool(c.get('in'))) { c.state.n = (c.state.n ?? 0) + 1; c.view({ n: c.state.n, ms: c.num('ms') }); } },
     doc: { summary: 'Vibrates the device when triggered.', runtime: 'Uses the Vibration API. Supported on most Android browsers; unavailable on iOS Safari and desktops, where the node reports it.', errors: ['Unsupported device: status shows “not supported”.'] },
   },
   {
     ...base, type: 'vital', name: 'Vital', caption: 'Vital Indicator', glyph: 'vital', size: 'small', keywords: 'indicator light led dot status',
     inputs: [inp('in', 'Input', 'any', 'Boolean or 0–1 level.')], outputs: [],
-    params: [sel('color', 'Color', 'white', COLORS, 'Indicator color. The state also shows in the fill, not just the color.')],
+    params: [sel('color', 'Color', 'white', COLORS, 'The indicator’s color. The state also shows in how full it is, so it isn’t only the color.')],
     run(c) { const v = c.get('in'); c.view({ level: typeof v === 'boolean' ? (v ? 1 : 0) : clamp(toNum(v) || 0, 0, 1), color: c.str('color') }); },
     doc: { summary: 'A dot indicator. Filled and large when the input is true or near 1, hollow when false.', runtime: 'Booleans map to 0/1; numbers are clamped to 0–1 and set the dot size.' },
   },
   {
     ...base, type: 'light', name: 'Light', caption: 'Light Generator', glyph: 'light', size: 'small', keywords: 'brightness beam lamp',
     inputs: [inp('in', 'Level', 'num', 'Brightness, 0–1.')], outputs: [],
-    params: [sel('color', 'Color', 'white', COLORS, 'Beam color.')],
+    params: [sel('color', 'Color', 'white', COLORS, 'The color of the beam.')],
     run(c) { c.view({ level: clamp(toNum(c.get('in')) || 0, 0, 1), color: c.str('color') }); },
     doc: { summary: 'A light beam whose brightness follows the input.', runtime: 'Level is clamped to 0–1.' },
   },
   {
     ...base, type: 'notify', name: 'Notify', caption: 'Notification', glyph: 'notify', size: 'small', keywords: 'alert browser notification message',
     inputs: [inp('in', 'Trigger', 'any', 'A true value sends a notification.')], outputs: [],
-    params: [txt('title', 'Title', 'Nicque', 'Notification title.', { maxLength: 80 }), txt('body', 'Body', '', 'Notification text. If empty, the triggering value is used.', { maxLength: 200 }), num('gap', 'Minimum gap', 3000, 100, 600000, 100, 'Notifications closer together than this are dropped.', 'ms')],
+    params: [txt('title', 'Title', 'Nicque', 'The notification’s title.', { maxLength: 80 }), txt('body', 'Body', '', 'The notification’s text. If you leave it empty, the value that triggered it is used.', { maxLength: 200 }), num('gap', 'Minimum gap', 3000, 100, 600000, 100, 'Notifications that come closer together than this get dropped.', 'ms')],
     run(c) {
       if (!(c.changed('in') && toBool(c.get('in')))) return;
       if (c.state.last !== undefined && c.time - c.state.last < c.num('gap')) return c.warn('Notification dropped (minimum gap).');
@@ -244,7 +244,7 @@ function runPlace(c: Parameters<ModuleDef['run']>[0], extra: Record<string, unkn
   c.emit('name', p.label);
   c.view({ state: 'ready', query, place: p, ...extra });
 }
-const PLACE_SUGGEST = txt('place', 'Default place', 'Tokyo, Japan', 'The place to show when the Place pin has no signal: a city, country, province, district, address or landmark anywhere on Earth, in English, 简体中文 or 繁體中文 (for example “Paris, France”, “Bavaria”, “Eiffel Tower” or “东京”), or coordinates like 35.68, 139.76.', { maxLength: 200, placeholder: 'e.g. Kyoto, Texas, 1 Infinite Loop, 35.68 139.76', suggest: cityLabels });
+const PLACE_SUGGEST = txt('place', 'Default place', 'Tokyo, Japan', 'The place to show when the Place pin has no signal. It can be a city, country, province, district, address or landmark anywhere on Earth, written in English, 简体中文 or 繁體中文 (like “Paris, France”, “Bavaria”, “Eiffel Tower” or “东京”), or coordinates like 35.68, 139.76.', { maxLength: 200, placeholder: 'e.g. Kyoto, Texas, 1 Infinite Loop, 35.68 139.76', suggest: cityLabels });
 const placePins = [
   out('lat', 'Latitude', 'num', 'Latitude of the place in degrees, north positive.', 'right'),
   out('lon', 'Longitude', 'num', 'Longitude of the place in degrees, east positive.', 'right'),
@@ -258,9 +258,9 @@ export const places: ModuleDef[] = [
     outputs: placePins,
     params: [
       PLACE_SUGGEST,
-      bol('fit', 'Fit to place', true, 'Zoom so the whole place is in view: you’ll see all of a country, or the streets of a city. Off uses the Zoom setting.'),
-      num('zoom', 'Zoom', 16, 1, 19, 1, 'Used when Fit to place is off. 3 is a continent, 10 a city, 16 shows streets and buildings, and 19 is as close as the map goes.'),
-      bol('marker', 'Show pin', true, 'Draw a pin on the exact spot.'),
+      bol('fit', 'Fit to place', true, 'Zoom so the whole place fits: you’ll see all of a country, or the streets of a city. Off uses the Zoom setting instead.'),
+      num('zoom', 'Zoom', 16, 1, 19, 1, 'Used when Fit to place is off. 3 shows a continent, 10 a city, 16 the streets and buildings, and 19 is as close as the map goes.'),
+      bol('marker', 'Show pin', true, 'Drops a pin on the exact spot.'),
       sel('style', 'Appearance', 'dark', [['dark', 'Dark'], ['light', 'Light map']], 'Dark matches the rest of the program. Light is the usual OpenStreetMap look.'),
       details('the place’s name and coordinates'),
     ],
@@ -278,10 +278,10 @@ export const places: ModuleDef[] = [
     outputs: placePins,
     params: [
       PLACE_SUGGEST,
-      bol('borders', 'Show borders', true, 'Draw the borders between countries, dimmer than the coastlines.'),
-      bol('grid', 'Show grid', true, 'Draw the lines of latitude and longitude every 30 degrees.'),
-      bol('marker', 'Show pin', true, 'Draw a marker on the exact spot, plus the outline of the area when the place is one.'),
-      bol('spin', 'Auto-rotate', false, 'Turn the globe slowly. Off keeps the place facing you.'),
+      bol('borders', 'Show borders', true, 'Draws the borders between countries, dimmer than the coastlines.'),
+      bol('grid', 'Show grid', true, 'Draws the lines of latitude and longitude every 30 degrees.'),
+      bol('marker', 'Show pin', true, 'Puts a marker on the exact spot, and outlines the area too when the place is one.'),
+      bol('spin', 'Auto-rotate', false, 'Turns the globe slowly. Off keeps the place facing you.'),
       details('the place’s name and coordinates'),
     ],
     run(c) { runPlace(c, {}); },

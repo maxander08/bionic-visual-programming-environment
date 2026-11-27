@@ -321,7 +321,7 @@ describe('Meter number display', () => {
 
   it.each(['zh-Hans', 'zh-Hant'] as const)('translates the new setting in %s', (lang) => {
     expect(trIn(lang, 'Show number')).not.toBe('Show number');
-    const doc = 'Show the latest value as a number at the top of the node, level with the name (numeric signals only).';
+    const doc = 'Show the latest value as a number at the top of the node, next to its name (numeric signals only).';
     expect(trIn(lang, doc)).not.toBe(doc);
   });
 });

@@ -58,17 +58,16 @@ export const files: Record<string, string> = {
 
   /* hidden settings */
   'File id': '文件编号',
-  'Key of the file kept in this browser.': '保存在此浏览器中的文件的键。',
+  'The key of the file stored in this browser.': '保存在此浏览器中的文件的键。',
   'File name': '文件名',
-  'Name of the file in this node.': '此节点中文件的名称。',
+  'The name of the file in this node.': '此节点中文件的名称。',
   'File extension': '文件扩展名',
-  'Extension of the file in this node.': '此节点中文件的扩展名。',
+  'The extension of the file in this node.': '此节点中文件的扩展名。',
   'File size': '文件大小',
-  'Size of the file in bytes.': '文件大小，单位为字节。',
   'File type': '文件类型',
-  'MIME type reported by the browser.': '浏览器报告的 MIME 类型。',
+  'The MIME type the browser reports.': '浏览器报告的 MIME 类型。',
   'File modified': '文件修改时间',
-  'Last-modified time of the file.': '文件的最后修改时间。',
+  'When the file was last modified.': '文件的最后修改时间。',
 
   /* module documentation */
   'Holds a word-processor document: .DOCX or .DOC.': '存放文字处理文档：.DOCX 或 .DOC。',

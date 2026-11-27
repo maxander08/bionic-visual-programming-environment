@@ -9,12 +9,12 @@ import { details, out, txt } from './kit';
 const hidden = (key: string, label: string, doc: string) => txt(key, label, '', doc, { hidden: true, maxLength: 300 });
 const PARAMS = [
   details('the file’s type and size, and the kinds of file it takes'),
-  hidden('fileId', 'File id', 'Key of the file kept in this browser.'),
-  hidden('fileName', 'File name', 'Name of the file in this node.'),
-  hidden('fileExt', 'File extension', 'Extension of the file in this node.'),
-  hidden('fileSize', 'File size', 'Size of the file in bytes.'),
-  hidden('fileMime', 'File type', 'MIME type reported by the browser.'),
-  hidden('fileModified', 'File modified', 'Last-modified time of the file.'),
+  hidden('fileId', 'File id', 'The key of the file stored in this browser.'),
+  hidden('fileName', 'File name', 'The name of the file in this node.'),
+  hidden('fileExt', 'File extension', 'The extension of the file in this node.'),
+  hidden('fileSize', 'File size', 'The size of the file in bytes.'),
+  hidden('fileMime', 'File type', 'The MIME type the browser reports.'),
+  hidden('fileModified', 'File modified', 'When the file was last modified.'),
 ];
 
 const FILE = out('file', 'File', 'data', 'The file as a small record (name, extension, size, type, modified time). It never contains the file’s bytes.', 'bottom');

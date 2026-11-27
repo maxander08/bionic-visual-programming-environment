@@ -23,7 +23,7 @@ const calc = (c: Ctx, f: () => void) => {
 };
 /** A setting written out with all its digits, for node faces. */
 const face = (v: unknown): string => { const d = toDec(v); return d ? toPlain(d) : String(v); };
-const PREC = num('precision', 'Precision', DEFAULT_PRECISION, 1, MAX_PRECISION, 1, 'How many significant digits to work out for results that never end and never repeat (√2, sin, e^x). Ask for as many as you like. Results that end (1 ÷ 8 = 0.125) or repeat (1 ÷ 3 = 0.333...) are always exact, and never cut or padded.', 'digits');
+const PREC = num('precision', 'Precision', DEFAULT_PRECISION, 1, MAX_PRECISION, 1, 'How many significant digits to work out for results that never end and never repeat (√2, sin, e^x). Ask for as many as you like. Results that end (1 ÷ 8 = 0.125) or repeat (1 ÷ 3 = 0.333...) are always exact, and are never cut or padded.', 'digits');
 const k = (dt: number, tau: number) => (tau <= 0 ? 1 : 1 - Math.exp(-dt / tau));
 const n = (v: unknown) => toNum(v);
 /** Is the magnitude of a larger than that of b? Compared on every digit; values that are not numbers count as 0. */
@@ -47,7 +47,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'constant', name: 'Constant', caption: 'Constant', glyph: 'C', chip: (p) => String(p.value),
     inputs: [], outputs: [OUT_ANY], source: true,
-    params: [sel('kind', 'Kind', 'number', [['number', 'Number'], ['text', 'Text'], ['bool', 'Boolean']], 'Type of the sent value.'), txt('value', 'Value', '1', 'The value to send out. A number keeps every digit you type.', { maxLength: 5000 })],
+    params: [sel('kind', 'Kind', 'number', [['number', 'Number'], ['text', 'Text'], ['bool', 'Boolean']], 'The type of value to send.'), txt('value', 'Value', '1', 'The value to send. A number keeps every digit you type.', { maxLength: 5000 })],
     run(c) {
       const v = c.str('value'), kd = c.str('kind');
       if (kd === 'number') { const d = v.trim() === '' ? null : toDec(v); if (!d) return c.fail(`“${v}” is not a number.`); out$(c, 'out', d); }
@@ -59,7 +59,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'random', name: 'Random', caption: 'Random', glyph: 'R', chip: (p) => `${face(p.min)}…${face(p.max)}`,
     inputs: [], outputs: [OUT_ANY], source: true, delaying: true,
-    params: [dnum('min', 'Minimum', 0, -1e6, 1e6, 0.1, 'Lower bound.'), dnum('max', 'Maximum', 1, -1e6, 1e6, 0.1, 'Upper bound.'), num('rate', 'Rate', 2, 0.1, 30, 0.1, 'Values per second.', 'Hz'), num('seed', 'Seed', 1, 0, 99999, 1, 'The seed for the repeatable random generator.'), bol('integer', 'Integers', false, 'Round to whole numbers.')],
+    params: [dnum('min', 'Minimum', 0, -1e6, 1e6, 0.1, 'The lowest value it can pick.'), dnum('max', 'Maximum', 1, -1e6, 1e6, 0.1, 'The highest value it can pick.'), num('rate', 'Rate', 2, 0.1, 30, 0.1, 'How many values to make per second.', 'Hz'), num('seed', 'Seed', 1, 0, 99999, 1, 'The seed for the repeatable random generator. The same seed always gives the same sequence.'), bol('integer', 'Integers', false, 'Round every value to a whole number.')],
     run(c) {
       calc(c, () => {
         const lo = c.dec('min'), hi = c.dec('max'), ln = D.toNumber(lo), hn = D.toNumber(hi);
@@ -87,7 +87,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'pulse', name: 'Pulse', caption: 'Pulse', glyph: '⏸', chip: (p) => formatBase(Number(p.period), 'ms', { compact: true }),
     inputs: [], outputs: [out('out', 'Pulse', 'bool', 'True for the pulse width, then false.'), out('count', 'Count', 'num', 'Pulses emitted so far.', 'right')], source: true, delaying: true,
-    params: [num('period', 'Period', 1000, 20, 86400000, 10, 'Time between pulse starts.', 'ms'), num('width', 'Width', 100, 1, 86400000, 10, 'How long the pulse stays true. It can’t be longer than the period.', 'ms'), num('offset', 'Offset', 0, 0, 86400000, 10, 'Time of the first pulse.', 'ms'), num('max', 'Max pulses', 0, 0, 100000, 1, '0 means unlimited.')],
+    params: [num('period', 'Period', 1000, 20, 86400000, 10, 'The time between the starts of two pulses.', 'ms'), num('width', 'Width', 100, 1, 86400000, 10, 'How long the pulse stays true. It can’t be longer than the period.', 'ms'), num('offset', 'Offset', 0, 0, 86400000, 10, 'When the first pulse happens.', 'ms'), num('max', 'Max pulses', 0, 0, 100000, 1, 'The most pulses it will send. 0 means no limit.')],
     run(c) {
       const s = c.state, period = c.num('period'), width = Math.min(c.num('width'), period - 1);
       if (s.next === undefined) { s.next = c.num('offset'); s.high = false; s.count = 0; c.emit('out', false); c.emit('count', 0); }
@@ -104,7 +104,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'add', name: 'Adder', caption: 'Adder', glyph: '+', chip: (p) => face(p.offset),
     inputs: [inp('a', 'A', 'num', 'First addend.'), inp('b', 'B', 'num', 'Second addend; 0 when not connected.', 'top', true)], outputs: [out('out', 'Sum', 'num', 'a + b + offset.')],
-    params: [{ ...dnum('offset', 'Offset', 0, -1e6, 1e6, 0.1, 'Constant added to the sum.'), pinSide: 'left' }],
+    params: [{ ...dnum('offset', 'Offset', 0, -1e6, 1e6, 0.1, 'A constant that gets added to the sum.'), pinSide: 'left' }],
     run(c) { calc(c, () => out$(c, 'out', D.add(D.add(sig$(c, 'a'), c.has('b') ? sig$(c, 'b') : D.ZERO), c.dec('offset')))); },
     doc: { summary: 'Adds numbers.', runtime: 'out = a + b + offset, worked out exactly: every digit of every number is kept (3 + 0.14159265 is 3.14159265, 0.1 + 0.2 is 0.3). A missing b counts as 0, and if a is missing the node sits idle.' },
   },
@@ -118,7 +118,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'sub', name: 'Subtractor', caption: 'Subtractor', glyph: '−', chip: (p) => face(p.offset),
     inputs: [inp('a', 'A', 'num', 'Minuend: the value to subtract from.'), inp('b', 'B', 'num', 'Subtrahend; 0 when not connected.', 'top', true)], outputs: [out('out', 'Difference', 'num', 'a − b − offset.')],
-    params: [{ ...dnum('offset', 'Offset', 0, -1e6, 1e6, 0.1, 'Constant subtracted from the difference.'), pinSide: 'left' }],
+    params: [{ ...dnum('offset', 'Offset', 0, -1e6, 1e6, 0.1, 'A constant that gets taken off the difference.'), pinSide: 'left' }],
     run(c) { calc(c, () => out$(c, 'out', D.sub(D.sub(sig$(c, 'a'), c.has('b') ? sig$(c, 'b') : D.ZERO), c.dec('offset')))); },
     doc: { summary: 'Subtracts numbers.', runtime: 'out = a − b − offset, worked out exactly: every digit of every number is kept. A missing b counts as 0, and if a is missing the node sits idle.' },
   },
@@ -138,7 +138,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'invert', name: 'Inverter', caption: 'Inverter', glyph: '−', chip: (p) => String(p.mode),
     inputs: [IN_ANY('Number or boolean.')], outputs: [OUT_ANY],
-    params: [sel('mode', 'Mode', 'negate', [['negate', 'Negate (−x)'], ['complement', 'Complement (1 − x)']], 'Numbers are negated. True/false values are always flipped.')],
+    params: [sel('mode', 'Mode', 'negate', [['negate', 'Negate (−x)'], ['complement', 'Complement (1 − x)']], 'Numbers get negated, while true/false values are always flipped.')],
     run(c) {
       const v = c.get('in');
       if (typeof v === 'boolean') return c.emit('out', !v);
@@ -151,7 +151,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'math', name: 'Math', caption: 'Math', glyph: 'M', chip: (p) => String(p.fn),
     inputs: [inp('a', 'A', 'num', 'Operand.'), inp('b', 'B', 'num', 'Second operand for min, max, pow, mod.', 'top', true)], outputs: [out('out', 'Result', 'num', 'Function result.')],
-    params: [sel('fn', 'Function', 'abs', ['abs', 'sqrt', 'square', 'sin', 'cos', 'tanh', 'exp', 'log', 'floor', 'round', 'ceil', 'min', 'max', 'pow', 'mod'].map((x) => [x, x] as [string, string]), 'Function applied to a (and b).'), { ...PREC, pinSide: 'left' }],
+    params: [sel('fn', 'Function', 'abs', ['abs', 'sqrt', 'square', 'sin', 'cos', 'tanh', 'exp', 'log', 'floor', 'round', 'ceil', 'min', 'max', 'pow', 'mod'].map((x) => [x, x] as [string, string]), 'The function applied to a (and b).'), { ...PREC, pinSide: 'left' }],
     run(c) {
       calc(c, () => {
         const a = sig$(c, 'a'), b = c.has('b') ? sig$(c, 'b') : D.ZERO, P = c.num('precision'), fn = c.str('fn');
@@ -192,7 +192,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'relay', name: 'Gate', caption: 'Relay', glyph: '╤', chip: (p) => (p.invert ? 'BLOCK' : 'OPEN?'), 
     inputs: [IN_ANY('Signal to pass.'), inp('open', 'Open', 'bool', 'Gate control. When not connected the gate uses its default.', 'left', true)], outputs: [OUT_ANY],
-    params: [bol('openDefault', 'Open by default', true, 'Used when Open isn’t connected.'), bol('invert', 'Invert control', false, 'When on, the gate lets signals through while Open is false.')],
+    params: [bol('openDefault', 'Open by default', true, 'Used when Open isn’t connected.'), bol('invert', 'Invert control', false, 'When on, signals only get through while Open is false.')],
     run(c) {
       let open = c.has('open') ? toBool(c.get('open')) : c.bool('openDefault');
       if (c.bool('invert')) open = !open;
@@ -217,7 +217,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'threshold', name: 'Threshold', caption: 'Filter', glyph: '>', chip: (p) => `${p.mode === 'below' ? '<' : '>'} ${face(p.threshold)}`, delaying: false,
     inputs: [inp('in', 'Input', 'num', 'Value to compare.')], outputs: [out('over', 'Over', 'bool', 'True when the condition holds.'), out('delta', 'Delta', 'num', 'Input minus threshold.', 'right')],
-    params: [dnum('threshold', 'Threshold', 0.5, -1e6, 1e6, 0.01, 'Comparison level.'), dnum('hysteresis', 'Hysteresis', 0, 0, 1e6, 0.01, 'Once it’s true, the input has to cross back past the threshold by this much to turn false.'), sel('mode', 'Condition', 'above', [['above', 'Input ≥ threshold'], ['below', 'Input ≤ threshold']], 'Direction of the comparison.')],
+    params: [dnum('threshold', 'Threshold', 0.5, -1e6, 1e6, 0.01, 'The level it compares against.'), dnum('hysteresis', 'Hysteresis', 0, 0, 1e6, 0.01, 'Once it’s true, the input has to drop back past the threshold by this much before it turns false.'), sel('mode', 'Condition', 'above', [['above', 'Input ≥ threshold'], ['below', 'Input ≤ threshold']], 'Which way to compare.')],
     run(c) {
       calc(c, () => {
         const x = toDec(c.get('in'));
@@ -234,7 +234,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'compare', name: 'Compare', caption: 'Comparator', glyph: '=', chip: (p) => String(p.op),
     inputs: [inp('a', 'A', 'any', 'Left operand.'), inp('b', 'B', 'any', 'Right operand; uses the fallback when not connected.', 'top', true)], outputs: [out('out', 'Result', 'bool', 'True when the relation holds.')],
-    params: [sel('op', 'Relation', '>', ['==', '!=', '>', '<', '>=', '<='].map((x) => [x, x] as [string, string]), 'Relation between a and b.'), txt('fallback', 'Fallback b', '0', 'Right operand when b is unconnected.'), { ...dnum('tolerance', 'Tolerance', 0, 0, 1e6, 0.001, 'Equality slack for numbers.'), pinSide: 'left' }],
+    params: [sel('op', 'Relation', '>', ['==', '!=', '>', '<', '>=', '<='].map((x) => [x, x] as [string, string]), 'How a and b are compared.'), txt('fallback', 'Fallback b', '0', 'The right-hand value when b isn’t connected.'), { ...dnum('tolerance', 'Tolerance', 0, 0, 1e6, 0.001, 'How close two numbers can be and still count as equal.'), pinSide: 'left' }],
     run(c) {
       calc(c, () => {
         const a = c.get('a'), b = c.has('b') ? c.get('b') : c.str('fallback');
@@ -252,7 +252,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'combine', name: 'Combine', caption: 'Combiner', glyph: '⊕', chip: (p) => String(p.mode),
     inputs: [inp('a', 'A', 'any', 'Input A.', 'top', true), inp('b', 'B', 'any', 'Input B.', 'top', true), inp('c', 'C', 'any', 'Input C.', 'top', true)], outputs: [OUT_ANY],
-    params: [sel('mode', 'Mode', 'sum', [['sum', 'Sum'], ['mean', 'Mean'], ['max', 'Max'], ['min', 'Min'], ['product', 'Product'], ['join', 'Join as text'], ['list', 'List']], 'How present inputs merge.'), txt('sep', 'Separator', ' ', 'Used by Join.')],
+    params: [sel('mode', 'Mode', 'sum', [['sum', 'Sum'], ['mean', 'Mean'], ['max', 'Max'], ['min', 'Min'], ['product', 'Product'], ['join', 'Join as text'], ['list', 'List']], 'How the inputs that are present get merged.'), txt('sep', 'Separator', ' ', 'What Join puts between the values.')],
     run(c) {
       const vals = ['a', 'b', 'c'].filter((p) => c.has(p)).map((p) => c.get(p));
       if (!vals.length) return;
@@ -273,7 +273,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'delay', name: 'Delay', caption: 'Delay', glyph: '⧖', chip: (p) => formatBase(Number(p.ms), 'ms', { compact: true }), delaying: true,
     inputs: [IN_ANY('Signal to delay.')], outputs: [OUT_ANY],
-    params: [num('ms', 'Delay', 500, 0, 86400000, 10, 'How long each value is delayed, in simulation time.', 'ms'), sel('mode', 'Mode', 'shift', [['shift', 'Shift every value'], ['settle', 'Settle (emit after quiet)']], 'Shift keeps every value, in order. Settle forgets the values in between and only sends something once the input has been quiet for the delay.')],
+    params: [num('ms', 'Delay', 500, 0, 86400000, 10, 'How long each value is held back, in simulation time.', 'ms'), sel('mode', 'Mode', 'shift', [['shift', 'Shift every value'], ['settle', 'Settle (emit after quiet)']], 'Shift keeps every value, in order. Settle skips the ones in between and only sends something once the input has been quiet for the delay.')],
     run(c) {
       const s = c.state;
       if (c.reason === 'input' || c.changed('in')) {
@@ -289,7 +289,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'counter', name: 'Counter', caption: 'Counter', glyph: '#', chip: (p) => `+${face(p.step)}`, delaying: true, source: true,
     inputs: [inp('inc', 'Increment', 'any', 'Each arriving true value adds one step.', 'top', true), inp('dec', 'Decrement', 'any', 'Each arriving true value subtracts one step.', 'left', true), inp('reset', 'Reset', 'bool', 'Rising edge returns to the start value.', 'left', true)], outputs: [out('out', 'Count', 'num', 'Current count.')],
-    params: [dnum('start', 'Start', 0, -1e9, 1e9, 1, 'Initial and reset value.'), dnum('step', 'Step', 1, -1e6, 1e6, 1, 'Amount added per event.'), dnum('min', 'Minimum', 0, -1e9, 1e9, 1, 'Lower limit.'), dnum('max', 'Maximum', 100, -1e9, 1e9, 1, 'Upper limit.'), bol('wrap', 'Wrap around', false, 'Wrap around to the opposite limit instead of stopping at the edge.')],
+    params: [dnum('start', 'Start', 0, -1e9, 1e9, 1, 'The value it starts at, and goes back to on reset.'), dnum('step', 'Step', 1, -1e6, 1e6, 1, 'How much gets added on every event.'), dnum('min', 'Minimum', 0, -1e9, 1e9, 1, 'The lowest it can go.'), dnum('max', 'Maximum', 100, -1e9, 1e9, 1, 'The highest it can go.'), bol('wrap', 'Wrap around', false, 'Wrap around to the other limit instead of stopping at the edge.')],
     run(c) {
       calc(c, () => {
         const s = c.state;
@@ -309,7 +309,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'sequence', name: 'Sequence', caption: 'Sequencer', glyph: 'SEQ', chip: (p) => `${parseList(String(p.values)).length} steps`, delaying: true, source: true,
     inputs: [inp('next', 'Next', 'any', 'Each arriving true value advances one step.', 'top', true), inp('reset', 'Reset', 'bool', 'Rising edge returns to step 1.', 'left', true)], outputs: [OUT_ANY, out('index', 'Index', 'num', 'Current step number, from 0.', 'right')],
-    params: [txt('values', 'Values', '1, 2, 3', 'Comma-separated values. Numbers and true/false are recognised, and everything else is treated as text.'), bol('loop', 'Loop', true, 'Go back to the start after the last step. Off stops on the last step.'), num('auto', 'Auto advance', 0, 0, 600000, 10, 'If above 0, it moves to the next step by itself at this interval.', 'ms')],
+    params: [txt('values', 'Values', '1, 2, 3', 'Values separated by commas. Numbers and true/false are recognised, and anything else is treated as text.'), bol('loop', 'Loop', true, 'Go back to the start after the last step. Off stops on the last step.'), num('auto', 'Auto advance', 0, 0, 600000, 10, 'If it’s above 0, the node moves on to the next step by itself at this interval.', 'ms')],
     run(c) {
       const s = c.state, vals = parseList(c.str('values'));
       if (!vals.length) return c.fail('Define at least one value.');
@@ -339,7 +339,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'plastic', name: 'Plastic Nerve', caption: 'Plastic Nerve', glyph: '⇄', chip: (p) => `${face(p.inMin)}…${face(p.inMax)} → ${face(p.outMin)}…${face(p.outMax)}`,
     inputs: [inp('in', 'Input', 'num', 'Value to remap.')], outputs: [out('out', 'Output', 'num', 'Remapped value.')],
-    params: [dnum('inMin', 'Input min', 0, -1e6, 1e6, 0.1, 'Bottom of the input range.'), dnum('inMax', 'Input max', 1, -1e6, 1e6, 0.1, 'Top of the input range.'), dnum('outMin', 'Output min', 0, -1e6, 1e6, 0.1, 'The value you get at input min.'), dnum('outMax', 'Output max', 100, -1e6, 1e6, 0.1, 'The value you get at input max.'), sel('curve', 'Curve', 'linear', [['linear', 'Linear'], ['ease-in', 'Ease in (t²)'], ['ease-out', 'Ease out'], ['smooth', 'Smoothstep']], 'Shape of the mapping.'), bol('clamp', 'Clamp', true, 'Keep the output inside the output range.')],
+    params: [dnum('inMin', 'Input min', 0, -1e6, 1e6, 0.1, 'The bottom of the input range.'), dnum('inMax', 'Input max', 1, -1e6, 1e6, 0.1, 'The top of the input range.'), dnum('outMin', 'Output min', 0, -1e6, 1e6, 0.1, 'The value you get at input min.'), dnum('outMax', 'Output max', 100, -1e6, 1e6, 0.1, 'The value you get at input max.'), sel('curve', 'Curve', 'linear', [['linear', 'Linear'], ['ease-in', 'Ease in (t²)'], ['ease-out', 'Ease out'], ['smooth', 'Smoothstep']], 'The shape of the mapping.'), bol('clamp', 'Clamp', true, 'Keeps the output inside the output range.')],
     run(c) {
       calc(c, () => {
         const x = sig$(c, 'in'), a = c.dec('inMin'), b = c.dec('inMax');
@@ -357,7 +357,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'hyponerve', name: 'Hyponerve', caption: 'Hyponerve', glyph: 'Δ', chip: (p) => String(p.rule), 
     inputs: [IN_ANY('Signal to watch.')], outputs: [OUT_ANY],
-    params: [sel('rule', 'Emit when', 'change', [['change', 'Value changes'], ['delta', 'Changes by ≥ epsilon'], ['rise', 'Number rises'], ['fall', 'Number falls'], ['cross-up', 'Crosses threshold upward'], ['cross-down', 'Crosses threshold downward']], 'Rule that decides whether a new value passes.'), dnum('epsilon', 'Epsilon', 0.1, 0, 1e6, 0.01, 'The smallest change that counts for the delta rule, measured from the last value sent.'), dnum('threshold', 'Threshold', 0.5, -1e6, 1e6, 0.01, 'Level for the crossing rules.')],
+    params: [sel('rule', 'Emit when', 'change', [['change', 'Value changes'], ['delta', 'Changes by ≥ epsilon'], ['rise', 'Number rises'], ['fall', 'Number falls'], ['cross-up', 'Crosses threshold upward'], ['cross-down', 'Crosses threshold downward']], 'The rule that decides whether a new value gets through.'), dnum('epsilon', 'Epsilon', 0.1, 0, 1e6, 0.01, 'The smallest change that counts for the delta rule, measured from the last value that was sent.'), dnum('threshold', 'Threshold', 0.5, -1e6, 1e6, 0.01, 'The level the crossing rules look for.')],
     run(c) {
       calc(c, () => {
         const s = c.state, v = c.get('in'), x = toDec(v), rule = c.str('rule');
@@ -380,7 +380,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'hypernerve', name: 'Hypernerve', caption: 'Hypernerve', glyph: '⇶', chip: (p) => String(p.policy), 
     inputs: [inp('a', 'A', 'any', 'Candidate A (highest priority).', 'top', true), inp('b', 'B', 'any', 'Candidate B.', 'top', true), inp('c', 'C', 'any', 'Candidate C (lowest priority; wins under override).', 'top', true)], outputs: [OUT_ANY, out('winner', 'Winner', 'text', 'Which input won: a, b or c.', 'right')],
-    params: [sel('policy', 'Policy', 'priority', [['priority', 'Priority: a > b > c'], ['strongest', 'Strongest signal'], ['latest', 'Most recent'], ['override', 'C overrides when present']], 'How competing inputs are resolved.')],
+    params: [sel('policy', 'Policy', 'priority', [['priority', 'Priority: a > b > c'], ['strongest', 'Strongest signal'], ['latest', 'Most recent'], ['override', 'C overrides when present']], 'How to settle things when inputs compete.')],
     run(c) {
       const names = ['a', 'b', 'c'].filter((p) => c.has(p));
       if (!names.length) return;
@@ -399,7 +399,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'firing', name: 'Firing Rate Control', caption: 'Rate Control', glyph: 'Hz', chip: (p) => `≤ ${fmtNum(Number(p.rate))} Hz`, delaying: true,
     inputs: [IN_ANY('Signal to regulate.')], outputs: [OUT_ANY],
-    params: [num('rate', 'Max rate', 2, 0.1, 100, 0.1, 'Highest emission frequency.', 'Hz'), sel('mode', 'Mode', 'throttle', [['throttle', 'Throttle (send latest later)'], ['drop', 'Drop extras']], 'Throttle delivers the newest value when the next slot opens. Drop throws away values that arrive too early.')],
+    params: [num('rate', 'Max rate', 2, 0.1, 100, 0.1, 'The highest rate it will send at.', 'Hz'), sel('mode', 'Mode', 'throttle', [['throttle', 'Throttle (send latest later)'], ['drop', 'Drop extras']], 'Throttle sends the newest value when the next slot opens. Drop throws away values that arrive too early.')],
     run(c) {
       const s = c.state, period = 1000 / c.num('rate');
       const fresh = c.reason === 'input' || c.changed('in');
@@ -412,7 +412,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'envelope', name: 'Envelope', caption: 'Envelope', glyph: 'ENV', chip: (p) => `A${fmtNum(Number(p.attack))} R${fmtNum(Number(p.release))}`, delaying: true,
     inputs: [inp('gate', 'Gate', 'bool', 'True starts attack/decay and holds sustain; false starts release.')], outputs: [out('out', 'Level', 'num', 'Envelope level, 0–peak.'), out('phase', 'Phase', 'text', 'idle, attack, decay, sustain or release.', 'right')],
-    params: [num('attack', 'Attack', 100, 1, 60000, 1, 'Time to rise to the peak.', 'ms'), num('decay', 'Decay', 200, 1, 60000, 1, 'Time to fall from peak to sustain.', 'ms'), num('sustain', 'Sustain', 0.6, 0, 1, 0.01, 'The fraction of the peak that’s held while the gate stays true.'), num('release', 'Release', 400, 1, 60000, 1, 'Time to fall to zero after the gate closes.', 'ms'), num('peak', 'Peak', 1, 0, 1000, 0.1, 'Maximum level.')],
+    params: [num('attack', 'Attack', 100, 1, 60000, 1, 'How long it takes to rise to the peak.', 'ms'), num('decay', 'Decay', 200, 1, 60000, 1, 'How long it takes to fall from the peak down to the sustain level.', 'ms'), num('sustain', 'Sustain', 0.6, 0, 1, 0.01, 'How much of the peak is held while the gate stays true, as a fraction.'), num('release', 'Release', 400, 1, 60000, 1, 'How long it takes to fall to zero once the gate closes.', 'ms'), num('peak', 'Peak', 1, 0, 1000, 0.1, 'The highest level it reaches.')],
     run(c) {
       const s = c.state;
       s.phase ??= 'idle'; s.level ??= 0;
@@ -446,7 +446,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'nap', name: 'Nap', caption: 'Nap', glyph: 'Zz', chip: (p) => (p.mode === 'suspend' ? 'SUSPEND' : `${fmtNum(Number(p.duration))} ms`), delaying: true,
     inputs: [IN_ANY('Signal to pass.'), inp('sleep', 'Sleep', 'bool', 'Suspend mode: holds the signal while true.', 'left', true)], outputs: [OUT_ANY],
-    params: [sel('mode', 'Mode', 'refractory', [['refractory', 'Refractory (ignore after firing)'], ['suspend', 'Suspend (hold while asleep)']], 'Refractory: after passing a value, the node sleeps for the duration and ignores inputs. Suspend: while Sleep is true, the latest input is held and released when the node wakes up.'), num('duration', 'Duration', 500, 0, 600000, 10, 'Refractory sleep length.', 'ms'), num('maxSleep', 'Max sleep', 5000, 10, 600000, 10, 'Suspend mode: the longest it will hold before it’s forced awake.', 'ms')],
+    params: [sel('mode', 'Mode', 'refractory', [['refractory', 'Refractory (ignore after firing)'], ['suspend', 'Suspend (hold while asleep)']], 'Refractory: after a value passes, the node goes to sleep for the duration and ignores whatever arrives. Suspend: while Sleep is true, the latest input is held, then let go when the node wakes up.'), num('duration', 'Duration', 500, 0, 600000, 10, 'How long the refractory sleep lasts.', 'ms'), num('maxSleep', 'Max sleep', 5000, 10, 600000, 10, 'Suspend mode: the longest it will hold on before it’s forced awake.', 'ms')],
     run(c) {
       const s = c.state;
       if (c.str('mode') === 'refractory') {
@@ -467,7 +467,7 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'wave', name: 'Wave', caption: 'Wave Generator', glyph: '∿', chip: (p) => `${p.shape} ${fmtNum(Number(p.freq))} Hz`, source: true, delaying: true,
     inputs: [inp('amp', 'A', 'num', 'Amplitude; overrides the parameter when connected.', 'top', true), inp('freq', 'F', 'num', 'Frequency in Hz; overrides the parameter when connected.', 'top', true)], outputs: [out('out', 'Output', 'num', 'Waveform sample.')],
-    params: [sel('shape', 'Shape', 'sine', [['sine', 'Sine'], ['triangle', 'Triangle'], ['square', 'Square'], ['saw', 'Saw']], 'Waveform shape.'), num('freq', 'Frequency', 1, 0.01, 2000, 0.01, 'Used when F is unconnected.', 'Hz'), num('amp', 'Amplitude', 1, 0, 1000, 0.01, 'Used when A is unconnected.'), num('offset', 'Offset', 0, -1000, 1000, 0.01, 'Added to the waveform.')],
+    params: [sel('shape', 'Shape', 'sine', [['sine', 'Sine'], ['triangle', 'Triangle'], ['square', 'Square'], ['saw', 'Saw']], 'The shape of the wave.'), num('freq', 'Frequency', 1, 0.01, 2000, 0.01, 'Used when F isn’t connected.', 'Hz'), num('amp', 'Amplitude', 1, 0, 1000, 0.01, 'Used when A isn’t connected.'), num('offset', 'Offset', 0, -1000, 1000, 0.01, 'Added to the wave.')],
     run(c) {
       const f = c.has('freq') ? n(c.get('freq')) : c.num('freq'), a = c.has('amp') ? n(c.get('amp')) : c.num('amp');
       const s = c.state;
@@ -485,13 +485,13 @@ export const nodes: ModuleDef[] = [
     inputs: [inp('x', 'X', 'num', 'Evaluate the first equation at this x for the y(x) output. Optional: the “Evaluate at x” setting is used when it isn’t connected.', 'top', true)],
     outputs: [out('eq', 'Equation', 'data', 'The equation stored as data (expressions, plot range, time). Route it to a Meter to see its graph.'), out('text', 'Equation text', 'text', 'The equation as text: the expressions as typed, one per line.'), out('y', 'y(x)', 'num', 'Value of the first equation at x.', 'right')],
     params: [
-      txt('expr', 'Equation', 'sin(x)', `Any expression in x (and t, the simulation time in seconds). Write one equation per line or separate them with “;” to graph several curves. A leading “y =” is allowed. Functions: ${FUNCTION_NAMES.join(', ')}. Constants: pi, e, tau, phi. Operators: + − * / ^ %, and implicit products such as 2x or 3sin(x).`, { multiline: true, maxLength: 600, placeholder: 'y = sin(x)' }),
-      num('xMin', 'x min', -10, -1e6, 1e6, 0.1, 'Left edge of the graph.'),
-      num('xMax', 'x max', 10, -1e6, 1e6, 0.1, 'Right edge of the graph. Must be greater than x min.'),
-      bol('yAuto', 'Auto y range', true, 'Fit the vertical range to the curves (ignoring asymptotes). Off: use y min and y max.'),
-      num('yMin', 'y min', -1, -1e6, 1e6, 0.1, 'Bottom edge of the graph when Auto y range is off.'),
-      num('yMax', 'y max', 1, -1e6, 1e6, 0.1, 'Top edge of the graph when Auto y range is off.'),
-      num('samples', 'Samples', 200, 20, 2000, 10, 'Points computed per curve. More points give smoother curves.'),
+      txt('expr', 'Equation', 'sin(x)', `Any expression in x (and t, the simulation time in seconds). Put one equation on each line, or split them with “;”, to graph several curves. A leading “y =” is fine. Functions: ${FUNCTION_NAMES.join(', ')}. Constants: pi, e, tau, phi. Operators: + − * / ^ %, and you can leave out the multiplication sign in things like 2x or 3sin(x).`, { multiline: true, maxLength: 600, placeholder: 'y = sin(x)' }),
+      num('xMin', 'x min', -10, -1e6, 1e6, 0.1, 'The left edge of the graph.'),
+      num('xMax', 'x max', 10, -1e6, 1e6, 0.1, 'The right edge of the graph. It has to be greater than x min.'),
+      bol('yAuto', 'Auto y range', true, 'Fits the vertical range to the curves (ignoring asymptotes). Off uses y min and y max instead.'),
+      num('yMin', 'y min', -1, -1e6, 1e6, 0.1, 'The bottom edge of the graph when Auto y range is off.'),
+      num('yMax', 'y max', 1, -1e6, 1e6, 0.1, 'The top edge of the graph when Auto y range is off.'),
+      num('samples', 'Samples', 200, 20, 2000, 10, 'How many points to work out for each curve. More points make smoother curves.'),
       num('x', 'Evaluate at x', 0, -1e6, 1e6, 0.1, 'The x used for the y(x) output when X isn’t connected.'),
     ],
     run(c) {

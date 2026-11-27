@@ -19,7 +19,7 @@ const base = { category: 'Base Data' as const, family: 'data' as const, size: 'c
 
 const IN = (what: string) => inp('in', 'Input', 'any', `${what} While connected, it replaces the stored value. Whatever arrives is converted to this type.`, 'left', true);
 
-const TRUNCATE_NOTE = 'Rounding decides how a fractional number becomes whole.';
+const TRUNCATE_NOTE = 'Decides how a number with a fraction becomes whole.';
 
 export const baseData: ModuleDef[] = [
   /* ───── Integer ───── */
@@ -33,8 +33,8 @@ export const baseData: ModuleDef[] = [
       out('text', 'Text', 'text', 'The integer written as text in the chosen Base: 255 is 255, 0xFF, 0o377 or 0b11111111.'),
     ],
     params: [
-      dnum('value', 'Value', 1, -Infinity, Infinity, 1, 'Any whole number. Use as many digits as you like, because there’s no biggest or smallest.'),
-      sel('rounding', 'Rounding', 'trunc', [['trunc', 'Toward zero'], ['round', 'Nearest'], ['floor', 'Down'], ['ceil', 'Up']], `${TRUNCATE_NOTE} Applies to the Input pin and to a Value that arrives on its setting pin.`),
+      dnum('value', 'Value', 1, -Infinity, Infinity, 1, 'Any whole number. Use as many digits as you like, since there’s no biggest or smallest.'),
+      sel('rounding', 'Rounding', 'trunc', [['trunc', 'Toward zero'], ['round', 'Nearest'], ['floor', 'Down'], ['ceil', 'Up']], `${TRUNCATE_NOTE} It applies to the Input pin and to a Value that arrives on its setting pin.`),
       sel('base', 'Base', 'dec', [['dec', 'Decimal (10)'], ['bin', 'Binary (2)'], ['oct', 'Octal (8)'], ['hex', 'Hexadecimal (16)']], 'How the integer is written on the node face and on the Text output. The Integer output is always a plain number.'),
     ],
     run(c) {
@@ -74,7 +74,7 @@ export const baseData: ModuleDef[] = [
       out('text', 'Text', 'text', 'The number written out in full, with every digit it was given, never rounded and never in exponent form. Handy when you want the digits as text, for example to join them into a sentence.'),
     ],
     params: [
-      txt('value', 'Value', '1.5', 'The number to send out, with as many digits as you like: 3.14159265358979323846264338327950288 is kept whole. Digits after the point, trailing zeros and an exponent (6.022e23) are all fine.', { maxLength: 5000, placeholder: 'Any number, any number of digits' }),
+      txt('value', 'Value', '1.5', 'The number to send, with as many digits as you like: 3.14159265358979323846264338327950288 is kept whole. Digits after the point, trailing zeros and an exponent (6.022e23) are all fine.', { maxLength: 5000, placeholder: 'Any number, any number of digits' }),
     ],
     run(c) {
       let dec: Dec;
@@ -113,9 +113,9 @@ export const baseData: ModuleDef[] = [
       out('length', 'Length', 'num', 'How many characters the text has. An emoji counts as one.'),
     ],
     params: [
-      txt('value', 'Value', 'Hello', 'The text to emit.', { placeholder: 'Type some text' }),
+      txt('value', 'Value', 'Hello', 'The text to send.', { placeholder: 'Type some text' }),
       sel('case', 'Case', 'keep', [['keep', 'As typed'], ['upper', 'UPPER CASE'], ['lower', 'lower case'], ['title', 'Capitalize Words']], 'Switches letters to capitals or small letters.'),
-      bol('trim', 'Trim', false, 'Removes spaces and line breaks from the start and the end.'),
+      bol('trim', 'Trim', false, 'Removes spaces and line breaks from both ends.'),
     ],
     run(c) {
       let s = c.has('in') ? toExactText(c.get('in')) : c.str('value');
@@ -146,9 +146,9 @@ export const baseData: ModuleDef[] = [
       out('code', 'Code', 'num', 'The Unicode code point of the character: A is 65, a is 97, 0 is 48.'),
     ],
     params: [
-      txt('value', 'Value', 'A', 'The character to send: exactly one. If you type more, only the first is used.', { maxLength: 2, placeholder: 'A' }),
-      sel('case', 'Case', 'keep', [['keep', 'As typed'], ['upper', 'Capital'], ['lower', 'Small']], 'Changes a letter to its capital or small form. Characters that aren’t letters are left as they are.'),
-      sel('numbers', 'Number input', 'text', [['text', 'As text (5 → “5”)'], ['code', 'As code point (65 → “A”)']], 'How a number arriving on the Input pin becomes a character: as the digits it’s written with, or as the Unicode code point it stands for.'),
+      txt('value', 'Value', 'A', 'The character to send, just one. If you type more, only the first is used.', { maxLength: 2, placeholder: 'A' }),
+      sel('case', 'Case', 'keep', [['keep', 'As typed'], ['upper', 'Capital'], ['lower', 'Small']], 'Turns a letter into its capital or small form. Anything that isn’t a letter is left as it is.'),
+      sel('numbers', 'Number input', 'text', [['text', 'As text (5 → “5”)'], ['code', 'As code point (65 → “A”)']], 'How a number arriving on the Input pin becomes a character: either as the digits it’s written with, or as the Unicode code point it stands for.'),
     ],
     run(c) {
       let ch: string | undefined;
@@ -190,8 +190,8 @@ export const baseData: ModuleDef[] = [
       out('text', 'Text', 'text', 'The value written with the chosen Words: true/false, yes/no, on/off or 1/0.'),
     ],
     params: [
-      bol('value', 'Value', true, 'The truth value to emit.'),
-      sel('words', 'Words', 'tf', [['tf', 'true / false'], ['yn', 'yes / no'], ['oo', 'on / off'], ['bit', '1 / 0']], 'The words used on the node face and on the Text output. The Boolean output is always true or false.'),
+      bol('value', 'Value', true, 'The truth value to send.'),
+      sel('words', 'Words', 'tf', [['tf', 'true / false'], ['yn', 'yes / no'], ['oo', 'on / off'], ['bit', '1 / 0']], 'The words shown on the node face and on the Text output. The Boolean output is always true or false.'),
     ],
     run(c) {
       const v = c.has('in') ? readBool(c.get('in')) : c.bool('value');
@@ -223,9 +223,9 @@ export const baseData: ModuleDef[] = [
       out('item', 'Item', 'any', 'The item at the chosen Index. Nothing is sent when the index is outside the list.'),
     ],
     params: [
-      txt('items', 'Items', '1, 2, 3', 'The items, written one after another and split at the Separator, or a JSON list such as [1, "a", true].', { multiline: true, maxLength: 4000, placeholder: '1, 2, 3' }),
-      txt('separator', 'Separator', ',', 'What splits the Items text into separate items. Leave empty to make every character an item.', { maxLength: 8 }),
-      sel('as', 'Items as', 'auto', [['auto', 'Automatic'], ['number', 'Numbers'], ['text', 'Text']], 'Automatic reads 12 as a number, true and false as booleans, and anything else as text. Numbers insists that every item is a number. Text keeps everything as written.'),
+      txt('items', 'Items', '1, 2, 3', 'The items, written one after another and split at the Separator, or a JSON list like [1, "a", true].', { multiline: true, maxLength: 4000, placeholder: '1, 2, 3' }),
+      txt('separator', 'Separator', ',', 'What splits the Items text into separate items. Leave it empty to make every character an item.', { maxLength: 8 }),
+      sel('as', 'Items as', 'auto', [['auto', 'Automatic'], ['number', 'Numbers'], ['text', 'Text']], 'Automatic reads 12 as a number, true and false as booleans, and anything else as text. Numbers insists that every item is a number. Text keeps everything just as you wrote it.'),
       num('index', 'Index', 0, -9999, 9999, 1, 'Which item goes to the Item output. 0 is the first, and a negative index counts from the end, so −1 is the last.'),
     ],
     run(c) {
@@ -274,9 +274,9 @@ export const baseData: ModuleDef[] = [
       out('text', 'Text', 'text', 'The vector written as text, for example [1, 2, 3].'),
     ],
     params: [
-      txt('items', 'Items', '1, 2, 3', 'The numbers of the vector, in order, separated by commas, semicolons or spaces, or a JSON list like [1, 2, 3]. As many as you like.', { multiline: true, maxLength: 4000, placeholder: '1, 2, 3' }),
+      txt('items', 'Items', '1, 2, 3', 'The numbers in the vector, in order, separated by commas, semicolons or spaces, or a JSON list like [1, 2, 3]. As many as you like.', { multiline: true, maxLength: 4000, placeholder: '1, 2, 3' }),
       num('index', 'Index', 0, -9999, 9999, 1, 'Which number goes to the Item output. 0 is the first, and a negative index counts from the end, so −1 is the last.'),
-      bol('normalize', 'Normalize', false, 'Scale the vector to a magnitude of 1, keeping its direction (a unit vector). A vector of zeros stays as it is.'),
+      bol('normalize', 'Normalize', false, 'Scales the vector to a length of 1 and keeps its direction (a unit vector). A vector of zeros stays as it is.'),
     ],
     run(c) {
       const r = c.has('in') ? toVector(c.get('in')) : parseVector(c.str('items'));
@@ -320,8 +320,8 @@ export const baseData: ModuleDef[] = [
       out('text', 'Text', 'text', 'The matrix written as text, for example [[1, 2], [3, 4]].'),
     ],
     params: [
-      txt('values', 'Values', '1, 2; 3, 4', 'The numbers of the matrix. Write one row at a time: separate the numbers in a row with commas or spaces, and the rows with semicolons or new lines (1, 2; 3, 4). Or write a JSON list of rows like [[1, 2], [3, 4]]. Any number of rows and columns, as long as every row is the same length.', { multiline: true, maxLength: 8000, placeholder: '1, 2; 3, 4' }),
-      bol('transpose', 'Transpose', false, 'Swap rows and columns, so a 2 × 3 matrix becomes 3 × 2.'),
+      txt('values', 'Values', '1, 2; 3, 4', 'The numbers in the matrix. Write one row at a time, with commas or spaces between the numbers in a row and semicolons or new lines between the rows (1, 2; 3, 4). A JSON list of rows like [[1, 2], [3, 4]] works too. Any number of rows and columns is fine, as long as every row has the same length.', { multiline: true, maxLength: 8000, placeholder: '1, 2; 3, 4' }),
+      bol('transpose', 'Transpose', false, 'Swaps rows and columns, so a 2 × 3 matrix becomes 3 × 2.'),
       num('row', 'Row', 0, -9999, 9999, 1, 'The row of the number to send to the Item output. 0 is the first, and a negative index counts from the end, so −1 is the last.'),
       num('col', 'Column', 0, -9999, 9999, 1, 'The column of the number to send to the Item output. 0 is the first, and a negative index counts from the end, so −1 is the last.'),
     ],

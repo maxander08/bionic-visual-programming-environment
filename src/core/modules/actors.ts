@@ -30,12 +30,12 @@ function fileConverterParams(p: Params): ParamDef[] {
   const formats = formatsOf(from, to);
   return [
     sel('from', 'Convert from', 'image', SOURCE_KINDS.map((id) => [id, kindName(id)] as [string, string]),
-      'The category of the incoming file: Document, Text, PDF, Audio, Video, Image, Spreadsheet, Presentation, Executable, Web, Compressed or Miscellaneous. A file from another category is refused, with a message that names it.'),
+      'The category of the incoming file: Document, Text, PDF, Audio, Video, Image, Spreadsheet, Presentation, Executable, Web, Compressed or Miscellaneous. A file from any other category is refused, with a message that names it.'),
     sel('to', 'Convert to', tos[0], tos.map((id) => [id, kindName(id)] as [string, string]),
       'The category the file becomes. You only see categories this converter can really make from the “from” category, so changing “Convert from” may change this choice too.'),
     sel('format', 'Format', formats[0], formats.map((f) => [f, formatLabel(f)] as [string, string]),
       'The file type of the result, as its extension. The choices depend on “Convert to”.'),
-    txt('name', 'Result name', '', 'Name of the new file without its extension. Leave it empty to keep the name of the incoming file.', { maxLength: 80, placeholder: 'same as the source' }),
+    txt('name', 'Result name', '', 'The name of the new file, without its extension. Leave it empty to keep the name of the incoming file.', { maxLength: 80, placeholder: 'same as the source' }),
     num('quality', 'Picture quality', 0.92, 0.05, 1, 0.01, 'How much detail JPEG and WebP pictures keep, and pictures drawn into a PDF (1 is best, 0.05 is smallest). Every other format ignores it.'),
     details('the name of the file being converted'),
   ];
@@ -113,7 +113,7 @@ function unitConverterParams(p: Params): ParamDef[] {
   const choices = g.units.map((s) => [s, `${s} · ${CONV_BY_SYM.get(s)!.name}`] as [string, string]);
   return [
     sel('group', 'Quantity', 'length', CONV_GROUPS.map((q) => [q.id, q.name] as [string, string]),
-      'The kind of quantity to convert: Length, Mass, Time, Temperature, Pressure, Energy, Speed, Area, Volume and the rest of the Quantities section. Only units of this kind are offered below, because those are the only ones that can be converted into each other.'),
+      'The kind of quantity to convert: Length, Mass, Time, Temperature, Pressure, Energy, Speed, Area, Volume and the rest of the Quantities section. Only units of that kind are offered below, since those are the only ones that can be converted into each other.'),
     num('amount', 'Amount', 1, -1e15, 1e15, 0.1, 'How much there is to convert, in the “From” unit. Used when the Quantity pin has no signal.'),
     sel('from', 'From unit', g.units[0], choices, 'The unit the amount is written in. The choices are the units of the chosen kind of quantity.'),
     sel('fromPrefix', 'From prefix', NONE, FROM_PREFIXES, 'SI prefix of the “From” unit, a power of ten placed in front of it: k + m is the kilometre. Units like ft, lb and psi don’t take prefixes, so it’s ignored for them.'),
@@ -212,10 +212,10 @@ const numberFormatter: ModuleDef = {
   ],
   params: [
     txt('value', 'Value', '1234.56789', 'The number to format, with as many digits as you like. Used when the Number pin has no signal.', { maxLength: 5000, placeholder: 'Any number, any number of digits' }),
-    sel('mode', 'Format', 'places', NF_MODES, 'What to do with the number. Round to n decimal places and Round to n significant digits shorten it. Scientific and Engineering notation write it with a power of ten. Exact only rewrites it, dropping nothing.'),
+    sel('mode', 'Format', 'places', NF_MODES, 'What to do with the number. Round to n decimal places and Round to n significant digits shorten it. Scientific and Engineering notation write it with a power of ten. Exact only rewrites it and drops nothing.'),
     num('n', 'Digits (n)', 2, 0, Infinity, 1, 'How many decimal places (Round to n decimal places) or significant digits (the other formats) to keep. For decimal places, 0 gives a whole number. For significant digits and the two notations, 0 means keep every digit.'),
     sel('rounding', 'Rounding', 'nearest', NF_ROUNDING, 'How to round a number that doesn’t fit. It decides what 2.5 and −2.5 become at 0 places, and whether a leftover digit pushes the last kept digit up.'),
-    bol('trim', 'Trim trailing zeros', false, 'Off: 3.1 at 3 places is 3.100. On: it’s 3.1. Applies to every format, including the mantissa of scientific and engineering notation.'),
+    bol('trim', 'Trim trailing zeros', false, 'Off: 3.1 at 3 places comes out as 3.100. On: it stays 3.1. This applies to every format, including the mantissa in scientific and engineering notation.'),
     sel('style', 'Exponent style', 'e', [['e', 'e-notation (1.5e+3)'], ['x10', 'Times ten (1.5 × 10³)']], 'How the power of ten is written in scientific and engineering notation. The other formats ignore it.'),
     details('how the number is being formatted'),
   ],

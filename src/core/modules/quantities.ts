@@ -49,9 +49,9 @@ function make(spec: QuantitySpec): ModuleDef {
       out('base', 'SI value', 'num', `The same ${spec.name.toLowerCase()} in ${grp.baseName} (${grp.base}), the coherent SI unit. Handy for comparing or calculating with quantities written in different units.`, 'right'),
     ],
     params: [
-      num('amount', 'Amount', 1, -1e15, 1e15, 0.1, `How much of ${spec.about}, in the prefix and unit chosen below.`),
-      sel('prefix', 'Prefix', prefix0, PREFIX_OPTIONS, 'SI prefix, a power of ten placed in front of the unit. Every unit takes all 24 prefixes. “auto” picks the step of 1000 that keeps the amount between 1 and 999.'),
-      sel('unit', 'Unit', unit0, spec.units.map((s) => [s, `${s} · ${UNIT_BY_SYM.get(s)!.name}`] as [string, string]), `The unit of the amount: ${unitNames}.`),
+      num('amount', 'Amount', 1, -1e15, 1e15, 0.1, `A number for ${spec.about}, written with the prefix and unit chosen below.`),
+      sel('prefix', 'Prefix', prefix0, PREFIX_OPTIONS, 'The SI prefix, a power of ten that goes in front of the unit. Every unit takes all 24 prefixes. “auto” picks the step of 1000 that keeps the amount between 1 and 999.'),
+      sel('unit', 'Unit', unit0, spec.units.map((s) => [s, `${s} · ${UNIT_BY_SYM.get(s)!.name}`] as [string, string]), `Which unit the amount is in: ${unitNames}.`),
     ],
     run(c) {
       const unit = c.str('unit');
@@ -138,8 +138,8 @@ function makeTime(spec: QuantitySpec): ModuleDef {
     params: [
       { key: 'span', label: 'Duration', kind: 'number', default: 1, min: 0, max: MAX_SPAN, step: 1, unit: 's', time: 's',
         doc: 'How long, typed the way you’d say it: 2 h 40 min, 1h30m, 90 s, 1:30:00, 2.5 hours, 1d 4h. A plain number is seconds.' },
-      sel('prefix', 'Prefix', NONE, PREFIX_OPTIONS, 'SI prefix for a single unit (m + s = milliseconds). It does nothing with “h · min · s”. “auto” picks the step of 1000 that keeps the amount between 1 and 999.'),
-      sel('unit', 'Show as', HMS, unitOptions, `How Quantity and Amount are written: as hours, minutes and seconds together (2h 40min), or in one unit: ${unitNames}. Hours, Minutes, Seconds and Milliseconds always come out as separate pins whatever this says.`),
+      sel('prefix', 'Prefix', NONE, PREFIX_OPTIONS, 'The SI prefix for a single unit (m + s = milliseconds). It does nothing with “h · min · s”. “auto” picks the step of 1000 that keeps the amount between 1 and 999.'),
+      sel('unit', 'Show as', HMS, unitOptions, `How Quantity and Amount are written: as hours, minutes and seconds together (2h 40min), or in a single unit: ${unitNames}. The Hours, Minutes, Seconds and Milliseconds pins always come out separately, whatever this says.`),
     ],
     // Older programs held an Amount in a Prefix and Unit: keep that time, written the way it was.
     migrate(raw) {

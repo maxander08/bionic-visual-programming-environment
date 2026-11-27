@@ -37,13 +37,13 @@ export const timer: ModuleDef = {
   ],
   params: [
     num('duration', 'Duration', 60, 0.1, 8640000, 0.1, 'How long the countdown lasts. Type it the way you’d say it: 2 h 40 min, 1h30m, 90 s, 1:30:00 or 2.5 hours. A plain number is seconds. The timer follows this setting while it’s waiting, but a countdown that’s already running keeps its length until it restarts.', 's'),
-    bol('autostart', 'Auto start', true, 'Begin counting down as soon as the program runs. Turn it off to wait for the Start pin or the START button.'),
-    bol('repeat', 'Repeat', false, 'When the countdown ends, start it again at once instead of stopping.'),
+    bol('autostart', 'Auto start', true, 'Starts counting down as soon as the program runs. Turn it off to wait for the Start pin or the START button.'),
+    bol('repeat', 'Repeat', false, 'When the countdown ends, start it again right away instead of stopping.'),
     bol('millis', 'Show milliseconds', true, 'Show milliseconds in the Time output (04:59.250). Without them the text rounds up, so it reads 00:01 right until the end. The Hour, Minute, Seconds and Milliseconds pins are always exact.'),
     details('the progress bar and the number of completions'),
-    act('startNow', 'START', 'start', 'Start, resume or restart the countdown now.'),
-    act('pauseNow', 'PAUSE / RESUME', 'pause', 'Pause the countdown, or let it carry on.'),
-    act('resetNow', 'RESET', 'reset', 'Stop and set the timer back to the full duration.'),
+    act('startNow', 'START', 'start', 'Start, resume or restart the countdown right now.'),
+    act('pauseNow', 'PAUSE / RESUME', 'pause', 'Pause the countdown, or carry on if it’s already paused.'),
+    act('resetNow', 'RESET', 'reset', 'Stop and put the timer back to the full duration.'),
   ],
   run(c) {
     const s = c.state;
@@ -124,9 +124,9 @@ export const stopwatch: ModuleDef = {
     ...timeParts('elapsed time'),
   ],
   params: [
-    bol('autostart', 'Auto start', true, 'Begin counting as soon as the program runs. Turn it off to wait for the Start pin or the START / STOP button.'),
+    bol('autostart', 'Auto start', true, 'Starts counting as soon as the program runs. Turn it off to wait for the Start pin or the START / STOP button.'),
     bol('millis', 'Show milliseconds', true, 'Show milliseconds in the Time output (01:05.250). The Hour, Minute, Seconds and Milliseconds pins are always exact.'),
-    num('limit', 'Stop at', 0, 0, 8640000, 1, 'The stopwatch stops by itself when it reaches this time, typed as 2 h 40 min, 90 s or 1:30:00 (a plain number is seconds). 0 means no limit.', 's'),
+    num('limit', 'Stop at', 0, 0, 8640000, 1, 'The stopwatch stops by itself when it reaches this time. Type 2 h 40 min, 90 s or 1:30:00 (a plain number is seconds). 0 means no limit.', 's'),
     details('the latest lap'),
     act('toggleNow', 'START / STOP', 'toggle', 'Start the stopwatch, or stop it if it’s running.'),
     act('lapNow', 'LAP', 'lap', 'Record a lap now.'),
@@ -202,11 +202,11 @@ export const alarm: ModuleDef = {
     txt('time', 'Time', '07:30', 'The time of day to ring, on the clock of the chosen city (or this device). Write 07:30, 19:45:30, 19:45:30.250 (with milliseconds) or 7:30 pm.', { maxLength: 16, placeholder: 'e.g. 07:30:00.000 or 7:30 pm' }),
     sel('repeat', 'Repeat', 'daily', REPEAT, 'Which days the alarm rings. “Once” rings the next time that time comes round, then stays quiet until you change a setting.'),
     txt('city', 'City', '', 'Optional. A city whose clock the alarm follows, like in the World Clock module. Leave it empty to use this device’s time zone.', { maxLength: 80, placeholder: 'This device (leave empty)', suggest: cityLabels }),
-    num('ring', 'Ring time', 10, 1, 86400, 1, 'How long Ringing stays true when nobody dismisses the alarm, typed as 2 min, 90 s or 1 h (a plain number is seconds). It’s counted in simulation time.', 's'),
+    num('ring', 'Ring time', 10, 1, 86400, 1, 'How long Ringing stays true if nobody dismisses the alarm. Type 2 min, 90 s or 1 h (a plain number is seconds). It’s counted in simulation time.', 's'),
     details('the time left and the place'),
-    act('testNow', 'TEST RING', 'test', 'Ring right now, so you can try out whatever the alarm drives.'),
-    act('snoozeNow', 'SNOOZE', 'snooze', 'Silence the alarm. It rings again in 5 minutes.'),
-    act('dismissNow', 'DISMISS', 'dismiss', 'Silence the alarm.'),
+    act('testNow', 'TEST RING', 'test', 'Rings right now, so you can try out whatever the alarm drives.'),
+    act('snoozeNow', 'SNOOZE', 'snooze', 'Silences the alarm. It rings again in 5 minutes.'),
+    act('dismissNow', 'DISMISS', 'dismiss', 'Silences the alarm.'),
   ],
   run(c) {
     const s = c.state;

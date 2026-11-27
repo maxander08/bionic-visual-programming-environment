@@ -25,7 +25,7 @@ import { isEquation } from './equation';
 const info: ModuleDef[] = [
   {
     type: 'comment', name: 'Comment', caption: 'Comment', category: 'Info', family: 'info', glyph: '//', size: 'small', keywords: 'note annotation text label',
-    title: () => '//', inputs: [], outputs: [], params: [txt('text', 'Note', 'Note to self', 'Free text shown on the workspace. It doesn’t affect how the program runs.', { multiline: true, maxLength: 500 })],
+    title: () => '//', inputs: [], outputs: [], params: [txt('text', 'Note', 'Note to self', 'Free text shown on the workspace. It doesn’t change how the program runs.', { multiline: true, maxLength: 500 })],
     run() {},
     doc: { summary: 'A note for yourself. It never affects how the program runs.', runtime: 'None. Long notes wrap and get clipped inside the node. The full text is in the inspector.' },
   },

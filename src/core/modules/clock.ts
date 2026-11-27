@@ -17,7 +17,7 @@ export const worldClock: ModuleDef = {
     out('millisecond', 'Milliseconds', 'num', 'Local millisecond within the current second, 0–999. It refreshes every tick while Show seconds and Show milliseconds are on, otherwise once a second.', 'right'),
   ],
   params: [
-    txt('city', 'City', 'Tokyo, Japan', `Name of a city. Type to see suggestions: the 30 most populous cities of each of ${COUNTRY_COUNT} countries are known. Write “Paris, France” (or “Paris, FR”) when a name exists in several countries; a bare name picks the most populous one. Accents and capitals don’t matter.`, { maxLength: 80, placeholder: 'e.g. Tokyo or Paris, France', suggest: cityLabels }),
+    txt('city', 'City', 'Tokyo, Japan', `The name of a city. Start typing to see suggestions: the 30 biggest cities of each of ${COUNTRY_COUNT} countries are known. If a name exists in several countries, write “Paris, France” (or “Paris, FR”); a bare name picks the most populous one. Accents and capitals don’t matter.`, { maxLength: 80, placeholder: 'e.g. Tokyo or Paris, France', suggest: cityLabels }),
     sel('format', 'Format', '24h', [['24h', '24-hour (14:30)'], ['12h', '12-hour (2:30 PM)']], 'How the Time output is written. Hour is always 0–23.'),
     bol('seconds', 'Show seconds', true, 'Include seconds in the Time output.'),
     bol('millis', 'Show milliseconds', true, 'Show milliseconds after the seconds (14:30:05.123). Only works while Show seconds is on.'),

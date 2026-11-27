@@ -284,5 +284,5 @@ export const packagesFor = (host: 'knowledge' | 'imagination') => PACKAGES.filte
 export function packageParamDef(host: 'knowledge' | 'imagination'): ParamDef {
   const list = packagesFor(host);
   // The package decides which other settings exist: the setting pins shown are those of the package chosen in the inspector.
-  return { ...sel('package', 'Package', list.find((p) => p.status === 'available')!.id, list.map((p) => [p.id, p.status === 'unavailable' ? `${p.name} — unavailable` : p.name] as [string, string]), 'Which package this nucleus runs. Each package describes its own technique and limits.')};
+  return { ...sel('package', 'Package', list.find((p) => p.status === 'available')!.id, list.map((p) => [p.id, p.status === 'unavailable' ? `${p.name} — unavailable` : p.name] as [string, string]), 'Which package this nucleus runs. Every package comes with its own technique and its own limits.')};
 }

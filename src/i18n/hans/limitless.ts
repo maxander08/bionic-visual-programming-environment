@@ -2,7 +2,7 @@
 // exact number bases and settings without a range.
 export const limitless: Record<string, string> = {
   /* Precision, Divisor, Math, Combine, Random */
-  'How many significant digits to work out for results that never end and never repeat (√2, sin, e^x). Ask for as many as you like. Results that end (1 ÷ 8 = 0.125) or repeat (1 ÷ 3 = 0.333...) are always exact, and never cut or padded.': '永不终止也不循环的结果（√2、sin、e^x）计算到多少位有效数字；可以要求任意多位。会终止（1 ÷ 8 = 0.125）或循环（1 ÷ 3 = 0.333...）的结果是精确的，绝不截断或补零。',
+  'How many significant digits to work out for results that never end and never repeat (√2, sin, e^x). Ask for as many as you like. Results that end (1 ÷ 8 = 0.125) or repeat (1 ÷ 3 = 0.333...) are always exact, and are never cut or padded.': '永不终止也不循环的结果（√2、sin、e^x）计算到多少位有效数字；可以要求任意多位。会终止（1 ÷ 8 = 0.125）或循环（1 ÷ 3 = 0.333...）的结果是精确的，绝不截断或补零。',
   'out = a ÷ b, or a ÷ divisor if nothing is connected to b. The answer is always exact. If it ends (1 ÷ 8 = 0.125), you get every digit. If it never ends, it repeats, and it’s kept as the repeating number it is: 1 ÷ 3 is 0.33333..., with an ellipsis after the repeating digits, and 1 ÷ 3 × 3 is exactly 1.': 'out = a ÷ b；b 未连接时为 a ÷ 除数。商是精确的，不论有多少位。会终止的商（1 ÷ 8 = 0.125）完整写出；不会终止的商是循环小数，并按循环小数原样保存：1 ÷ 3 是 0.33333...，循环的数字后面带省略号，而 1 ÷ 3 × 3 恰好等于 1。',
   'Applies the chosen function to a (and b) using exact decimals. abs, square, floor, round, ceil, min, max, mod, and powers with a whole-number exponent are exact. That includes negative exponents (3 to the power −1 = 0.33333...) and square roots that end or repeat. sqrt, sin, cos, tanh, exp, log, and powers with a fractional exponent go on forever without repeating, so they’re worked out to the Precision setting (50 significant digits by default, or any number you like). sin and cos use radians.': '用精确小数对 a（和 b）计算所选函数。abs、square、floor、round、ceil、min、max、mod 以及整数指数的幂（负指数也可以，例如 3 的 −1 次方 = 0.33333...）都是精确的，会终止或循环的平方根也是精确的；sqrt、sin、cos、tanh、exp、log 以及小数指数的幂既不终止也不循环，所以按“精度”设置计算（默认 50 位有效数字，可设任意位数）。sin 和 cos 使用弧度。',
   'Only inputs that are connected and carrying a signal are counted. The numeric modes are exact (a mean that never ends repeats, and is kept exactly: 0.33333...), and show a warning if they get something that isn’t a number.': '只有已连接且有信号的输入才参与。数值模式是精确的（除不尽的平均数是循环小数，并被精确保存：0.33333...），遇到非数值会给出警告并拒绝。',
@@ -10,7 +10,7 @@ export const limitless: Record<string, string> = {
   'Any number, with as many digits as you like{unit}.': '任意数字，位数不限{unit}。',
 
   /* Integer */
-  'Any whole number. Use as many digits as you like, because there’s no biggest or smallest.': '要输出的整数。位数不限：整数没有最大值或最小值。',
+  'Any whole number. Use as many digits as you like, since there’s no biggest or smallest.': '要输出的整数。位数不限：整数没有最大值或最小值。',
   'A whole number like 7, −3 or 0, of any size. Anything you give it gets turned into an integer.': '整数，例如 7、−3 或 0，大小不限。把收到的任何内容转换为整数。',
   'Sends out the Value (or the converted Input) as a whole number, plus the same number as text in the Base you chose. Every digit is kept, no matter how many, until your device runs out of memory. The Rounding setting decides what happens to fractions.': '把“值”（或转换后的输入）作为整数输出，并以所选“进制”输出同一个数的文本。整数没有最大值或最小值：每一位都会保留，不论有多少位，直到设备内存用完为止。小数部分由“取整”设置变成整数。',
 

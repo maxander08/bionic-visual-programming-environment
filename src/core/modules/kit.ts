@@ -23,13 +23,13 @@ export const bol = (key: string, label: string, def: boolean, doc: string): Para
  * shows only what matters at a glance; a signal on this pin, or the switch in the inspector, brings the rest out.
  * `what` names the extra lines, as in “the date and UTC offset”.
  */
-export const details = (what: string): ParamDef => bol('details', 'Show details', false, `Also show ${what} on the node. Off keeps the node’s face short, and the same information is always available from the module’s output pins and the inspector.`);
+export const details = (what: string): ParamDef => bol('details', 'Show details', false, `Also show ${what} on the node. Leave it off to keep the node’s face short, since the same information is always there on the output pins and in the inspector.`);
 export const act = (key: string, label: string, command: string, doc: string): ParamDef => ({ key, label, kind: 'action', command, doc });
 
 export const inp = (id: string, label: string, type: PortType, doc: string, side: Side = 'top', optional = false): PortDef => ({ id, label, type, doc, side, optional });
 export const out = (id: string, label: string, type: PortType, doc: string, side: Side = 'bottom'): PortDef => ({ id, label, type, doc, side });
 
-export const RATE = (def = 5) => num('rate', 'Sample rate', def, 0.5, 30, 0.5, 'How many samples per second the source produces, in simulation time.', 'Hz');
+export const RATE = (def = 5) => num('rate', 'Sample rate', def, 0.5, 30, 0.5, 'How many samples per second the source makes, in simulation time.', 'Hz');
 
 /**
  * The four output pins that split a time into its elements, laid out like the World Clock's: Hours, Minutes, Seconds and
