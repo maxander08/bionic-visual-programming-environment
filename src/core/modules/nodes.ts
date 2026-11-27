@@ -1,6 +1,6 @@
 import type { Ctx, ModuleDef } from '../types';
 import { clamp, fmtNum, toBool, toNum, toText } from '../util';
-import { exactText, packDec, toPlain, type Dec } from '../decimal';
+import { exactText, leadExp, packDec, sameValue, toPlain, type Dec } from '../decimal';
 import * as D from '../decmath';
 import { DEFAULT_PRECISION, MAX_PRECISION, DecError, needDec, toDec } from '../decmath';
 import { FUNCTION_NAMES, compileExpr, splitEquations, type EquationData } from '../equation';
@@ -13,12 +13,21 @@ import { formatBase } from '../duration';
 const out$ = (c: Ctx, port: string, d: Dec) => c.emit(port, packDec(d));
 const sig$ = (c: Ctx, key: string): Dec => needDec(c.get(key), `Input “${key.toUpperCase()}”`);
 /** Run a calculation: a result that has no answer (÷ 0, √ of a negative…) fails the module with a message that says why. */
-const calc = (c: Ctx, f: () => void) => { try { f(); } catch (e) { if (e instanceof DecError) return c.fail(e.message); throw e; } };
+const calc = (c: Ctx, f: () => void) => {
+  try { f(); } catch (e) {
+    if (e instanceof DecError) return c.fail(e.message);
+    // The numbers have no size limit but the memory of the machine: a result too big for it fails this module, not the program.
+    if (e instanceof RangeError) return c.fail('The result needs more memory than this browser can give it.');
+    throw e;
+  }
+};
 /** A setting written out with all its digits, for node faces. */
 const face = (v: unknown): string => { const d = toDec(v); return d ? toPlain(d) : String(v); };
-const PREC = num('precision', 'Precision', DEFAULT_PRECISION, 1, MAX_PRECISION, 1, 'How many significant digits a result that never ends (1 ÷ 3, √2, sin) is worked out to. A result that ends (1 ÷ 8 = 0.125) is exact and never padded.', 'digits');
+const PREC = num('precision', 'Precision', DEFAULT_PRECISION, 1, MAX_PRECISION, 1, 'How many significant digits a result that never ends and never repeats (√2, sin, e^x) is worked out to; any number of digits may be asked for. A result that ends (1 ÷ 8 = 0.125) or repeats (1 ÷ 3 = 0.333...) is exact and never cut or padded.', 'digits');
 const k = (dt: number, tau: number) => (tau <= 0 ? 1 : 1 - Math.exp(-dt / tau));
 const n = (v: unknown) => toNum(v);
+/** Is the magnitude of a larger than that of b? Compared on every digit; values that are not numbers count as 0. */
+const magnitudeAbove = (a: unknown, b: unknown): boolean => D.cmp(D.abs(toDec(a) ?? D.ZERO), D.abs(toDec(b) ?? D.ZERO)) > 0;
 
 function parseList(s: string): unknown[] {
   return s.split(',').map((t) => t.trim()).filter((t) => t !== '').map((t) => {
@@ -48,17 +57,32 @@ export const nodes: ModuleDef[] = [
     doc: { summary: 'Emits a fixed value.', runtime: 'Emits when the program starts and whenever the value is edited.', errors: ['Kind “number” with non-numeric text raises an error.'] },
   },
   {
-    ...chipBase, type: 'random', name: 'Random', caption: 'Random', glyph: 'R', chip: (p) => `${fmtNum(Number(p.min))}…${fmtNum(Number(p.max))}`,
+    ...chipBase, type: 'random', name: 'Random', caption: 'Random', glyph: 'R', chip: (p) => `${face(p.min)}…${face(p.max)}`,
     inputs: [], outputs: [OUT_ANY], source: true, delaying: true,
-    params: [num('min', 'Minimum', 0, -1e6, 1e6, 0.1, 'Lower bound.'), num('max', 'Maximum', 1, -1e6, 1e6, 0.1, 'Upper bound.'), num('rate', 'Rate', 2, 0.1, 30, 0.1, 'Values per second.', 'Hz'), num('seed', 'Seed', 1, 0, 99999, 1, 'Seed of the repeatable generator.'), bol('integer', 'Integers', false, 'Round to whole numbers.')],
+    params: [dnum('min', 'Minimum', 0, -1e6, 1e6, 0.1, 'Lower bound.'), dnum('max', 'Maximum', 1, -1e6, 1e6, 0.1, 'Upper bound.'), num('rate', 'Rate', 2, 0.1, 30, 0.1, 'Values per second.', 'Hz'), num('seed', 'Seed', 1, 0, 99999, 1, 'Seed of the repeatable generator.'), bol('integer', 'Integers', false, 'Round to whole numbers.')],
     run(c) {
-      const lo = c.num('min'), hi = c.num('max');
-      let v = lo + c.rand() * (hi - lo);
-      if (c.bool('integer')) v = Math.round(v);
-      c.emit('out', v);
+      calc(c, () => {
+        const lo = c.dec('min'), hi = c.dec('max'), ln = D.toNumber(lo), hn = D.toNumber(hi);
+        // Bounds a double holds exactly keep the plain double draw (so a seed gives the same sequence as always).
+        if (Math.abs(ln) < 2 ** 53 && Math.abs(hn) < 2 ** 53 && packDec(lo) === ln && packDec(hi) === hn) {
+          let v = ln + c.rand() * (hn - ln);
+          if (c.bool('integer')) v = Math.round(v);
+          c.emit('out', v);
+        } else {
+          // Any other bounds, however many digits or however large: enough random bits are drawn to spread over every digit of the range.
+          const span = D.sub(hi, lo);
+          const bits = Math.max(64, Math.ceil((leadExp(span) + 1) * 3.33) + 64);
+          let R = 0n;
+          for (let got = 0; got < bits; got += 32) R = (R << 32n) | BigInt(Math.floor(c.rand() * 4294967296));
+          const u = D.div(D.fromBigInt(R), D.fromBigInt(1n << BigInt(Math.ceil(bits / 32) * 32)));
+          let v = D.add(lo, D.mul(u, span));
+          if (c.bool('integer')) v = D.round(v);
+          out$(c, 'out', v);
+        }
+      });
       c.wake(1000 / c.num('rate'));
     },
-    doc: { summary: 'A seeded pseudo-random number source.', runtime: 'Draws uniformly between min and max every 1/rate seconds of simulation time. The same seed always yields the same sequence after Stop → Run.' },
+    doc: { summary: 'A seeded pseudo-random number source.', runtime: 'Draws uniformly between min and max every 1/rate seconds of simulation time. The bounds can be any numbers, with as many digits as you like, and the draw spreads over all of them. The same seed always yields the same sequence after Stop → Run.' },
   },
   {
     ...chipBase, type: 'pulse', name: 'Pulse', caption: 'Pulse', glyph: '⏸', chip: (p) => formatBase(Number(p.period), 'ms', { compact: true }),
@@ -101,15 +125,15 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'div', name: 'Divisor', caption: 'Divisor', glyph: '÷', chip: (p) => face(p.divisor),
     inputs: [inp('a', 'A', 'num', 'Dividend: the value to divide.'), inp('b', 'B', 'num', 'Replaces the divisor when connected.', 'top', true)], outputs: [out('out', 'Quotient', 'num', 'a ÷ (b or divisor).')],
-    params: [{ ...dnum('divisor', 'Divisor', 1, -1e6, 1e6, 0.1, 'Used when b is not connected.'), pinSide: 'left' }, PREC],
+    params: [{ ...dnum('divisor', 'Divisor', 1, -1e6, 1e6, 0.1, 'Used when b is not connected.'), pinSide: 'left' }],
     run(c) {
       calc(c, () => {
         const a = sig$(c, 'a'), d = c.has('b') ? sig$(c, 'b') : c.dec('divisor');
         if (D.isZero(d)) return c.fail(`Division by zero: ${exactText(packDec(a))} ÷ 0.`);
-        out$(c, 'out', D.div(a, d, c.num('precision')));
+        out$(c, 'out', D.div(a, d));
       });
     },
-    doc: { summary: 'Divides a signal.', runtime: 'out = a ÷ b, or a ÷ divisor when b is not connected. A quotient that ends (1 ÷ 8 = 0.125) is exact. One that never ends (1 ÷ 3) is worked out to the Precision setting (50 significant digits by default) and rounded once, at the last digit.', errors: ['A divisor of 0 raises an error and emits nothing.'] },
+    doc: { summary: 'Divides a signal.', runtime: 'out = a ÷ b, or a ÷ divisor when b is not connected. The quotient is exact, however many digits it has. One that ends (1 ÷ 8 = 0.125) is written out in full. One that never ends repeats, and is kept as the repeating number it is: 1 ÷ 3 is 0.33333... with an ellipsis after the repeating digits, and 1 ÷ 3 × 3 is exactly 1.', errors: ['A divisor of 0 raises an error and emits nothing.'] },
   },
   {
     ...chipBase, type: 'invert', name: 'Inverter', caption: 'Inverter', glyph: '−', chip: (p) => String(p.mode),
@@ -153,7 +177,7 @@ export const nodes: ModuleDef[] = [
         out$(c, 'out', r);
       });
     },
-    doc: { summary: 'Applies a mathematical function.', runtime: 'Evaluates the selected function on a (and b) with exact decimals. abs, square, floor, round, ceil, min, max, mod and a power with a whole exponent are exact; sqrt, sin, cos, tanh, exp, log and a power with a fractional exponent are worked out to the Precision setting (50 significant digits by default). sin and cos take radians.', errors: ['Results that are not finite (e.g. sqrt of a negative) raise an error and emit nothing.'] },
+    doc: { summary: 'Applies a mathematical function.', runtime: 'Evaluates the selected function on a (and b) with exact decimals. abs, square, floor, round, ceil, min, max, mod and a power with a whole exponent (negative ones too, such as 3 to the power −1 = 0.33333...) are exact, and so is a square root that ends or repeats; sqrt, sin, cos, tanh, exp, log and a power with a fractional exponent never end and never repeat, so they are worked out to the Precision setting (50 significant digits by default, any number you like). sin and cos take radians.', errors: ['Results that are not finite (e.g. sqrt of a negative) raise an error and emit nothing.'] },
   },
   {
     ...chipBase, type: 'register', name: 'Register', caption: 'Register', glyph: '○', chip: () => 'HOLD', delaying: true,
@@ -240,11 +264,11 @@ export const nodes: ModuleDef[] = [
         if (x.some((v) => !v)) return c.warn('A numeric mode received a non-numeric input.');
         const xs = x as Dec[];
         const sum = () => xs.reduce((p, q) => D.add(p, q), D.ZERO);
-        const r = m === 'sum' ? sum() : m === 'mean' ? D.div(sum(), D.fromInt(xs.length), DEFAULT_PRECISION) : m === 'max' ? xs.reduce((p, q) => D.max(p, q)) : m === 'min' ? xs.reduce((p, q) => D.min(p, q)) : xs.reduce((p, q) => D.mul(p, q), D.ONE);
+        const r = m === 'sum' ? sum() : m === 'mean' ? D.div(sum(), D.fromInt(xs.length)) : m === 'max' ? xs.reduce((p, q) => D.max(p, q)) : m === 'min' ? xs.reduce((p, q) => D.min(p, q)) : xs.reduce((p, q) => D.mul(p, q), D.ONE);
         out$(c, 'out', r);
       });
     },
-    doc: { summary: 'Merges up to three inputs.', runtime: 'Only connected inputs that have a signal take part. Numeric modes are exact (a mean that never ends is worked out to 50 significant digits) and reject non-numeric values with a warning.' },
+    doc: { summary: 'Merges up to three inputs.', runtime: 'Only connected inputs that have a signal take part. Numeric modes are exact (a mean that never ends repeats, and is kept exactly: 0.33333...) and reject non-numeric values with a warning.' },
   },
   {
     ...chipBase, type: 'delay', name: 'Delay', caption: 'Delay', glyph: '⧖', chip: (p) => formatBase(Number(p.ms), 'ms', { compact: true }), delaying: true,
@@ -320,7 +344,7 @@ export const nodes: ModuleDef[] = [
       calc(c, () => {
         const x = sig$(c, 'in'), a = c.dec('inMin'), b = c.dec('inMax');
         if (D.cmp(a, b) === 0) return c.fail('Input min and max must differ.');
-        let t = D.div(D.sub(x, a), D.sub(b, a), DEFAULT_PRECISION);
+        let t = D.div(D.sub(x, a), D.sub(b, a));
         if (c.bool('clamp')) t = D.max(D.ZERO, D.min(D.ONE, t));
         const cv = c.str('curve'), one = D.ONE, inv = D.sub(one, t);
         const u = cv === 'ease-in' ? D.mul(t, t) : cv === 'ease-out' ? D.sub(one, D.mul(inv, inv)) : cv === 'smooth' ? D.mul(D.mul(t, t), D.sub(D.fromInt(3), D.mul(D.fromInt(2), t))) : t;
@@ -333,19 +357,23 @@ export const nodes: ModuleDef[] = [
   {
     ...chipBase, type: 'hyponerve', name: 'Hyponerve', caption: 'Hyponerve', glyph: 'Δ', chip: (p) => String(p.rule), 
     inputs: [IN_ANY('Signal to watch.')], outputs: [OUT_ANY],
-    params: [sel('rule', 'Emit when', 'change', [['change', 'Value changes'], ['delta', 'Changes by ≥ epsilon'], ['rise', 'Number rises'], ['fall', 'Number falls'], ['cross-up', 'Crosses threshold upward'], ['cross-down', 'Crosses threshold downward']], 'Rule that decides whether a new value passes.'), num('epsilon', 'Epsilon', 0.1, 0, 1e6, 0.01, 'Minimum change for the delta rule (measured from the last emitted value).'), num('threshold', 'Threshold', 0.5, -1e6, 1e6, 0.01, 'Level for the crossing rules.')],
+    params: [sel('rule', 'Emit when', 'change', [['change', 'Value changes'], ['delta', 'Changes by ≥ epsilon'], ['rise', 'Number rises'], ['fall', 'Number falls'], ['cross-up', 'Crosses threshold upward'], ['cross-down', 'Crosses threshold downward']], 'Rule that decides whether a new value passes.'), dnum('epsilon', 'Epsilon', 0.1, 0, 1e6, 0.01, 'Minimum change for the delta rule (measured from the last emitted value).'), dnum('threshold', 'Threshold', 0.5, -1e6, 1e6, 0.01, 'Level for the crossing rules.')],
     run(c) {
-      const s = c.state, v = c.get('in'), x = n(v), rule = c.str('rule');
-      let pass = false;
-      if (!s.seen) pass = rule === 'change' || rule === 'delta';
-      else if (rule === 'change') pass = v !== s.last;
-      else if (rule === 'delta') pass = Math.abs(x - s.emitted) >= c.num('epsilon');
-      else if (rule === 'rise') pass = x > s.lastN;
-      else if (rule === 'fall') pass = x < s.lastN;
-      else if (rule === 'cross-up') pass = s.lastN < c.num('threshold') && x >= c.num('threshold');
-      else pass = s.lastN >= c.num('threshold') && x < c.num('threshold');
-      s.seen = true; s.last = v; s.lastN = x;
-      if (pass) { s.emitted = x; c.emit('out', v, c.strength, true); }
+      calc(c, () => {
+        const s = c.state, v = c.get('in'), x = toDec(v), rule = c.str('rule');
+        let pass = false;
+        // Numbers are compared digit for digit, however many there are.
+        const th = c.dec('threshold');
+        if (!s.seen) pass = rule === 'change' || rule === 'delta';
+        else if (rule === 'change') pass = !sameValue(v, s.last);
+        else if (rule === 'delta') pass = !!x && !!s.emitted && D.cmp(D.abs(D.sub(x, s.emitted)), c.dec('epsilon')) >= 0;
+        else if (rule === 'rise') pass = !!x && !!s.lastN && D.cmp(x, s.lastN) > 0;
+        else if (rule === 'fall') pass = !!x && !!s.lastN && D.cmp(x, s.lastN) < 0;
+        else if (rule === 'cross-up') pass = !!x && !!s.lastN && D.cmp(s.lastN, th) < 0 && D.cmp(x, th) >= 0;
+        else pass = !!x && !!s.lastN && D.cmp(s.lastN, th) >= 0 && D.cmp(x, th) < 0;
+        s.seen = true; s.last = v; s.lastN = x;
+        if (pass) { s.emitted = x; c.emit('out', v, c.strength, true); }
+      });
     },
     doc: { summary: 'Emits only when the signal changes according to a rule — a change detector.', runtime: 'Compares each arriving value with the previous one (delta compares with the last emitted value). The first value passes for change/delta and is only a reference for the other rules.', examples: ['rule = cross-up, threshold 0.5: emits once as the signal climbs through 0.5.'] },
   },
@@ -360,7 +388,7 @@ export const nodes: ModuleDef[] = [
       names.forEach((p) => { if (c.changed(p)) s[p] = c.time + (p === 'c' ? 0.002 : p === 'b' ? 0.001 : 0); });
       const pol = c.str('policy');
       let w = names[0];
-      if (pol === 'strongest') w = names.reduce((p, q) => ((c.sig(q)!.s > c.sig(p)!.s) || (c.sig(q)!.s === c.sig(p)!.s && Math.abs(n(c.get(q))) > Math.abs(n(c.get(p)))) ? q : p));
+      if (pol === 'strongest') w = names.reduce((p, q) => ((c.sig(q)!.s > c.sig(p)!.s) || (c.sig(q)!.s === c.sig(p)!.s && magnitudeAbove(c.get(q), c.get(p))) ? q : p));
       else if (pol === 'latest') w = names.reduce((p, q) => ((s[q] ?? -1) > (s[p] ?? -1) ? q : p));
       else if (pol === 'override' && names.includes('c')) w = 'c';
       c.emit('out', c.get(w), c.sig(w)!.s, true);

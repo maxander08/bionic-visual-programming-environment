@@ -34,7 +34,7 @@ describe('registry', () => {
   it('creates modules with default and clamped parameters', () => {
     const g = addNode(emptyGraph(), 'threshold', 3, 5, { threshold: 1e9, mode: 'bogus' }).graph;
     const n = Object.values(g.nodes)[0];
-    expect(n.params.threshold).toBe(1e6);
+    expect(n.params.threshold).toBe(1e9); // an exact setting has no range: nothing is clamped
     expect(n.params.mode).toBe('above');
     expect(n.x % 12).toBe(0);
   });

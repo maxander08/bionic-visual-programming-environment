@@ -1,24 +1,25 @@
 // Pure support for the Vector and Matrix modules of the Base Data section. No engine, no UI.
 // A vector is a list of numbers; a matrix is a list of equally long rows of numbers, of any size (rows × columns).
 
-import { isDec, toNumber } from './decimal';
-import { numText } from './util';
+import { approxDec, canon, packDec, parseJsonExact, roundSignificant, type Dec } from './decimal';
+import * as D from './decmath';
+import { toExactText } from './util';
 
 /** Most numbers one vector or matrix may hold. */
 export const MAX_CELLS = 10000;
 
-export type Vec = number[];
-export type Mat = number[][];
+/** One number of a vector or matrix: a plain number when a double holds it exactly, otherwise the exact decimal (any number of digits, repeating ones too). */
+export type Cell = number | Dec;
+export type Vec = Cell[];
+export type Mat = Cell[][];
 
 export type Res<T> = { ok: true; value: T } | { ok: false; error: string };
 
-/** One value read as a number: numbers, exact decimals, true/false and numeric text. NaN when it is none of these. */
-export function cellNumber(v: unknown): number {
-  if (typeof v === 'number') return v;
-  if (isDec(v)) return toNumber(v);
-  if (typeof v === 'boolean') return v ? 1 : 0;
-  if (typeof v === 'string' && v.trim() !== '') return Number(v.trim());
-  return NaN;
+/** One value read as an exact number: numbers, exact decimals, true/false and numeric text (every digit kept). Undefined when it is none of these. */
+export function cellValue(v: unknown): Cell | undefined {
+  if (typeof v === 'string' && v.trim() === '') return undefined;
+  const d = D.toDec(v);
+  return d ? packDec(d) : undefined;
 }
 
 const bad = (v: unknown) => `“${typeof v === 'string' ? v : JSON.stringify(v) ?? String(v)}” is not a number.`.slice(0, 120);
@@ -26,9 +27,9 @@ const bad = (v: unknown) => `“${typeof v === 'string' ? v : JSON.stringify(v) 
 function numbers(list: unknown[]): Res<Vec> {
   const out: Vec = [];
   for (const x of list) {
-    const n = cellNumber(x);
-    if (!Number.isFinite(n)) return { ok: false, error: bad(x) };
-    out.push(n + 0);
+    const n = cellValue(x);
+    if (n === undefined) return { ok: false, error: bad(x) };
+    out.push(n);
   }
   return { ok: true, value: out };
 }
@@ -37,7 +38,7 @@ function jsonOf(text: string): unknown[] | undefined {
   const t = text.trim();
   if (!(t.startsWith('[') && t.endsWith(']'))) return undefined;
   try {
-    const j = JSON.parse(t);
+    const j = parseJsonExact(t);
     return Array.isArray(j) ? j : undefined;
   } catch { return undefined; }
 }
@@ -60,8 +61,8 @@ function fromList(list: unknown[]): Res<Vec> {
 export function toVector(v: unknown): Res<Vec> {
   if (Array.isArray(v)) return fromList(v);
   if (typeof v === 'string') return parseVector(v);
-  const n = cellNumber(v);
-  return Number.isFinite(n) ? { ok: true, value: [n + 0] } : { ok: false, error: bad(v) };
+  const n = cellValue(v);
+  return n !== undefined ? { ok: true, value: [n] } : { ok: false, error: bad(v) };
 }
 
 function fromRows(rows: unknown[]): Res<Mat> {
@@ -94,27 +95,34 @@ export function parseMatrix(text: string): Res<Mat> {
 export function toMatrix(v: unknown): Res<Mat> {
   if (Array.isArray(v)) return fromRows(v);
   if (typeof v === 'string') return parseMatrix(v);
-  const n = cellNumber(v);
-  return Number.isFinite(n) ? { ok: true, value: [[n + 0]] } : { ok: false, error: bad(v) };
+  const n = cellValue(v);
+  return n !== undefined ? { ok: true, value: [[n]] } : { ok: false, error: bad(v) };
 }
 
-/** Stable Euclidean norm: scale before squaring so finite large and small values keep their magnitude. */
-export function magnitude(v: Vec): number {
-  let scale = 0, sum = 0;
-  for (const x of v) {
-    const a = Math.abs(x);
-    if (!Number.isFinite(a)) return a;
-    if (a > scale) {
-      const ratio = scale / a;
-      sum = 1 + sum * ratio * ratio;
-      scale = a;
-    } else if (a > 0) {
-      const ratio = a / scale;
-      sum += ratio * ratio;
-    }
-  }
-  return scale * Math.sqrt(sum);
+const dec = (x: Cell): Dec => D.toDec(x) ?? D.ZERO;
+
+/** Is the exact root of this sum of squares a number that ends or repeats (so the length can be written exactly)? */
+function rootOf(v: Vec): { sum: Dec; root: Dec; exact: boolean } {
+  const sum = v.reduce<Dec>((t, x) => D.add(t, D.mul(dec(x), dec(x))), D.ZERO);
+  const root = D.sqrt(sum);
+  return { sum, root, exact: D.cmp(D.mul(root, root), sum) === 0 };
 }
+
+/** The length of the vector as an arrow: the square root of the sum of the squares. Exact whenever the root ends or repeats (3, 4 → 5); otherwise worked out to 50 significant digits. */
+export function magnitude(v: Vec): Cell {
+  return packDec(rootOf(v).root);
+}
+
+/** The vector scaled to length 1: every number divided by the length, exactly when the length is exact, otherwise to 50 significant digits. */
+export function unitVector(v: Vec): Vec {
+  const { root, exact } = rootOf(v);
+  if (D.isZero(root)) return v;
+  return v.map((x) => {
+    const q = D.div(dec(x), root);
+    return packDec(exact ? q : canon(roundSignificant(approxDec(q, 70), 50)));
+  });
+}
+
 export const transpose = (m: Mat): Mat => (m.length === 0 ? [] : m[0].map((_, c) => m.map((r) => r[c])));
 export const dims = (m: Mat): { rows: number; cols: number } => ({ rows: m.length, cols: m.length ? m[0].length : 0 });
 
@@ -125,10 +133,10 @@ export function indexOf(len: number, index: number): number | undefined {
   return at >= 0 && at < len ? at : undefined;
 }
 
-export const fmtVector = (v: Vec): string => `[${v.map(numText).join(', ')}]`;
+export const fmtVector = (v: Vec): string => `[${v.map(toExactText).join(', ')}]`;
 export const fmtMatrix = (m: Mat): string => `[${m.map(fmtVector).join(', ')}]`;
 /** Short form for a node face: 2×3 [1 2 3; 4 5 6]. */
 export const chipMatrix = (m: Mat): string => {
   const { rows, cols } = dims(m);
-  return `${rows}×${cols} [${m.map((r) => r.map(numText).join(' ')).join('; ')}]`;
+  return `${rows}×${cols} [${m.map((r) => r.map(toExactText).join(' ')).join('; ')}]`;
 };

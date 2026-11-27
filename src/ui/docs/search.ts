@@ -1,6 +1,6 @@
 import { MODULES, getDef } from '../../core/registry';
 import { PACKAGES } from '../../core/packages';
-import { fmtNum } from '../../core/util';
+import { fmtBound, fmtNum } from '../../core/util';
 import { ARTICLES, GOALS } from './content';
 import { GUIDE } from './nodeGuide';
 import { RECIPES } from './recipes';
@@ -31,7 +31,7 @@ export const KIND_ORDER: Kind[] = ['Node', 'Setting', 'Guide', 'Recipe', 'Goal',
 let cache: Entry[] | null = null;
 
 export function paramSummary(p: any): string {
-  if (p.kind === 'number') return `Number ${fmtNum(p.min)} to ${fmtNum(p.max)}${p.unit ? ' ' + p.unit : ''}, default ${fmtNum(p.default)}`;
+  if (p.kind === 'number') return `Number ${fmtBound(p.min)} to ${fmtBound(p.max)}${p.unit ? ' ' + p.unit : ''}, default ${fmtNum(p.default)}`;
   if (p.kind === 'select') return `Choice: ${p.options.map((o: any) => o.label).join(', ')}`;
   if (p.kind === 'bool') return `Switch, default ${p.default ? 'on' : 'off'}`;
   if (p.kind === 'text') return 'Text';

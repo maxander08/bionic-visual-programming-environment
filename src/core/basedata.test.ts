@@ -6,6 +6,7 @@ import { SIZES, type Graph, type Params } from './types';
 import { GUIDE } from '../ui/docs/nodeGuide';
 import * as bd from './basedata';
 import { toText } from './util';
+import { exactText } from './decimal';
 
 const TYPES = ['integer', 'decimal', 'string', 'character', 'boolean', 'array', 'vector', 'matrix'];
 
@@ -104,10 +105,18 @@ describe('Integer', () => {
     const e = build([['c', 'constant', { kind: 'text', value: 'abc' }], ['i', 'integer']], [['c', 'out', 'i', 'in']]);
     expect(status(e, 'i').level).toBe('error');
   });
-  it('holds out-of-range values at the 32-bit limit with a warning', () => {
+  it('has no largest or smallest value: every digit of a huge integer is kept', () => {
     const e = build([['c', 'constant', { value: '1e12' }], ['i', 'integer']], [['c', 'out', 'i', 'in']]);
-    expect(e.out('i', 'out')).toBe(2147483647);
-    expect(status(e, 'i').level).toBe('warn');
+    expect(e.out('i', 'out')).toBe(1e12);
+    expect(status(e, 'i').level).toBe('ok');
+    const big = '123456789012345678901234567890123456789012345678901234567890';
+    const h = build([['c', 'constant', { kind: 'text', value: big }], ['i', 'integer', { base: 'hex' }]], [['c', 'out', 'i', 'in']]);
+    expect(exactText(h.out('i', 'out') as any)).toBe(big);
+    expect(h.out('i', 'text')).toBe('0x' + BigInt(big).toString(16).toUpperCase());
+    expect(status(h, 'i').level).toBe('ok');
+    const v = build([['i', 'integer', { value: '-' + big + '7' }]], []);
+    expect(exactText(v.out('i', 'out') as any)).toBe('-' + big + '7');
+    expect(bd.fmtInt(-(2n ** 200n), 'bin')).toBe('-0b1' + '0'.repeat(200));
   });
   it('its Value and Base settings can be driven through their pins', () => {
     const e = build([['c', 'constant', { value: '3.9' }], ['b', 'constant', { kind: 'text', value: 'bin' }], ['i', 'integer', { value: 1 }]], [['c', 'out', 'i', 'p:value'], ['b', 'out', 'i', 'p:base']]);

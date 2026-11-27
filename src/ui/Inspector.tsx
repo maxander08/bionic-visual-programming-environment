@@ -30,7 +30,7 @@ function NumberField({ id, p, value, onChange }: { id?: string; p: Extract<Param
   const sliderOk = range <= 100000;
   // A setting that is “exact” keeps every digit typed into it: a number a double holds stays a number, a longer one is kept as its digits.
   const pack = (d: Dec): number | string => { const k = packDec(d); return typeof k === 'number' ? k : toPlain(k); };
-  const clampDec = (d: Dec): Dec => { const lo = fromNumber(p.min), hi = fromNumber(p.max); return cmp(d, lo) < 0 ? lo : cmp(d, hi) > 0 ? hi : d; };
+  const clampDec = (d: Dec): Dec => { const lo = Number.isFinite(p.min) ? fromNumber(p.min) : null, hi = Number.isFinite(p.max) ? fromNumber(p.max) : null; return lo && cmp(d, lo) < 0 ? lo : hi && cmp(d, hi) > 0 ? hi : d; };
   const commit = (t: string) => {
     setText(t);
     if (t.trim() === '') return;

@@ -4,9 +4,12 @@ import type { ParamDef, PortDef, PortType, Side } from '../types';
 export const num = (key: string, label: string, def: number, min: number, max: number, step: number, doc: string, unit?: string): ParamDef => ({
   key, label, kind: 'number', default: def, min, max, step, doc, unit, ...(unit === 's' || unit === 'ms' ? { time: unit } : {}),
 });
-/** A number setting that keeps every digit typed into it (see ParamDef.exact). The range still limits it. */
-export const dnum = (key: string, label: string, def: number, min: number, max: number, step: number, doc: string, unit?: string): ParamDef => ({
-  key, label, kind: 'number', default: def, min, max, step, doc, unit, exact: true,
+/**
+ * A number setting that keeps every digit typed into it (see ParamDef.exact), however many, and has no largest or smallest value:
+ * only a setting that cannot be negative (a lower bound of 0 or more) keeps its lower bound.
+ */
+export const dnum = (key: string, label: string, def: number, min: number, _max: number, step: number, doc: string, unit?: string): ParamDef => ({
+  key, label, kind: 'number', default: def, min: min >= 0 ? min : -Infinity, max: Infinity, step, doc, unit, exact: true,
 });
 export const sel = (key: string, label: string, def: string, options: [string, string][], doc: string): ParamDef => ({
   key, label, kind: 'select', default: def, options: options.map(([value, l]) => ({ value, label: l })), doc,

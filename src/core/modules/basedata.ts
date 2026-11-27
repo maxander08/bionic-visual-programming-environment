@@ -1,14 +1,14 @@
 import type { ModuleDef } from '../types';
 import { toText, toExactText } from '../util';
-import { decFromValue, isDec, packDec, parseDec, toNumber, toPlain, type Dec } from '../decimal';
+import { decFromValue, isDec, packDec, parseDec, toPlain, type Dec } from '../decimal';
 import * as D from '../decmath';
 import { toDec } from '../decmath';
 import {
-  INT_MAX, INT_MIN, MAX_ITEMS, applyCase, caseChar, chars, clampInt, codePointOf, fmtCodePoint, fmtInt, fmtItem, fmtList, itemAt,
-  parseItems, quote, readBool, roundInt, validCodePoint, wordsFor,
+  MAX_ITEMS, applyCase, caseChar, chars, codePointOf, fmtCodePoint, fmtInt, fmtItem, fmtList, itemAt,
+  parseItems, quote, readBool, validCodePoint, wholeNumber, wordsFor,
 } from '../basedata';
-import { chipMatrix, dims, fmtMatrix, fmtVector, indexOf, magnitude, parseMatrix, parseVector, toMatrix, toVector, transpose } from '../linalg';
-import { bol, inp, num, out, sel, txt } from './kit';
+import { chipMatrix, dims, fmtMatrix, fmtVector, indexOf, magnitude, parseMatrix, parseVector, toMatrix, toVector, transpose, unitVector } from '../linalg';
+import { bol, dnum, inp, num, out, sel, txt } from './kit';
 
 // The Base Data section: the six basic data types. Each module holds one value of its type, converts whatever arrives on
 // its Input pin into that type, and emits it. They look like the yellow utility chips, in the section's own fuchsia.
@@ -25,39 +25,39 @@ export const baseData: ModuleDef[] = [
   /* ───── Integer ───── */
   {
     ...base, type: 'integer', name: 'Integer', caption: 'Integer', glyph: 'Int',
-    keywords: 'int whole number counter hex binary octal 32-bit signed',
-    chip: (p) => fmtInt(Number(p.value), String(p.base)),
+    keywords: 'int whole number counter hex binary octal signed big huge arbitrary unlimited',
+    chip: (p) => { const d = toDec(p.value); return d ? fmtInt(wholeNumber(d, String(p.rounding)), String(p.base)) : '0'; },
     inputs: [IN('A number, text such as 42 or 0xFF, or true/false.')],
     outputs: [
       out('out', 'Integer', 'num', 'The whole number.'),
       out('text', 'Text', 'text', 'The integer written as text in the chosen Base: 255 is 255, 0xFF, 0o377 or 0b11111111.'),
     ],
     params: [
-      num('value', 'Value', 1, INT_MIN, INT_MAX, 1, 'The whole number to emit, from −2 147 483 648 to 2 147 483 647 (a signed 32-bit integer).'),
+      dnum('value', 'Value', 1, -Infinity, Infinity, 1, 'The whole number to emit. It can have as many digits as you like: there is no largest or smallest integer.'),
       sel('rounding', 'Rounding', 'trunc', [['trunc', 'Toward zero'], ['round', 'Nearest'], ['floor', 'Down'], ['ceil', 'Up']], `${TRUNCATE_NOTE} Applies to the Input pin and to a Value that arrives on its setting pin.`),
       sel('base', 'Base', 'dec', [['dec', 'Decimal (10)'], ['bin', 'Binary (2)'], ['oct', 'Octal (8)'], ['hex', 'Hexadecimal (16)']], 'How the integer is written on the node face and on the Text output. The Integer output is always a plain number.'),
     ],
     run(c) {
-      let x: number;
-      if (c.has('in')) {
-        // Rounded on the exact digits, so 2147483647.99999999999 is cut to 2147483647, not pushed over the limit by a double.
-        const d = toDec(c.get('in'));
-        if (!d) return c.fail(`“${toText(c.get('in'))}” is not a number, so it cannot become an integer.`);
-        const how = c.str('rounding');
-        x = toNumber(how === 'round' ? D.round(d) : how === 'floor' ? D.floor(d) : how === 'ceil' ? D.ceil(d) : D.trunc(d)) + 0;
-      } else x = roundInt(c.num('value'), c.str('rounding'));
-      if (!Number.isFinite(x)) return c.fail('This is not a number, so it cannot become an integer.');
-      const r = clampInt(x);
-      x = r.value;
-      if (r.clamped) c.warn('Outside the 32-bit range −2 147 483 648 … 2 147 483 647: held at the nearest limit.');
-      const text = fmtInt(x, c.str('base'));
-      c.emit('out', x);
+      // Made whole on the exact digits, so a number of any size keeps every one of them.
+      const d = c.has('in') ? toDec(c.get('in')) : c.dec('value');
+      if (!d) return c.fail(`“${toText(c.get('in'))}” is not a number, so it cannot become an integer.`);
+      let r: Dec;
+      try { r = wholeNumber(d, c.str('rounding')); } catch (e) {
+        if (e instanceof D.DecError || e instanceof RangeError) return c.fail('This number needs more memory than this browser can give it.');
+        throw e;
+      }
+      let text: string;
+      try { text = fmtInt(r, c.str('base')); } catch (e) {
+        if (e instanceof RangeError) return c.fail('This number needs more memory than this browser can give it.');
+        throw e;
+      }
+      c.emit('out', packDec(r));
       c.emit('text', text);
       c.view({ chip: text });
     },
     doc: {
-      summary: 'A whole number, such as 7, −3 or 0. Converts anything it is given into an integer.',
-      runtime: 'Emits the Value (or the converted Input) as a whole number between −2 147 483 648 and 2 147 483 647, and the same number as text in the chosen Base. Fractions are made whole by the Rounding setting; values beyond the range are held at the limit with a warning.',
+      summary: 'A whole number, such as 7, −3 or 0, of any size. Converts anything it is given into an integer.',
+      runtime: 'Emits the Value (or the converted Input) as a whole number, and the same number as text in the chosen Base. There is no largest or smallest integer: every digit is kept, however many there are, until the memory of the machine runs out. Fractions are made whole by the Rounding setting.',
       errors: ['An Input that is not a number (for example “abc”) raises an error.'],
       examples: ['Integer → Adder: count in whole steps.', 'Decimal → Integer: drop the fraction of a measurement.', 'Integer Text (Hexadecimal) → Projector: show a number as 0xFF.'],
     },
@@ -264,7 +264,7 @@ export const baseData: ModuleDef[] = [
   {
     ...base, type: 'vector', name: 'Vector', caption: 'Vector', glyph: 'Vct',
     keywords: 'vector list of numbers coordinates components magnitude length norm unit direction point 2d 3d array',
-    chip: (p) => { const r = parseVector(String(p.items)); return r.ok ? fmtVector(p.normalize ? normalized(r.value) : r.value) : String(p.items); },
+    chip: (p) => { const r = parseVector(String(p.items)); return r.ok ? fmtVector(p.normalize ? unitVector(r.value) : r.value) : String(p.items); },
     inputs: [IN('A list of numbers, text such as 1, 2, 3, or a single number (a vector of one).')],
     outputs: [
       out('out', 'Vector', 'data', 'The whole vector, as a list of numbers.'),
@@ -283,7 +283,7 @@ export const baseData: ModuleDef[] = [
       if (!r.ok) return c.fail(r.error);
       let v = r.value;
       if (c.bool('normalize')) {
-        if (magnitude(v) === 0) { if (v.length) c.warn('A vector of zeros has no direction, so it cannot be normalized and is kept as it is.'); } else v = normalized(v);
+        if (v.every((x) => D.isZero(toDec(x) ?? D.ZERO))) { if (v.length) c.warn('A vector of zeros has no direction, so it cannot be normalized and is kept as it is.'); } else v = unitVector(v);
       }
       c.emit('out', v);
       c.emit('length', v.length);
@@ -351,12 +351,3 @@ export const baseData: ModuleDef[] = [
     },
   },
 ];
-
-function normalized(v: number[]): number[] {
-  const scale = v.reduce((max, x) => Math.max(max, Math.abs(x)), 0);
-  if (scale === 0) return v;
-  // Scale first: the true magnitude may exceed the largest representable number, even for finite components.
-  const scaled = v.map((x) => x / scale);
-  const m = magnitude(scaled);
-  return scaled.map((x) => x / m + 0);
-}

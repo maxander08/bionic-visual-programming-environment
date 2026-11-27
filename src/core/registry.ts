@@ -14,7 +14,7 @@ import { workspace } from './modules/workspace';
 import { getLang, tr } from '../i18n';
 import { localizeDef } from './localize';
 import { txt } from './modules/kit';
-import { clamp, fmtNum, numText } from './util';
+import { clamp, fmtBound, numText } from './util';
 import { fromNumber, isDec, packDec, toNumber, toPlain, type Dec } from './decimal';
 import { cmp, toDec } from './decmath';
 import { formatBase, parseDuration, toBaseUnit } from './duration';
@@ -69,7 +69,8 @@ function settingPin(p: ParamDef): PortDef | null {
   if (p.kind === 'action' || p.hidden || p.pin === false) return null;
   const hint =
     p.kind === 'number' && p.time ? tr('A time: text such as 2h 40min or 1:30:00, or a number of {unit}. Values from {min} to {max} are kept; others are clamped.', { unit: p.time === 'ms' ? tr('milliseconds') : tr('seconds'), min: formatBase(p.min, p.time), max: formatBase(p.max, p.time) })
-    : p.kind === 'number' ? tr('Number from {min} to {max}{unit}; values outside are clamped.', { min: fmtNum(p.min), max: fmtNum(p.max), unit: p.unit ? ' ' + p.unit : '' })
+    : p.kind === 'number' && !Number.isFinite(p.min) && !Number.isFinite(p.max) ? tr('Any number, with as many digits as you like{unit}.', { unit: p.unit ? ' ' + p.unit : '' })
+    : p.kind === 'number' ? tr('Number from {min} to {max}{unit}; values outside are clamped.', { min: fmtBound(p.min), max: fmtBound(p.max), unit: p.unit ? ' ' + p.unit : '' })
     : p.kind === 'bool' ? tr('True or false.')
     : p.kind === 'select' ? tr('Text, one of: {list}.', { list: p.options.map((o) => o.value).join(', ') })
     : p.kind === 'text' && p.pinType === 'data' ? tr('An Equation (the Equation output of an Equation node): its first expression is used. Text is read as the expression itself.')
@@ -190,8 +191,9 @@ export function resolveParams(def: ModuleDef, rawParams: Params): Params {
           // Every digit is kept: a number a double holds exactly stays a number, a longer one is stored as its digits.
           const d: Dec | null = v === '' || v === null || v === undefined || typeof v === 'boolean' ? null : toDec(v);
           if (!d) { out[p.key] = p.default; break; }
-          const lo = fromNumber(p.min), hi = fromNumber(p.max);
-          const c = cmp(d, lo) < 0 ? lo : cmp(d, hi) > 0 ? hi : d;
+          // A bound of ±Infinity means there is none.
+          const lo = Number.isFinite(p.min) ? fromNumber(p.min) : null, hi = Number.isFinite(p.max) ? fromNumber(p.max) : null;
+          const c = lo && cmp(d, lo) < 0 ? lo : hi && cmp(d, hi) > 0 ? hi : d;
           const packed = packDec(c);
           out[p.key] = typeof packed === 'number' ? packed : toPlain(packed);
           break;

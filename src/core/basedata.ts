@@ -1,22 +1,21 @@
 // Pure support for the Base Data section: Integer, Decimal, String, Character, Boolean and Array. No engine, no UI.
 
 import { numText } from './util';
-import { isDec, isZero, jsonText, packDec, parseDec, parseJsonExact, toPlain } from './decimal';
+import { isDec, isZero, jsonText, packDec, parseDec, parseJsonExact, parseRadixLiteral, toPlain, type Dec } from './decimal';
+import * as D from './decmath';
 
 /** A number read from text with every digit it has (a number when a double holds it exactly, an exact decimal when it takes more). Undefined when the text is not a number. */
 export function readNumber(s: string): number | import('./decimal').Dec | undefined {
   const r = parseDec(s);
   if (r.ok) return packDec(r.dec);
-  // Only fall back to JS Number() for non-decimal literals (0x1F, 0b101, 0o77), not empty text or out-of-range decimals.
-  if (!/^[+-]?0[xXbBoO]/.test(s.trim())) return undefined;
-  const n = Number(s);
-  return Number.isFinite(n) ? n : undefined;
+  // Numbers written in another base (0x1F, 0b101, 0o77) are read exactly, whatever their length.
+  const lit = parseRadixLiteral(s);
+  return lit ? packDec(lit) : undefined;
 }
 
 /* ───── Integer ───── */
 
-export const INT_MIN = -2147483648;
-export const INT_MAX = 2147483647;
+// There is no largest or smallest Integer: it has as many digits as the memory of the machine allows.
 
 export type Rounding = 'trunc' | 'round' | 'floor' | 'ceil';
 export type IntBase = 'dec' | 'bin' | 'oct' | 'hex';
@@ -27,19 +26,28 @@ export function roundInt(x: number, how: Rounding | string): number {
   return r + 0;
 }
 
-export function clampInt(x: number): { value: number; clamped: boolean } {
-  const value = Math.min(INT_MAX, Math.max(INT_MIN, x));
-  return { value, clamped: value !== x };
+/** Make a whole number out of any exact number, of any size, with no digit lost: 123456789012345678901234567890.5 rounded is …891. */
+export function wholeNumber(d: Dec, how: Rounding | string): Dec {
+  return how === 'round' ? D.round(d) : how === 'floor' ? D.floor(d) : how === 'ceil' ? D.ceil(d) : D.trunc(d);
+}
+
+/** The whole number held by an exact decimal (any fraction is dropped). */
+export function bigIntOf(d: Dec): bigint {
+  const w = D.trunc(d);
+  const v = BigInt(w.digits) * (w.scale < 0 ? 10n ** BigInt(-w.scale) : 1n);
+  return w.neg ? -v : v;
 }
 
 const BASES: Record<IntBase, { radix: number; prefix: string }> = {
   dec: { radix: 10, prefix: '' }, bin: { radix: 2, prefix: '0b' }, oct: { radix: 8, prefix: '0o' }, hex: { radix: 16, prefix: '0x' },
 };
 
-export function fmtInt(x: number, base: IntBase | string = 'dec'): string {
+/** A whole number written out in full in the base: 255 is 255, 0xFF, 0o377 or 0b11111111, however large it is. */
+export function fmtInt(x: number | bigint | Dec, base: IntBase | string = 'dec'): string {
   const b = BASES[base as IntBase] ?? BASES.dec;
-  const digits = Math.abs(x).toString(b.radix);
-  return (x < 0 ? '-' : '') + b.prefix + (b.radix === 16 ? digits.toUpperCase() : digits);
+  const v = typeof x === 'bigint' ? x : typeof x === 'number' ? (Number.isFinite(x) ? BigInt(Math.trunc(x)) : 0n) : bigIntOf(x);
+  const digits = (v < 0n ? -v : v).toString(b.radix);
+  return (v < 0n ? '-' : '') + b.prefix + (b.radix === 16 ? digits.toUpperCase() : digits);
 }
 
 /* ───── Decimal ───── */

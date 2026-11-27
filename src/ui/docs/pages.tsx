@@ -2,7 +2,7 @@ import { useContext, useMemo, useState, type ReactNode } from 'react';
 import { MODULES, CATEGORIES, getDef, portSide } from '../../core/registry';
 import { PACKAGES, type MlPackage } from '../../core/packages';
 import { SIZES, type ModuleDef, type ParamDef } from '../../core/types';
-import { fmtNum } from '../../core/util';
+import { fmtBound, fmtNum } from '../../core/util';
 import { openTemplate } from '../../state/actions';
 import { bridge, useStore } from '../../state/store';
 import { FAMILY_VAR, PreviewNode } from '../NodeView';
@@ -132,12 +132,12 @@ const KIND_LABEL: Record<string, string> = { number: 'Number', select: 'Choice',
 
 function RangeBar({ p }: { p: Extract<ParamDef, { kind: 'number' }> }) {
   const span = p.max - p.min;
-  const pct = span > 0 ? Math.min(100, Math.max(0, ((p.default - p.min) / span) * 100)) : 0;
+  const pct = Number.isFinite(span) ? (span > 0 ? Math.min(100, Math.max(0, ((p.default - p.min) / span) * 100)) : 0) : Number.isFinite(p.min) ? 0 : 50;
   return (
     <div className="dx-range" aria-hidden="true">
-      <span>{fmtNum(p.min)}</span>
+      <span>{fmtBound(p.min)}</span>
       <div><i style={{ left: `${pct}%` }} /></div>
-      <span>{fmtNum(p.max)}</span>
+      <span>{fmtBound(p.max)}</span>
     </div>
   );
 }
@@ -154,7 +154,7 @@ function SettingCard({ def, p, tip, options }: { def: ModuleDef; p: ParamDef; ti
       </header>
       <dl className="dx-meta">
         {p.kind !== 'action' && <><dt>Default</dt><dd>{defaultText(p)}</dd></>}
-        {p.kind === 'number' && <><dt>Range</dt><dd>{fmtNum(p.min)} to {fmtNum(p.max)}{p.unit ? ` ${p.unit}` : ''}, step {fmtNum(p.step)}</dd></>}
+        {p.kind === 'number' && <><dt>Range</dt><dd>{fmtBound(p.min)} to {fmtBound(p.max)}{p.unit ? ` ${p.unit}` : ''}, step {fmtNum(p.step)}</dd></>}
       </dl>
       {p.kind === 'number' && <RangeBar p={p} />}
       <p className="dx-p">{p.doc}</p>
@@ -450,7 +450,7 @@ export function SettingsIndex() {
                   <tr key={i} className="dx-clickrow" onClick={() => nav.go({ k: 'node', type: m.type }, r.anchor)}>
                     <th scope="row"><button type="button" className="dx-link" onClick={(e) => { e.stopPropagation(); nav.go({ k: 'node', type: m.type }, r.anchor); }}>{r.extra ? `${r.extra} · ` : ''}{r.label}</button></th>
                     <td>{KIND_LABEL[r.p.kind]}</td>
-                    <td className="dx-dim">{r.p.kind === 'action' ? '—' : `${defaultText(r.p)}${r.p.kind === 'number' ? ` (${fmtNum(r.p.min)} to ${fmtNum(r.p.max)})` : ''}`}</td>
+                    <td className="dx-dim">{r.p.kind === 'action' ? '—' : `${defaultText(r.p)}${r.p.kind === 'number' ? ` (${fmtBound(r.p.min)} to ${fmtBound(r.p.max)})` : ''}`}</td>
                     <td>{r.p.doc}</td>
                   </tr>
                 ))}

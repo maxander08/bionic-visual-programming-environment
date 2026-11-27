@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { toNum } from './util';
 import { checkSymbols, DEFAULT_SYMBOLS, parseBased } from './baseconv';
 import { Engine } from './engine';
 import { addNode, connect, emptyGraph, flatten, setParams } from './graph';
@@ -26,18 +27,22 @@ describe('new module edge cases', () => {
     expect(checkSymbols('0\u2009', 2)).toBeDefined();
   });
 
+  it('accepts U+2026 when it is a custom base digit', () => {
+    expect(parseBased('…', 2, '0…')).toEqual({ ok: true, value: { neg: false, n: 1n, d: 1n } });
+  });
+
   it('computes magnitudes without premature overflow or underflow', () => {
-    expect(magnitude([1e200, 1e200]) / 1e200).toBeCloseTo(Math.SQRT2, 12);
-    expect(magnitude([1e-200, 1e-200]) / 1e-200).toBeCloseTo(Math.SQRT2, 12);
+    expect(toNum(magnitude([1e200, 1e200])) / 1e200).toBeCloseTo(Math.SQRT2, 12);
+    expect(toNum(magnitude([1e-200, 1e-200])) / 1e-200).toBeCloseTo(Math.SQRT2, 12);
   });
 
   it('normalizes very large and very small vectors without losing their direction', () => {
     for (const items of ['1e200, 1e200', '1e-200, 1e-200', '1.7e308, 1.7e308']) {
       const engine = vectorRun(items);
-      const values = engine.out('v', 'out') as number[];
+      const values = (engine.out('v', 'out') as unknown[]).map(toNum);
       expect(values[0], items).toBeCloseTo(Math.SQRT1_2, 12);
       expect(values[1], items).toBeCloseTo(Math.SQRT1_2, 12);
-      expect(engine.out('v', 'magnitude'), items).toBeCloseTo(1, 12);
+      expect(toNum(engine.out('v', 'magnitude')), items).toBeCloseTo(1, 12);
       expect(engine.nodes.get('v')!.status.level, items).toBe('ok');
     }
   });

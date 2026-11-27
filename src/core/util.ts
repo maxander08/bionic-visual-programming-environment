@@ -74,6 +74,9 @@ export function fmtNum(n: number, digits = 3): string {
   return s === '-0' ? '0' : s;
 }
 
+/** One end of a setting's range: ∞ or −∞ for an end that has no limit. */
+export const fmtBound = (n: number): string => (Number.isFinite(n) ? fmtNum(n) : n < 0 ? '−∞' : '∞');
+
 /** A number as the shortest text that reads back as exactly the same number: no digit is dropped (unlike toText, which tidies for display). */
 export const numText = (n: number): string => (Object.is(n, -0) ? '0' : String(n));
 

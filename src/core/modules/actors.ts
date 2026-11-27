@@ -1,7 +1,7 @@
 import type { ModuleDef, ParamDef, Params } from '../types';
 import { toExactText, toNum, toText } from '../util';
-import { decFromValue, formatDec, formatOptionsOf, isDec, packDec, parseDec, toPlain } from '../decimal';
-import { DEFAULT_SYMBOLS, MAX_BASE, MAX_FRACTION_DIGITS, checkSymbols, countDigits, formatBased, parseBased } from '../baseconv';
+import { decFromValue, formatDec, formatOptionsOf, isDec, packDec, parseDec, ratToDec, toPlain } from '../decimal';
+import { DEFAULT_SYMBOLS, MAX_BASE, checkSymbols, countDigits, formatBased, parseBased } from '../baseconv';
 import { FILE_KIND_BY_ID, isFileDescriptor, type FileKindId } from '../files';
 import { SOURCE_KINDS, formatLabel, formatsOf, isKindId, requestConversion, routeLabel, targetsOf } from '../convert';
 import { PREFIXES, autoPrefix, fmtQuantity } from '../quantities';
@@ -213,7 +213,7 @@ const numberFormatter: ModuleDef = {
   params: [
     txt('value', 'Value', '1234.56789', 'The number to format, with as many digits as you like. Used when the Number pin has no signal.', { maxLength: 5000, placeholder: 'Any number, any number of digits' }),
     sel('mode', 'Format', 'places', NF_MODES, 'What to do with the number. Round to n decimal places and Round to n significant digits shorten it; Scientific and Engineering notation write it with a power of ten; Exact only rewrites it, dropping nothing.'),
-    num('n', 'Digits (n)', 2, 0, 1000, 1, 'How many decimal places (Round to n decimal places) or significant digits (the other formats) to keep. For decimal places 0 gives a whole number. For significant digits and the two notations 0 means keep every digit.'),
+    num('n', 'Digits (n)', 2, 0, Infinity, 1, 'How many decimal places (Round to n decimal places) or significant digits (the other formats) to keep. For decimal places 0 gives a whole number. For significant digits and the two notations 0 means keep every digit.'),
     sel('rounding', 'Rounding', 'nearest', NF_ROUNDING, 'How a number that does not fit is rounded. It decides what 2.5 and −2.5 become at 0 places, and whether any leftover digit pushes the last kept digit up.'),
     bol('trim', 'Trim trailing zeros', false, 'Off: 3.1 at 3 places is 3.100. On: it is 3.1. Applies to every format, including the mantissa of scientific and engineering notation.'),
     sel('style', 'Exponent style', 'e', [['e', 'e-notation (1.5e+3)'], ['x10', 'Times ten (1.5 × 10³)']], 'How the power of ten is written in scientific and engineering notation. Ignored by the other formats.'),
@@ -240,7 +240,6 @@ const numberFormatter: ModuleDef = {
     runtime: 'Takes the number on the Number pin (or the Value setting), keeps every digit it has, and applies the chosen Format once. The result leaves as text on Formatted, as a number on Number, and as Mantissa and Exponent. Decimals never round by themselves: wire a Decimal’s Text output here to round it exactly, however many digits it has. Every setting is also a pin on the left, so signals can change the number of digits while the program runs.',
     errors: [
       'An input that is not a number (for example “1,5” with a comma, or “abc”) raises an error.',
-      'A number whose exponent is beyond ±99999 is refused.',
     ],
     examples: [
       'Decimal (3.14159265358979323846) Text → Number Formatter (10 decimal places) → Projector: 3.1415926536.',
@@ -269,14 +268,15 @@ const baseConverter: ModuleDef = {
   inputs: [inp('in', 'Number', 'any', 'The number to convert, written in the From base. A number is read by the digits it is written with (101 is the digits 1, 0, 1). Text keeps every digit. It replaces Value while connected.', 'top', true)],
   outputs: [
     out('text', 'Converted', 'text', 'The number written in the To base, with the chosen Symbols, for example FF, 11111111 or -2A.8.', 'bottom'),
-    out('number', 'Decimal value', 'num', 'The same number as an ordinary decimal number, with every digit it needs (up to 20 after the point).', 'bottom'),
+    out('number', 'Decimal value', 'num', 'The same number as an ordinary decimal number, exactly: every digit it needs, however many. A fraction that never ends repeats, and is kept as the repeating number it is (0.33333...).', 'bottom'),
     out('digits', 'Digits', 'num', 'How many digits the converted number has. The sign and the point are not counted.', 'right'),
   ],
   params: [
     txt('value', 'Value', '255', 'The number to convert, written in the From base: it may have a sign, a point and any number of digits (FF.8, -101.01). Used when the Number pin has no signal.', { maxLength: 5000, placeholder: 'Digits written in the From base' }),
     num('from', 'From base', 10, 1, MAX_BASE, 1, 'The base the Value is written in, from 1 to 40. Base 1 is tally marks (111 is three); 2 is binary, 8 octal, 10 decimal, 16 hexadecimal.'),
     num('to', 'To base', 16, 1, MAX_BASE, 1, 'The base to write the number in, from 1 to 40. Base 1 is tally marks, written with the second symbol, and zero with the first.'),
-    num('precision', 'Fraction digits', 12, 0, MAX_FRACTION_DIGITS, 1, 'How many digits to keep after the point in the To base. The last one is rounded to the nearest, and zeros at the end are dropped. 0 gives a whole number.'),
+    bol('round', 'Round the fraction', false, 'Off: every digit of the number is written, however many, and a fraction that never ends repeats, so its repeating digits are followed by an ellipsis (0.1 in base 2 is 0.00011001100110011...). On: the fraction is rounded to Fraction digits places.'),
+    num('precision', 'Fraction digits', 12, 0, Infinity, 1, 'How many digits to keep after the point in the To base when Round the fraction is on. The last one is rounded to the nearest, and zeros at the end are dropped. 0 gives a whole number.'),
     txt('symbols', 'Symbols', DEFAULT_SYMBOLS, 'The characters used as digits, in order: the first one is zero, the next is one, and so on. The default is 0-9, A-Z and then a, b, c, d, which writes every base up to 40. Edit it to use your own symbols; it needs at least as many characters as the larger base, all different. The characters - + . _ and spaces cannot be used.', { maxLength: 64, placeholder: DEFAULT_SYMBOLS }),
     details('the bases being converted'),
   ],
@@ -290,19 +290,17 @@ const baseConverter: ModuleDef = {
     if (src === undefined) { c.view({ state: 'error' }); return c.fail('This is not a number, so it cannot be converted.'); }
     const read = parseBased(src, from, symbols);
     if (!read.ok) { c.view({ state: 'error' }); return c.fail(read.error); }
-    const written = formatBased(read.value, to, symbols, c.num('precision'));
+    const written = formatBased(read.value, to, symbols, c.bool('round') ? c.num('precision') : null);
     if (!written.ok) { c.view({ state: 'error' }); return c.fail(written.error); }
     if (to === 1 && written.value.rounded) c.warn('Base 1 writes whole numbers only: the fraction was rounded.');
-    const dec = formatBased(read.value, 10, '0123456789', 20);
-    const dv = dec.ok ? parseDec(dec.value.text) : undefined;
     c.emit('text', written.value.text);
-    c.emit('number', dv && dv.ok ? packDec(dv.dec) : undefined);
+    c.emit('number', packDec(ratToDec(read.value.neg ? -read.value.n : read.value.n, read.value.d)));
     c.emit('digits', countDigits(written.value.text));
     c.view({ text: written.value.text, from, to });
   },
   doc: {
     summary: 'Writes a number in a different base, from base 1 (tally marks) to base 40, with symbols you can choose.',
-    runtime: 'Reads the number on the Number pin (or the Value setting) as digits in the From base and writes it in the To base. Whole numbers of any size are converted exactly; digits after the point are rounded to Fraction digits places. The default symbols are 0-9, A-Z and a-d (40 in all): bases up to 16 read as usual (FF), and in bases up to 36 letters are read in either case. Edit Symbols to use other characters. Base 1 is tally marks: a number is that many marks (the second symbol), and zero is the first symbol. Every setting is also a pin on the left, so signals can choose the bases while the program runs.',
+    runtime: 'Reads the number on the Number pin (or the Value setting) as digits in the From base and writes it in the To base. Numbers of any size are converted exactly, with every digit, before and after the point. A fraction that never ends in the To base repeats (0.1 in binary is 0.0001100110011...), and is written with its repeating digits followed by an ellipsis; text written that way can be read back in the From base. Switch on Round the fraction to round the fraction to Fraction digits places instead. The default symbols are 0-9, A-Z and a-d (40 in all): bases up to 16 read as usual (FF), and in bases up to 36 letters are read in either case. Edit Symbols to use other characters. Base 1 is tally marks: a number is that many marks (the second symbol), and zero is the first symbol. Every setting is also a pin on the left, so signals can choose the bases while the program runs.',
     errors: [
       'A digit that does not exist in the From base (for example 2 in binary, or a letter beyond the base) raises an error that lists the digits.',
       'Symbols with too few characters for the larger base, with a repeated symbol, or with - + . _ or a space among the digits raises an error.',

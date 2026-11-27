@@ -5,7 +5,7 @@ import { getDef, paramDefsOf } from './registry';
 import type { Graph, Params } from './types';
 import { TEMPLATES } from './library';
 import { toText } from './util';
-import { formatDec, formatText, parseDec, setScale, toNumber, toPlain, type FormatOptions } from './decimal';
+import { formatDec, formatText, MEMORY_DIGITS, parseDec, setScale, toNumber, toPlain, type FormatOptions } from './decimal';
 
 const D = (s: string) => { const r = parseDec(s); if (!r.ok) throw new Error(r.error); return r.dec; };
 const opt = (o: Partial<FormatOptions>): FormatOptions => ({ mode: 'places', n: 2, rounding: 'nearest', trim: false, style: 'e', ...o });
@@ -37,7 +37,13 @@ describe('arbitrary-precision decimals', () => {
     expect(toPlain(D('12.5E-3'))).toBe('0.0125');
   });
   it('refuses what is not a number', () => {
-    for (const bad of ['', '.', 'abc', '1,5', '1e', '--1', '1.2.3', 'Infinity', 'NaN', '1e100000']) expect(parseDec(bad).ok, bad).toBe(false);
+    for (const bad of ['', '.', 'abc', '1,5', '1e', '--1', '1.2.3', 'Infinity', 'NaN']) expect(parseDec(bad).ok, bad).toBe(false);
+  });
+  it('checks zero exponents against the plain-text memory limit without expanding the zeroes', () => {
+    expect(parseDec(`0e-${MEMORY_DIGITS}`).ok).toBe(false);
+    const nearLimit = parseDec(`0e-${MEMORY_DIGITS - 2}`);
+    expect(nearLimit.ok).toBe(true);
+    if (nearLimit.ok) expect(nearLimit.dec.scale).toBe(MEMORY_DIGITS - 2);
   });
   it('converts to the nearest double', () => {
     expect(toNumber(D('3.5'))).toBe(3.5);

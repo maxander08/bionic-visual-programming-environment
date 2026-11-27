@@ -35,8 +35,8 @@ describe('exact decimal arithmetic', () => {
     expect(P(M.sub(D('1'), D('0.9')))).toBe('0.1');
     expect(P(M.mul(D('1.1'), D('1.1')))).toBe('1.21');
     expect(P(M.div(D('1'), D('8')))).toBe('0.125');
-    expect(P(M.div(D('1'), D('3'), 30))).toBe('0.' + '3'.repeat(30));
-    expect(P(M.div(D('2'), D('3'), 5))).toBe('0.66667');
+    expect(P(M.div(D('1'), D('3'), 30))).toBe('0.33333...');
+    expect(P(M.div(D('2'), D('3'), 5))).toBe('0.66666...');
     expect(() => M.div(D('1'), D('0'))).toThrow(/zero/i);
   });
   it('handles numbers far beyond a double on both ends', () => {
@@ -56,6 +56,12 @@ describe('exact decimal arithmetic', () => {
     expect(P(M.cos(D('1'), 30))).toBe('0.540302305868139717400936607443');
     expect(P(M.tanh(D('0.5'), 30))).toBe('0.462117157260009758502318483644');
     expect(M.sin(D('0'))).toEqual(M.ZERO);
+  });
+  it('uses exact parity for integer exponents beyond double precision', () => {
+    expect(P(M.pow(D('-1'), D('9007199254740993')))).toBe('-1');
+    expect(P(M.pow(D('-1'), D('9007199254740992')))).toBe('1');
+    expect(P(M.pow(D('-1'), D('9007199254740993.0')))).toBe('-1');
+    expect(P(M.pow(D('-1'), D('-9007199254740993')))).toBe('-1');
   });
   it('rounds to whole numbers like Math does', () => {
     expect(P(M.round(D('2.5')))).toBe('3');
@@ -107,9 +113,9 @@ describe('nodes keep every digit', () => {
     expect(val(e, 's', 'out')).toBe('1.0999999999999999999');
     expect(val(e, 'm', 'out')).toBe('1.21');
   });
-  it('Divisor works to its Precision setting and is exact when the quotient ends', () => {
-    const e = build([['a', 'constant', { value: '1' }], ['d', 'div', { divisor: '3', precision: 25 }], ['h', 'div', { divisor: '8' }]], [['a', 'out', 'd', 'a'], ['a', 'out', 'h', 'a']]);
-    expect(val(e, 'd', 'out')).toBe('0.' + '3'.repeat(25));
+  it('Divisor is exact: a quotient that repeats is kept whole and written with an ellipsis', () => {
+    const e = build([['a', 'constant', { value: '1' }], ['d', 'div', { divisor: '3' }], ['h', 'div', { divisor: '8' }]], [['a', 'out', 'd', 'a'], ['a', 'out', 'h', 'a']]);
+    expect(val(e, 'd', 'out')).toBe('0.33333...');
     expect(val(e, 'h', 'out')).toBe('0.125');
   });
   it('Divisor still reports division by zero', () => {
@@ -172,7 +178,7 @@ describe('nodes keep every digit', () => {
     const def = getDef('add')!;
     expect(resolveParams(def, { offset: '0.123456789012345678901234567890' }).offset).toBe('0.12345678901234567890123456789');
     expect(resolveParams(def, { offset: 0.5 }).offset).toBe(0.5);
-    expect(resolveParams(def, { offset: '1e99' }).offset).toBe(1e6);
+    expect(resolveParams(def, { offset: '1e99' }).offset).toBe(1e99);
     expect(resolveParams(def, { offset: 'abc' }).offset).toBe(0);
   });
   it('exact terminating quotients and perfect-square roots are never truncated by Precision', () => {
@@ -202,10 +208,10 @@ describe('nodes keep every digit', () => {
     expect(P(M.ln(D('1e99999'), 30))).toBe('230256.206714311574356115127477');
     expect(P(M.ln(D('1e-99999'), 30))).toBe('-230256.206714311574356115127477');
   });
-  it('toDec and readNumber reject out-of-range exponents and blank text while keeping 0x literals', () => {
-    expect(M.toDec('1e-100000')).toBeNull();
-    expect(M.toDec('1e100000')).toBeNull();
-    expect(readNumber('1e-100000')).toBeUndefined();
+  it('toDec and readNumber read any exponent, reject blank text and keep 0x literals', () => {
+    expect(M.toDec('1e-100000')).not.toBeNull();
+    expect(M.toDec('1e100000')).not.toBeNull();
+    expect(readNumber('1e-100000')).toBeDefined();
     expect(readNumber('')).toBeUndefined();
     expect(readNumber('   ')).toBeUndefined();
     expect(readNumber('0x1F')).toBe(31);

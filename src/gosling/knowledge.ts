@@ -4,7 +4,7 @@ import { parseDuration, toBaseUnit } from '../core/duration';
 import { parseQuantity } from '../core/quantities';
 import { MODULES, paramDefsOf, defaultParams } from '../core/registry';
 import type { ModuleDef, ParamDef, Params } from '../core/types';
-import { fmtNum } from '../core/util';
+import { fmtBound, fmtNum } from '../core/util';
 import { RECIPES } from '../ui/docs/recipes';
 import { search, tokenize } from '../ui/docs/search';
 import { GUIDE } from '../ui/docs/nodeGuide';
@@ -115,7 +115,7 @@ export const modulesIn = (category: string) => MODULES.filter((m) => m.category 
 // ---- settings --------------------------------------------------------------------------------------------------
 
 export function describeParam(p: ParamDef): string {
-  if (p.kind === 'number') return `number ${fmtNum(p.min)}–${fmtNum(p.max)}${p.unit ? ' ' + p.unit : ''}, default ${fmtNum(p.default)}`;
+  if (p.kind === 'number') return `number ${fmtBound(p.min)}–${fmtBound(p.max)}${p.unit ? ' ' + p.unit : ''}, default ${fmtNum(p.default)}`;
   if (p.kind === 'select') return `choice of ${p.options.map((o) => o.value).join(' / ')}, default ${p.default}`;
   if (p.kind === 'bool') return `on/off, default ${p.default ? 'on' : 'off'}`;
   if (p.kind === 'text') return 'text';
@@ -260,7 +260,7 @@ export function catalogueForModel(): string {
   const setting = (p: ParamDef) => {
     if (p.kind === 'action') return p.key;
     if (p.kind === 'select') return `${p.key}{${p.options.map((o) => o.value).join('|')}}=${p.default}`;
-    if (p.kind === 'number') return `${p.key}[${fmtNum(p.min)}..${fmtNum(p.max)}${p.unit ? ' ' + p.unit : ''}]=${fmtNum(p.default)}`;
+    if (p.kind === 'number') return `${p.key}[${fmtBound(p.min)}..${fmtBound(p.max)}${p.unit ? ' ' + p.unit : ''}]=${fmtNum(p.default)}`;
     if (p.kind === 'bool') return `${p.key}(bool)=${p.default}`;
     return `${p.key}(text)=${JSON.stringify(p.default)}`;
   };

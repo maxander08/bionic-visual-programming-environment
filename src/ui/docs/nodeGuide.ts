@@ -289,10 +289,10 @@ export const GUIDE: Record<string, NodeGuide> = {
   div: {
     when: 'You need to divide one number by another, or scale down.',
     steps: ['Connect the dividend to **A**.', 'Set **Divisor**, or connect a number to **B**.', 'Result = A ÷ (B or Divisor).'],
-    tips: ['A quotient that ends (1 ÷ 8 = 0.125) is exact. One that never ends (1 ÷ 3) is worked out to the **Precision** setting, 50 significant digits by default, up to 1000.'],
+    tips: ['The quotient is always exact. One that ends (1 ÷ 8 = 0.125) is written in full; one that never ends repeats (1 ÷ 3), and is kept as the repeating number it is, with an ellipsis after the repeating digits: 0.33333...'],
     pitfalls: ['A divisor of 0 raises an error (×) and emits nothing.'],
     alias: 'divide ratio quotient fraction',
-    settings: { divisor: 'Used only while B is unconnected. Must not be 0.', precision: 'Significant digits of a quotient that never ends. A quotient that ends is exact whatever this says.' },
+    settings: { divisor: 'Used only while B is unconnected. Must not be 0. Keeps every digit you type.' },
   },
   invert: {
     when: 'You need the opposite of a boolean or a number.',
@@ -303,8 +303,8 @@ export const GUIDE: Record<string, NodeGuide> = {
   math: {
     when: 'You need a mathematical function: abs, sqrt, sin, min, max, pow and more.',
     steps: ['Connect a number to **A**.', 'Pick a **Function**.', 'For *min*, *max*, *pow* and *mod* also connect **B**.'],
-    tips: ['abs, square, floor, round, ceil, min, max, mod and pow with a whole exponent are exact. sqrt, sin, cos, tanh, exp, log and pow with a fractional exponent are worked out to the **Precision** setting.'],
-    settings: { precision: 'Significant digits of a result that never ends (√2, sin 1). Exact results are never padded or cut.' },
+    tips: ['abs, square, floor, round, ceil, min, max, mod and pow with a whole exponent are exact. sqrt, sin, cos, tanh, exp, log and pow with a fractional exponent never end and never repeat, so they are worked out to the **Precision** setting, as many digits as you like.'],
+    settings: { precision: 'Significant digits of a result that never ends and never repeats (√2, sin 1). Exact results are never padded or cut.' },
     pitfalls: ['A result that is not finite (for example sqrt of a negative) raises an error and emits nothing.'],
     alias: 'abs sqrt sin cos tanh exp log floor round ceil min max pow mod function',
     options: { fn: { abs: 'Absolute value.', sqrt: 'Square root (A ≥ 0).', square: 'A × A.', sin: 'Sine of A (radians).', cos: 'Cosine of A (radians).', tanh: 'Squashes any number into −1…1.', exp: 'e to the power A.', log: 'Natural logarithm (A > 0).', floor: 'Round down.', round: 'Round to nearest.', ceil: 'Round up.', min: 'The smaller of A and B.', max: 'The larger of A and B.', pow: 'A to the power B.', mod: 'Remainder of A ÷ B.' } },
@@ -597,11 +597,11 @@ Object.assign(GUIDE, {
     tips: [
       'Value, Rounding and Base each have a setting pin on the top edge, so a signal can change them while the program runs.',
       'Input also understands text such as 42 or 0xFF, and reads true as 1 and false as 0.',
-      'The range is a signed 32-bit integer: −2 147 483 648 to 2 147 483 647.',
+      'There is no largest or smallest integer: it can have as many digits as you like.',
     ],
     pitfalls: [
       'A fraction is never kept: 2.7 becomes 2 with *Toward zero*, 3 with *Nearest*. Use [[n:decimal]] when the fraction matters.',
-      'A number beyond the range is held at the limit and the node shows a warning.',
+      'Only the memory of your device limits how big an integer can be; one too big for it fails with an error.',
       'The Integer output is always a plain number. Base only changes how it is written, on the face and on Text.',
     ],
     up: ['constant', 'random', 'decimal', 'string'], down: ['add', 'compare', 'projector', 'character'],
@@ -895,7 +895,7 @@ GUIDE['actor-numfmt'] = {
   settings: {
     value: 'Used when nothing is connected to the Number pin. Any number of digits.',
     mode: 'Decimal places and significant digits shorten the number; the notations write it with a power of ten; Exact only rewrites it.',
-    n: 'Decimal places or significant digits, 0 to 1000. For significant digits, scientific and engineering, 0 keeps every digit.',
+    n: 'Decimal places or significant digits, as many as you like. For significant digits, scientific and engineering, 0 keeps every digit.',
     rounding: 'Only matters when digits are cut off.',
     trim: 'Off keeps the zeros the digits count asks for (3.100); on removes them (3.1).',
     style: 'Only used by scientific and engineering notation.',
@@ -930,7 +930,7 @@ GUIDE['actor-baseconv'] = {
   ],
   tips: [
     'The default **Symbols** are 0-9, A-Z and then a, b, c, d: forty in all, so every base up to 40 can be written. Edit them to use your own characters.',
-    'Whole numbers of any size are converted exactly. Fractions are rounded to **Fraction digits** places in the new base.',
+    'Numbers of any size are converted exactly, with every digit. A fraction that never ends in the new base repeats, and is written with an ellipsis after the repeating digits: 0.1 in binary is 0.0001100110011...',
     'In bases up to 36 letters can be typed in either case: *ff* and *FF* are the same number.',
     'Base 1 is tally marks: 5 is 11111 (the second symbol, five times) and zero is the first symbol.',
     'Every setting is also a pin on the left, so a signal can choose the bases while the program runs.',
@@ -940,6 +940,7 @@ GUIDE['actor-baseconv'] = {
     'A number arriving on the Number pin is read by the digits it is written with: 101 is the digits 1, 0, 1 in the From base, not one hundred and one.',
     'The Symbols need at least as many different characters as the larger base. The characters - + . _ and the space cannot be digits.',
     'Base 1 has no decimal point: a fraction is an error on input and is rounded on output.',
+    'Text written with an ellipsis (0.0001100110011...) is read back as the repeating number it stands for.',
   ],
   up: ['decimal', 'integer', 'constant', 'string'],
   down: ['projector', 'text', 'string', 'compare'],
@@ -948,7 +949,8 @@ GUIDE['actor-baseconv'] = {
     value: 'Used when nothing is connected to the Number pin. Written in the From base.',
     from: 'The base of the Value, 1 to 40.',
     to: 'The base to write the result in, 1 to 40.',
-    precision: 'Digits kept after the point in the new base; the last one is rounded.',
+    round: 'Off writes every digit, with an ellipsis after the digits of a fraction that repeats. On rounds the fraction to Fraction digits places.',
+    precision: 'Digits kept after the point in the new base when Round the fraction is on; the last one is rounded.',
     symbols: 'The characters used as digits, in order: the first is zero.',
   },
 };
