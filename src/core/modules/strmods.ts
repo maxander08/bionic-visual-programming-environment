@@ -47,7 +47,7 @@ export const strmods: ModuleDef[] = [
   {
     ...chip, type: 'str-add', name: 'String Adder', caption: 'String Adder', glyph: '+', chip: (p) => q(p.add),
     keywords: 'concatenate concat append join plus add strings text + python',
-    inputs: [IN('The first string.'), inp('b', 'B', 'text', 'A second string, added after the first; nothing when not connected.', 'top', true)],
+    inputs: [inp('in', 'A', 'text', 'The first string.'), inp('b', 'B', 'text', 'A second string, added after the first; nothing when not connected.', 'top', true)],
     outputs: [OUT('A + B + the Add setting, one string.', 'Sum')],
     params: [{ ...txt('add', 'Add', '', `A string added at the end.${ESC}`), pinSide: 'left' }],
     run(c) { emitStr(c, 'out', str$(c) + (c.has('b') ? str$(c, 'b') : '') + esc$(c, 'add')); },
@@ -61,7 +61,7 @@ export const strmods: ModuleDef[] = [
   {
     ...chip, type: 'str-mul', name: 'String Multiplier', caption: 'String Multiplier', glyph: '×', chip: (p) => `${p.times}`,
     keywords: 'repeat multiply times duplicate copies * python',
-    inputs: [IN('The string to repeat.'), inp('b', 'B', 'num', 'Replaces the Times setting when connected.', 'top', true)],
+    inputs: [inp('in', 'A', 'text', 'The string to repeat.'), inp('b', 'B', 'num', 'Replaces the Times setting when connected.', 'top', true)],
     outputs: [OUT('The string repeated that many times.', 'Product')],
     params: [{ ...num('times', 'Times', 2, -1000000, 1000000, 1, 'How many copies to make. Zero or less gives an empty string.'), pinSide: 'left' }],
     run(c) { py(c, () => emitStr(c, 'out', S.repeat(str$(c), c.has('b') ? toNum(c.get('b')) : c.num('times')))); },
