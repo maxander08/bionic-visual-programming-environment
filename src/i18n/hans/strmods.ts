@@ -51,9 +51,9 @@ export const strmods: Record<string, string> = {
   'Sends the pieces as a list, and how many there are. With an empty Separator the string is cut at runs of whitespace and empty pieces are dropped; with a Separator, neighbouring separators give empty pieces (“a,,b” gives a, an empty string and b). Max splits limits the cuts: split keeps the rest on the right in one piece, rsplit on the left.': '输出各段组成的列表，以及段数。分隔符为空时，在连续的空白处切开，并丢弃空段；有分隔符时，相邻的分隔符之间会产生空段（“a,,b” 得到 a、空字符串和 b）。“最多切分次数”限制刀数：从左切分把剩余部分留在右侧成一段，从右切分则留在左侧。',
   'String Separator (“,”) → Array: turn a line of comma-separated values into a list.': '字符串分隔（“,”）→ 数组：把一行用逗号分隔的值变成列表。',
   'String Separator (splitlines) → Array Length: count the lines of a text.': '字符串分隔（按行切分）→ 数组长度：数出文本有多少行。',
-  'split()': '切分',
-  'rsplit()': '从右切分',
-  'splitlines()': '按行切分',
+  'split': '切分',
+  'rsplit': '从右切分',
+  'splitlines': '按行切分',
 
   // String Joiner
   'String Joiner': '字符串连接',
@@ -77,12 +77,12 @@ export const strmods: Record<string, string> = {
   'casefold: aggressive lower case': '大小写折叠：用于比较的小写',
   'Changes the case of a string: Python’s upper, lower, title, capitalize, swapcase and casefold.': '改变字符串的大小写：大写、小写、词首大写、首字母大写、大小写互换和大小写折叠。',
   'Applies the chosen method to the string. Letters of every alphabet that has two cases are changed (ä ↔ Ä), and characters that aren’t letters are left alone.': '对字符串应用所选方式。所有区分大小写的文字的字母都会被转换（ä ↔ Ä），不是字母的字符保持不变。',
-  'upper()': '大写',
-  'lower()': '小写',
-  'title()': '词首大写',
-  'capitalize()': '首字母大写',
-  'swapcase()': '大小写互换',
-  'casefold()': '大小写折叠',
+  'upper': '大写',
+  'lower': '小写',
+  'title': '词首大写',
+  'capitalize': '首字母大写',
+  'swapcase': '大小写互换',
+  'casefold': '大小写折叠',
 
   // String Stripper
   'String Stripper': '字符串去边',
@@ -94,9 +94,9 @@ export const strmods: Record<string, string> = {
   [`Every character listed here is stripped (in any order, not as a word). Leave it empty to strip whitespace.${ESC}`]: `这里列出的每个字符都会被去掉（不分先后，不是作为一个词）。留空则去掉空白。${ESC_ZH}`,
   'Removes characters from the ends of a string: Python’s strip, lstrip and rstrip.': '去掉字符串两端的字符：去两端、去开头和去结尾。',
   'Takes characters off the chosen end(s) for as long as they are in the Characters list, or whitespace (spaces, tabs, line breaks) when the list is empty. Characters in the middle are never touched: “xxhixx” stripped of “x” is “hi”.': '只要字符在“字符”列表中（列表为空时为空白：空格、制表符、换行），就从所选的一端或两端逐个去掉。中间的字符不会被动：从 “xxhixx” 去掉 “x” 得到 “hi”。',
-  'strip()': '去两端',
-  'lstrip()': '去开头',
-  'rstrip()': '去结尾',
+  'strip': '去两端',
+  'lstrip': '去开头',
+  'rstrip': '去结尾',
 
   // String Remover
   'String Remover': '字符串去缀',
@@ -107,8 +107,8 @@ export const strmods: Record<string, string> = {
   [`The prefix or suffix to remove, only when the string really starts or ends with it.${ESC}`]: `要去掉的前缀或后缀，仅当字符串确实以它开头或结尾时才去掉。${ESC_ZH}`,
   'Removes a prefix or a suffix, once: Python’s removeprefix and removesuffix.': '去掉一次前缀或后缀。',
   'If the string starts (removeprefix) or ends (removesuffix) with the Text, that part is cut off, once. Otherwise the string comes out unchanged. Unlike strip, the Text is a whole word, not a list of characters.': '如果字符串以“文本”开头（去前缀）或结尾（去后缀），这一部分会被去掉一次；否则字符串保持不变。与“字符串去边”不同，“文本”是一个整体，而不是字符列表。',
-  'removeprefix()': '去前缀',
-  'removesuffix()': '去后缀',
+  'removeprefix': '去前缀',
+  'removesuffix': '去后缀',
 
   // String Replacer
   'String Replacer': '字符串替换',
@@ -139,10 +139,10 @@ export const strmods: Record<string, string> = {
   'Sends the position of the first (find, index) or last (rfind, rindex) match, counting characters from 0, and whether there was one. Start and End limit the part that is searched, like Python’s s.find(sub, start, end). The positions count characters, so an emoji is one.': '输出第一处（查找、定位）或最后一处（从右查找、从右定位）匹配的位置（从 0 起按字符计数），以及是否找到。“起点”和“终点”限定查找的范围。位置按字符计数，所以一个表情符号算一个。',
   'index and rindex fail with “substring not found” when there is no match.': '“定位”和“从右定位”在没有匹配时会报错“找不到子字符串”。',
   'Start or End that isn’t a whole number gives an error.': '“起点”或“终点”不是整数会报错。',
-  'find()': '查找',
-  'rfind()': '从右查找',
-  'index()': '定位',
-  'rindex()': '从右定位',
+  'find': '查找',
+  'rfind': '从右查找',
+  'index': '定位',
+  'rindex': '从右定位',
 
   // String Counter
   'String Counter': '字符串计数',
@@ -166,10 +166,10 @@ export const strmods: Record<string, string> = {
   'Pads a string to a width: Python’s center, ljust, rjust and zfill.': '把字符串填充到指定宽度：居中、左对齐、右对齐和补零。',
   'Adds Fill characters until the string is Width characters long, around it (center), after it (ljust) or before it (rjust). zfill puts zeros in front and keeps a leading + or − first, so “-42” becomes “-0042”.': '添加“填充字符”，直到字符串达到“宽度”个字符：加在两侧（居中）、后面（左对齐）或前面（右对齐）。“补零”在前面补 0，并让开头的正负号仍排在最前，所以 “-42” 变成 “-0042”。',
   'A Fill character that isn’t exactly one character gives an error (Python: “The fill character must be exactly one character long”).': '“填充字符”不是恰好一个字符会报错（“填充字符必须恰好是一个字符”）。',
-  'center()': '居中',
-  'ljust()': '左对齐',
-  'rjust()': '右对齐',
-  'zfill()': '补零',
+  'center': '居中',
+  'ljust': '左对齐',
+  'rjust': '右对齐',
+  'zfill': '补零',
 
   // String Matcher
   'String Matcher': '字符串匹配',
@@ -182,8 +182,8 @@ export const strmods: Record<string, string> = {
   [`The text to look for. Empty text is found in every string.${ESC}`]: `要查找的文本。每个字符串中都能找到空文本。${ESC_ZH}`,
   'Checks whether a string begins with, ends with or contains some text: Python’s startswith, endswith and the in operator.': '检查字符串是否以某段文本开头、结尾，或包含它。',
   'Sends true or false. The check is case-sensitive; run the string through a String Caser first to ignore case.': '输出真或假。检查区分大小写；想忽略大小写，请先让字符串经过“字符串大小写”。',
-  'startswith()': '开头是',
-  'endswith()': '结尾是',
+  'startswith': '开头是',
+  'endswith': '结尾是',
   'x in s': '包含',
 
   // String Validator
@@ -205,18 +205,18 @@ export const strmods: Record<string, string> = {
   'Tests what kind of characters a string holds: Python’s isalpha, isdigit, isnumeric, isalnum, isspace, isupper, islower, istitle and the rest.': '检验字符串里是哪一类字符：字母、数字、数值字符、字母或数字、空白、大写、小写、标题格式等。',
   'Sends true or false. As in Python, an empty string fails every test except isascii and isprintable. isdecimal is the strictest digit test (0–9 and the digits of other scripts), isdigit adds superscripts such as ², and isnumeric adds fractions and numerals such as ½ and 五.': '输出真或假。空字符串除“全是基本拉丁字符”和“全部可打印”外，其余检验都不通过。“全是十进制数字”是最严格的数字检验（0–9 和其他文字的数字），“全是数字”再加上上标如 ²，“全是数值字符”还包括分数和数字字符，如 ½ 和 五。',
   'String Validator (isdigit) → Gate: let only numeric text through.': '字符串检验（全是数字）→ 闸门：只放行数字文本。',
-  'isalpha()': '全是字母',
-  'isdecimal()': '全是十进制数字',
-  'isdigit()': '全是数字',
-  'isnumeric()': '全是数值字符',
-  'isalnum()': '全是字母或数字',
-  'isspace()': '全是空白',
-  'isupper()': '全是大写字母',
-  'islower()': '全是小写字母',
-  'istitle()': '标题格式',
-  'isidentifier()': '合法名称',
-  'isascii()': '全是基本拉丁字符',
-  'isprintable()': '全部可打印',
+  'isalpha': '全是字母',
+  'isdecimal': '全是十进制数字',
+  'isdigit': '全是数字',
+  'isnumeric': '全是数值字符',
+  'isalnum': '全是字母或数字',
+  'isspace': '全是空白',
+  'isupper': '全是大写字母',
+  'islower': '全是小写字母',
+  'istitle': '标题格式',
+  'isidentifier': '合法名称',
+  'isascii': '全是基本拉丁字符',
+  'isprintable': '全部可打印',
 
   // String Partitioner
   'String Partitioner': '字符串三分',
@@ -233,8 +233,8 @@ export const strmods: Record<string, string> = {
   'Finds the first (partition) or last (rpartition) Separator and sends what comes before it, the separator, and what comes after. If there is no match, partition sends the whole string as Before and nothing else, and rpartition sends the whole string as After.': '找到第一个（三分）或最后一个（从右三分）分隔符，输出它之前的部分、分隔符本身和它之后的部分。没有匹配时，“三分”把整个字符串作为“之前”输出，其余为空；“从右三分”把整个字符串作为“之后”输出。',
   'An empty Separator gives an error (Python: “empty separator”).': '分隔符为空会报错（“分隔符不能为空”）。',
   'String Partitioner (“=”) on “volume=7”: Before is “volume”, After is “7”.': '用字符串三分（“=”）处理 “volume=7”：“之前”是 “volume”，“之后”是 “7”。',
-  'partition()': '三分',
-  'rpartition()': '从右三分',
+  'partition': '三分',
+  'rpartition': '从右三分',
 
   // String Slicer
   'String Slicer': '字符串切片',
@@ -278,7 +278,7 @@ export const strmods: Record<string, string> = {
   'lines: len(s.splitlines())': '行数',
   'Measures a string: Python’s len(s), and the bytes, words and lines of it.': '测量字符串：字符数，以及字节数、单词数和行数。',
   'Characters counts whole characters (an emoji is one). Bytes counts the bytes of the UTF-8 form, where “é” takes two and “五” three. Words and lines count the pieces split() and splitlines() would give.': '“字符数”按整个字符计（一个表情符号算一个）。“字节数”统计 8 位万国码形式的字节，“é” 占两个，“五” 占三个。“单词数”和“行数”统计切分后得到的段数。',
-  'len()': '字符数',
+  'len': '字符数',
   'len(bytes)': '字节数',
   'len(words)': '单词数',
   'len(lines)': '行数',
@@ -308,7 +308,7 @@ export const strmods: Record<string, string> = {
   'Swaps or deletes single characters in one pass: Python’s str.maketrans and translate.': '一次性替换或删除单个字符。',
   'Every character found in From is replaced by the character at the same position in To, and every character in Delete is removed. Unlike the String Replacer it works on single characters, all at once: From “ab” and To “ba” swaps a and b.': '“原字符”中出现的每个字符，都会换成“新字符”中相同位置的字符，“删除”中的每个字符都会被去掉。与“字符串替换”不同，它针对单个字符并一次完成：原字符 “ab”、新字符 “ba” 会把 a 和 b 互换。',
   'From and To of different lengths give an error (Python: “the first two maketrans arguments must have equal length”).': '“原字符”和“新字符”长度不同会报错。',
-  'translate()': '转换字符',
+  'translate': '转换字符',
 
   // String Ordinal
   'String Ordinal': '字符序数',
@@ -321,8 +321,8 @@ export const strmods: Record<string, string> = {
   'ord needs a text of exactly one character and sends its code point (0 to 1 114 111). chr needs a whole number in that range and sends the character. 😀 is 128512.': '“字符转数字”需要恰好一个字符的文本，并输出它的码位（0 到 1 114 111）。“数字转字符”需要此范围内的整数，并输出对应的字符。😀 是 128512。',
   'ord of a text that isn’t exactly one character gives an error (Python: TypeError).': '文本不是恰好一个字符时，“字符转数字”会报错。',
   'chr of a number that isn’t a whole number from 0 to 1 114 111 gives an error.': '数字不是 0 到 1 114 111 之间的整数时，“数字转字符”会报错。',
-  'ord()': '字符转数字',
-  'chr()': '数字转字符',
+  'ord': '字符转数字',
+  'chr': '数字转字符',
 
   // String Representer
   'String Representer': '字符串表示',
@@ -333,8 +333,8 @@ export const strmods: Record<string, string> = {
   'ascii: escape all non-ASCII': '转义所有非基本拉丁字符',
   'Shows a string the way Python prints it, with quotes, and line breaks and tabs written as \\n and \\t: Python’s repr and ascii.': '带引号地显示字符串，并把换行和制表符写成 \\n 和 \\t。',
   'Wraps the string in single quotes (double quotes if it holds a single quote and no double quote) and writes backslashes, line breaks, tabs and invisible characters as escapes, so hidden characters show. ascii also escapes every character that isn’t ASCII.': '用单引号包住字符串（若含单引号而不含双引号，则用双引号），并把反斜杠、换行、制表符和不可见字符写成转义形式，让隐藏的字符显现出来。“转义非基本拉丁字符”还会转义每个不属于基本拉丁字符的字符。',
-  'repr()': '保留可读字符',
-  'ascii()': '转义非基本拉丁字符',
+  'repr': '保留可读字符',
+  'ascii': '转义非基本拉丁字符',
 
   // String Tab Expander
   'String Tab Expander': '字符串展开制表符',

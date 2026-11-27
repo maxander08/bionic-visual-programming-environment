@@ -74,7 +74,7 @@ export const strmods: ModuleDef[] = [
 
   /* ───── split ───── */
   {
-    ...chip, type: 'str-split', name: 'String Separator', caption: 'String Separator', glyph: 'a|b', chip: (p) => `${p.mode}()`,
+    ...chip, type: 'str-split', name: 'String Separator', caption: 'String Separator', glyph: 'a|b', chip: (p) => `${p.mode}`,
     keywords: 'split rsplit splitlines separate divide cut tokens words lines list array python',
     inputs: [IN('The string to split.')],
     outputs: [out('out', 'List', 'data', 'The pieces, as a list of strings.'), out('count', 'Count', 'num', 'How many pieces there are.')],
@@ -120,7 +120,7 @@ export const strmods: ModuleDef[] = [
 
   /* ───── case ───── */
   {
-    ...chip, type: 'str-case', name: 'String Caser', caption: 'String Caser', glyph: 'A↔a', chip: (p) => `${p.mode}()`,
+    ...chip, type: 'str-case', name: 'String Caser', caption: 'String Caser', glyph: 'A↔a', chip: (p) => `${p.mode}`,
     keywords: 'upper lower title capitalize swapcase casefold uppercase lowercase capital letters case python',
     inputs: [IN()],
     outputs: [OUT('The string in the chosen case.')],
@@ -137,7 +137,7 @@ export const strmods: ModuleDef[] = [
 
   /* ───── strip ───── */
   {
-    ...chip, type: 'str-strip', name: 'String Stripper', caption: 'String Stripper', glyph: '⟨ ⟩', chip: (p) => `${p.mode}()`,
+    ...chip, type: 'str-strip', name: 'String Stripper', caption: 'String Stripper', glyph: '⟨ ⟩', chip: (p) => `${p.mode}`,
     keywords: 'strip lstrip rstrip trim whitespace clean spaces remove ends python',
     inputs: [IN()],
     outputs: [OUT('The string without the stripped characters at its ends.')],
@@ -154,7 +154,7 @@ export const strmods: ModuleDef[] = [
 
   /* ───── removeprefix / removesuffix ───── */
   {
-    ...chip, type: 'str-remove', name: 'String Remover', caption: 'String Remover', glyph: '−a', chip: (p) => `remove${p.mode}()`,
+    ...chip, type: 'str-remove', name: 'String Remover', caption: 'String Remover', glyph: '−a', chip: (p) => `remove${p.mode}`,
     keywords: 'removeprefix removesuffix prefix suffix cut off start end python',
     inputs: [IN()],
     outputs: [OUT('The string without the prefix or suffix.')],
@@ -189,7 +189,7 @@ export const strmods: ModuleDef[] = [
 
   /* ───── find / index ───── */
   {
-    ...chip, type: 'str-find', name: 'String Finder', caption: 'String Finder', glyph: 'i?', chip: (p) => `${p.mode}()`,
+    ...chip, type: 'str-find', name: 'String Finder', caption: 'String Finder', glyph: 'i?', chip: (p) => `${p.mode}`,
     keywords: 'find rfind index rindex search locate position where substring python',
     inputs: [IN('The string to search in.')],
     outputs: [out('index', 'Index', 'num', 'Where the match starts, counting characters from 0. −1 means there is none (find and rfind).'), out('found', 'Found', 'bool', 'True when the text was found.')],
@@ -230,7 +230,7 @@ export const strmods: ModuleDef[] = [
 
   /* ───── center / ljust / rjust / zfill ───── */
   {
-    ...chip, type: 'str-align', name: 'String Aligner', caption: 'String Aligner', glyph: '⇔', chip: (p) => `${p.mode}()`,
+    ...chip, type: 'str-align', name: 'String Aligner', caption: 'String Aligner', glyph: '⇔', chip: (p) => `${p.mode}`,
     keywords: 'center ljust rjust zfill pad padding justify align width fill zeros python',
     inputs: [IN()],
     outputs: [OUT('The string padded to the width.')],
@@ -249,7 +249,7 @@ export const strmods: ModuleDef[] = [
 
   /* ───── startswith / endswith / in ───── */
   {
-    ...chip, type: 'str-match', name: 'String Matcher', caption: 'String Matcher', glyph: '⊂', chip: (p) => (p.mode === 'contains' ? 'x in s' : `${p.mode}()`),
+    ...chip, type: 'str-match', name: 'String Matcher', caption: 'String Matcher', glyph: '⊂', chip: (p) => (p.mode === 'contains' ? 'x in s' : `${p.mode}`),
     keywords: 'startswith endswith contains in includes begins ends substring check match test python',
     inputs: [IN()],
     outputs: [out('out', 'Result', 'bool', 'True when the test holds.')],
@@ -269,7 +269,7 @@ export const strmods: ModuleDef[] = [
 
   /* ───── isalpha … ───── */
   {
-    ...chip, type: 'str-check', name: 'String Validator', caption: 'String Validator', glyph: '✓', chip: (p) => `${p.mode}()`,
+    ...chip, type: 'str-check', name: 'String Validator', caption: 'String Validator', glyph: '✓', chip: (p) => `${p.mode}`,
     keywords: 'isalpha isdigit isnumeric isdecimal isalnum isspace isupper islower istitle isidentifier isascii isprintable validate check kind letters digits python',
     inputs: [IN()],
     outputs: [out('out', 'Result', 'bool', 'True when the string passes the test.')],
@@ -288,7 +288,7 @@ export const strmods: ModuleDef[] = [
 
   /* ───── partition / rpartition ───── */
   {
-    ...chip, type: 'str-partition', name: 'String Partitioner', caption: 'String Partitioner', glyph: 'a|b|c', chip: (p) => `${p.mode}()`,
+    ...chip, type: 'str-partition', name: 'String Partitioner', caption: 'String Partitioner', glyph: 'a|b|c', chip: (p) => `${p.mode}`,
     keywords: 'partition rpartition split three parts before after separator head tail python',
     inputs: [IN()],
     outputs: [out('head', 'Before', 'text', 'The part before the separator (the whole string when it isn’t found, for partition).'), out('sep', 'Separator', 'text', 'The separator itself, or an empty string when it isn’t found.'), out('tail', 'After', 'text', 'The part after the separator (the whole string when it isn’t found, for rpartition).')],
@@ -363,7 +363,7 @@ export const strmods: ModuleDef[] = [
 
   /* ───── len ───── */
   {
-    ...chip, type: 'str-len', name: 'String Length', caption: 'String Length', glyph: '|s|', chip: (p) => (p.unit === 'chars' ? 'len()' : `len(${p.unit})`),
+    ...chip, type: 'str-len', name: 'String Length', caption: 'String Length', glyph: '|s|', chip: (p) => (p.unit === 'chars' ? 'len' : `len(${p.unit})`),
     keywords: 'length len size count characters bytes words lines how long python',
     inputs: [IN()],
     outputs: [out('out', 'Length', 'num', 'The length.')],
@@ -404,7 +404,7 @@ export const strmods: ModuleDef[] = [
   /* ───── maketrans / translate ───── */
   {
     ...chip, type: 'str-translate', name: 'String Translator', caption: 'String Translator', glyph: 'a↦b',
-    chip: (p) => (!p.from && !p.to && !p.delete ? 'translate()' : `${q(p.from)}→${q(p.to)}${p.delete ? ` −${q(p.delete)}` : ''}`),
+    chip: (p) => (!p.from && !p.to && !p.delete ? 'translate' : `${q(p.from)}→${q(p.to)}${p.delete ? ` −${q(p.delete)}` : ''}`),
     keywords: 'translate maketrans map characters substitute swap delete remove letters cipher rot python',
     inputs: [IN()],
     outputs: [OUT('The string with every character swapped or deleted.')],
@@ -423,7 +423,7 @@ export const strmods: ModuleDef[] = [
 
   /* ───── ord / chr ───── */
   {
-    ...chip, type: 'str-ord', name: 'String Ordinal', caption: 'String Ordinal', glyph: 'a↔1', chip: (p) => `${p.mode}()`,
+    ...chip, type: 'str-ord', name: 'String Ordinal', caption: 'String Ordinal', glyph: 'a↔1', chip: (p) => `${p.mode}`,
     keywords: 'ord chr unicode code point character number ascii convert codepoint python',
     inputs: [inp('in', 'Input', 'any', 'A single character (ord), or a code point number (chr).')],
     outputs: [out('out', 'Result', 'any', 'The code point of the character (ord), or the character of the code point (chr).')],
@@ -446,7 +446,7 @@ export const strmods: ModuleDef[] = [
 
   /* ───── repr / ascii ───── */
   {
-    ...chip, type: 'str-repr', name: 'String Representer', caption: 'String Representer', glyph: "'a'", chip: (p) => `${p.mode}()`,
+    ...chip, type: 'str-repr', name: 'String Representer', caption: 'String Representer', glyph: "'a'", chip: (p) => `${p.mode}`,
     keywords: 'repr ascii escape quote quoted representation printable debug invisible python',
     inputs: [IN()],
     outputs: [OUT('The string as Python would print it, with quotes and escapes.', 'Repr')],
