@@ -48,7 +48,7 @@ from the network and no system fonts are used.
   No PingFang, YaHei, JhengHei, Heiti, Source Han or “Noto Sans CJK” names appear anywhere, and `src/ui/typography.test.ts` makes sure it stays that way.
 * Elements with their own `lang` (the language picker, the Set Language node) get the matching face whatever the UI language is.
 * The faces are variable-weight (400–700) subsets of Noto Sans SC/TC (SIL OFL 1.1). They cover every character the app uses, plus GB2312 (SC) / Big5 level 1 (TC)
-  so text you type yourself is covered too. To regenerate them, run `python3 scripts/fonts/build-noto-subsets.py` (you'll need `pip install fonttools brotli`).
+  so text you type yourself is covered too.
 * The operating system draws native `title` bubbles in its own font, so `TitleTips` swaps them for an in-page tooltip that uses the app's font stack.
 
 ## Deploying to GitHub Pages

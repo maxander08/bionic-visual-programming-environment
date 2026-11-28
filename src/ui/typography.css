@@ -18,7 +18,7 @@
    Loaded last (see main.tsx) so it wins over index.css / docs.css / shell.css.
    ========================================================================== */
 
-/* ── Noto Sans SC / TC (SIL OFL 1.1) — variable weight 400–700, subset by scripts/fonts/build-noto-subsets.py ── */
+/* ── Noto Sans SC / TC (SIL OFL 1.1) — variable weight 400–700, subset ── */
 @font-face {
   font-family: "Noto Sans SC";
   src: url("../assets/fonts/NotoSansSC-subset.woff2") format("woff2");

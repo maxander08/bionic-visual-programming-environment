@@ -1,5 +1,5 @@
-// Python's str methods, in plain TypeScript, for the String Modifiers section. Pure data and maths, no browser objects.
-// Positions and lengths count code points (like Python), so an emoji is one character, not two.
+// String methods, in plain TypeScript, for the String Modifiers section. Pure data and maths, no browser objects.
+// Positions and lengths count code points, so an emoji is one character, not two.
 
 export class StrError extends Error {}
 
@@ -14,7 +14,7 @@ export const cps = (s: string): string[] => Array.from(s);
 export const cpLen = (s: string): number => { let n = 0; for (const _ of s) n++; return n; };
 const guard = (n: number) => { if (n > MAX_LEN) throw new StrError(`The result would be longer than ${MAX_LEN.toLocaleString('en')} characters.`); };
 
-/** Turns \n, \t, \r, \0, \\ and \xNN typed into a setting into the characters they stand for (like a Python string literal). */
+/** Turns \n, \t, \r, \0, \\ and \xNN typed into a setting into the characters they stand for (like in a string literal). */
 export function unescape(s: string): string {
   if (!s.includes('\\')) return s;
   return s.replace(/\\(x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|[ntr0\\'"])/g, (_m, g: string) => {
@@ -196,7 +196,7 @@ export function translate(s: string, from: string, to: string, del: string): str
 
 // ---- find / count --------------------------------------------------------------------------------------------
 
-/** Clamp a Python-style (possibly negative, possibly missing) bound to 0…len. */
+/** Clamp a (possibly negative, possibly missing) bound to 0…len. */
 export function bound(v: number | undefined, len: number, dflt: number): number {
   if (v === undefined) return dflt;
   const n = v < 0 ? v + len : v;
@@ -256,7 +256,7 @@ export function expandTabs(s: string, size: number): string {
 
 // ---- slicing / indexing --------------------------------------------------------------------------------------
 
-/** s[start:stop:step] with Python's rules for negative and missing bounds. */
+/** s[start:stop:step] with the usual rules for negative and missing bounds. */
 export function slice(s: string, start?: number, stop?: number, step = 1): string {
   if (step === 0) throw new StrError('slice step cannot be zero');
   const a = cps(s), n = a.length;
@@ -364,12 +364,12 @@ export function chr(n: number): string {
 
 // ---- str.format ----------------------------------------------------------------------------------------------
 
-/** A value handed to format(): its name ('a', 'b', 'c'), its text, and its number when it is one (text never is, as in Python). */
+/** A value handed to format(): its name ('a', 'b', 'c'), its text, and its number when it is one (text never is). */
 export interface FormatArg { name: string; text: string; num: number | undefined; bool?: boolean }
 
 const group3 = (digits: string, sep: string) => digits.replace(/\B(?=(\d{3})+(?!\d))/g, sep);
 
-/** Fixed-point text like Python's: JavaScript rounds an exact tie (2.25 to one place) up, Python to the even digit (2.2). */
+/** Fixed-point text that rounds an exact tie (2.25 to one place) to the even digit (2.2), where JavaScript rounds it up. */
 function fixed(abs: number, p: number): string {
   const d = Math.min(100, p);
   const plain = abs.toFixed(d);

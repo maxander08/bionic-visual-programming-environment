@@ -176,7 +176,6 @@ const FAQ: Faq[] = [
   { re: /\bwhat is (an? )?(compiler)\b/, a: 'A **compiler** translates source code into something a machine can run. Java compiles to bytecode; this site is compiled by Vite into a single HTML file.' },
   { re: /\bwhat is (an? )?(ai|artificial intelligence|llm|language model)\b/, a: '**AI** is software that performs tasks that normally need human judgement, like recognising speech or writing text. A **language model (LLM)** is an AI trained on huge amounts of text to predict and produce language. I am a lighter kind of assistant: out of the box I use rules and a live view of your workspace. If you connect a language model in my settings (the gear in this panel), I can use it to answer open questions.' },
   { re: /\bwhat is react\b/, a: '**React** is a JavaScript library for building user interfaces out of components. Nicque’s editor is built with React, Vite, Tailwind CSS and Zustand.' },
-  { re: /\bwhat is python\b/, a: '**Python** is a popular, readable programming language created by Guido van Rossum, widely used for scripting, data science and AI.' },
   { re: /\bhello world\b/, a: '`Hello, world!` is the traditional first program. In Nicque: add a **Constant** with Kind = Text and Value = Hello, world!, wire it to a **Projector**, and press Run. Say “build hello world” and I’ll do it.' },
   { re: /\bmeaning of life\b/, a: '42. (Though in Nicque, a Constant set to 42 wired to a Projector says it louder.)' },
 ];

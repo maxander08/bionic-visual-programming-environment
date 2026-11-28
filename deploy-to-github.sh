@@ -74,14 +74,14 @@ esac
 # ── 3. Point package.json at the real repo, then push ─────────────────────────
 cd "$DIR"
 if grep -q 'USERNAME' package.json; then
-  python3 - "$OWNER" "$REPO" <<'PY'
-import json, sys, collections
-owner, repo = sys.argv[1], sys.argv[2]
-d = json.load(open('package.json'), object_pairs_hook=collections.OrderedDict)
-d['homepage'] = f'https://{owner}.github.io/{repo}/'
-d['repository'] = {'type': 'git', 'url': f'https://github.com/{owner}/{repo}.git'}
-open('package.json', 'w').write(json.dumps(d, indent=2, ensure_ascii=False) + '\n')
-PY
+  node --input-type=commonjs - "$OWNER" "$REPO" <<'JS'
+const fs = require('fs');
+const [owner, repo] = process.argv.slice(2);
+const d = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+d.homepage = `https://${owner}.github.io/${repo}/`;
+d.repository = { type: 'git', url: `https://github.com/${owner}/${repo}.git` };
+fs.writeFileSync('package.json', JSON.stringify(d, null, 2) + '\n');
+JS
   git add package.json
   git -c user.name="Neural Studio" -c user.email="dev@local" \
       commit -q -m "Point package.json at $OWNER/$REPO"

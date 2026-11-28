@@ -50,13 +50,13 @@ describe('String Modifiers section', () => {
 });
 
 describe('String Adder and Multiplier', () => {
-  it('adds strings like Python’s +', () => {
+  it('adds strings with +', () => {
     expect(go('str-add', { add: '!' }, 'Hi')).toBe('Hi!');
     const e = run('str-add', { add: '-' }, 'a', [['b', 'string', { value: 'b' }, 'out', 'b']]);
     expect(out(e)).toBe('ab-');
     expect(go('str-add', { add: '\\n.' }, 'x')).toBe('x\n.');
   });
-  it('multiplies strings like Python’s *', () => {
+  it('multiplies strings with *', () => {
     expect(go('str-mul', { times: 3 }, 'ab')).toBe('ababab');
     expect(go('str-mul', { times: 0 }, 'ab')).toBe('');
     expect(go('str-mul', { times: -2 }, 'ab')).toBe('');
@@ -68,7 +68,7 @@ describe('String Adder and Multiplier', () => {
 });
 
 describe('split, join, partition', () => {
-  it('splits like Python', () => {
+  it('splits text', () => {
     expect(S.split('a,b,,c', ',', -1)).toEqual(['a', 'b', '', 'c']);
     expect(S.split('', ',', -1)).toEqual(['']);
     expect(S.split('  a  b c ', '', -1)).toEqual(['a', 'b', 'c']);
@@ -109,7 +109,7 @@ describe('split, join, partition', () => {
 });
 
 describe('case, strip, remove, replace, translate', () => {
-  it('changes case like Python', () => {
+  it('changes case', () => {
     expect(S.changeCase("they're a TEST", 'title')).toBe("They'Re A Test");
     expect(S.changeCase('hELLO wORLD', 'capitalize')).toBe('Hello world');
     expect(S.changeCase('Hello', 'swapcase')).toBe('hELLO');
@@ -128,7 +128,7 @@ describe('case, strip, remove, replace, translate', () => {
     expect(S.changeCase('---', 'camel')).toBe('');
     expect(go('str-case', { mode: 'camel' }, 'make me camel')).toBe('makeMeCamel');
   });
-  it('strips, removes and replaces like Python', () => {
+  it('strips, removes and replaces', () => {
     expect(S.strip('  hi \n', '', 'both')).toBe('hi');
     expect(S.strip('  hi ', '', 'left')).toBe('hi ');
     expect(S.strip('  hi ', '', 'right')).toBe('  hi');
@@ -153,7 +153,7 @@ describe('case, strip, remove, replace, translate', () => {
 });
 
 describe('find, count, tests', () => {
-  it('finds like Python (positions in characters)', () => {
+  it('finds (positions in characters)', () => {
     expect(S.find('hello', 'l', undefined, undefined, false)).toBe(2);
     expect(S.find('hello', 'l', undefined, undefined, true)).toBe(3);
     expect(S.find('hello', 'z', undefined, undefined, false)).toBe(-1);
@@ -169,14 +169,14 @@ describe('find, count, tests', () => {
     expect(out(run('str-find', { mode: 'rindex', sub: 'l' }, 'hello'), 'index')).toBe(3);
     expect(failed(run('str-find', { mode: 'find', sub: 'l', start: 'x' }, 'hello'))).toBe(true);
   });
-  it('counts like Python', () => {
+  it('counts', () => {
     expect(S.count('banana', 'a', undefined, undefined)).toBe(3);
     expect(S.count('aaa', 'aa', undefined, undefined)).toBe(1);
     expect(S.count('abc', '', undefined, undefined)).toBe(4);
     expect(S.count('banana', 'a', 2, undefined)).toBe(2);
     expect(go('str-count', { sub: 'l' }, 'hello')).toBe(2);
   });
-  it('tests like Python’s is…() methods', () => {
+  it('tests with the is…() methods', () => {
     const T = S.TESTS;
     expect(T.isalpha('abc')).toBe(true); expect(T.isalpha('ab1')).toBe(false); expect(T.isalpha('')).toBe(false);
     expect(T.isdecimal('123')).toBe(true); expect(T.isdecimal('²')).toBe(false); expect(T.isdigit('²')).toBe(true); expect(T.isnumeric('½')).toBe(true); expect(T.isnumeric('五')).toBe(true);
@@ -196,7 +196,7 @@ describe('find, count, tests', () => {
 });
 
 describe('align, tabs, slice, index, reverse, length', () => {
-  it('pads like Python', () => {
+  it('pads', () => {
     expect(S.align('ab', 'center', 7, '*')).toBe('***ab**');
     expect(S.align('abc', 'center', 6, '*')).toBe('*abc**');
     expect(S.align('ab', 'ljust', 5, '.')).toBe('ab...');
@@ -207,12 +207,12 @@ describe('align, tabs, slice, index, reverse, length', () => {
     expect(() => S.align('a', 'center', 5, 'ab')).toThrow();
     expect(go('str-align', { mode: 'rjust', width: 4, fill: '0' }, '7')).toBe('0007');
   });
-  it('expands tabs like Python', () => {
+  it('expands tabs', () => {
     expect(S.expandTabs('a\tb', 4)).toBe('a   b');
     expect(S.expandTabs('ab\tc\n\td', 4)).toBe('ab  c\n    d');
     expect(S.expandTabs('a\tb', 0)).toBe('ab');
   });
-  it('slices like Python', () => {
+  it('slices', () => {
     expect(S.slice('hello', 1, -1)).toBe('ell');
     expect(S.slice('hello', undefined, undefined, -1)).toBe('olleh');
     expect(S.slice('hello', undefined, undefined, 2)).toBe('hlo');
@@ -226,7 +226,7 @@ describe('align, tabs, slice, index, reverse, length', () => {
     expect(go('str-slice', { start: '1', stop: '-1', step: '' }, 'hello')).toBe('ell');
     expect(failed(run('str-slice', { step: '0' }, 'hello'))).toBe(true);
   });
-  it('indexes, reverses and measures like Python', () => {
+  it('indexes, reverses and measures', () => {
     expect(S.charAt('hello', -1)).toBe('o');
     expect(() => S.charAt('hello', 5)).toThrow('string index out of range');
     expect(go('str-index', { index: 1 }, 'hello')).toBe('e');
